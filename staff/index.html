@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MR.X.Change — Staff Mobile Exchange & Inventory</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- React & Babel for zero-install instant browser preview -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg-sidebar: #0b132b;
+      --bg-sidebar-hover: #1c2541;
+      --bg-main: #f4f7fb;
+      --primary-blue: #0284c7;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-main);
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .custom-shadow {
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+    }
+    .badge-in-hand { background: #ecfdf5; color: #059669; }
+    .badge-old-inv { background: #e0f2fe; color: #0284c7; }
+    .badge-repair { background: #fffbeb; color: #d97706; }
+    .badge-rejected { background: #fef2f2; color: #dc2626; }
+  </style>
+</head>
+<body class="bg-[#f4f7fb]">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Initial Demo State matching screenshots
+    const initialDevices = [
+      { id: '1', brand: 'Apple', model: 'iPhone 13', imei: '352039847593812', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '15 Sep 2026', status: 'IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+      { id: '2', brand: 'Samsung', model: 'Galaxy S22', imei: '358240951234765', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '14 Sep 2026', status: 'IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+      { id: '3', brand: 'Apple', model: 'iPhone 12', imei: '351682947651903', storage: 64, ram: 4, colour: 'White', condition: 'Fair', purchase_amount: 18000, paid_by: 'Neha', intake_date: '14 Sep 2026', status: 'IN_HAND', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
+      { id: '4', brand: 'OnePlus', model: 'OnePlus 10R', imei: '867985064321098', storage: 128, ram: 8, colour: 'Sierra Black', condition: 'Good', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
+      { id: '5', brand: 'Apple', model: 'iPhone 11', imei: '352091743812609', storage: 64, ram: 4, colour: 'Green', condition: 'Fair', purchase_amount: 14000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+      { id: '6', brand: 'Xiaomi', model: 'Redmi Note 11', imei: '864320567981234', storage: 128, ram: 6, colour: 'Blue', condition: 'Good', purchase_amount: 10000, paid_by: 'Aadarsh', intake_date: '12 Sep 2026', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
+      { id: '7', brand: 'Apple', model: 'iPhone 11', imei: '352948172635489', storage: 64, ram: 4, colour: 'Black', condition: 'Fair', purchase_amount: 18000, paid_by: 'Rohit', intake_date: '15 Sep 2026', status: 'IN_REPAIR', repair_issue: 'Display glass cracked', technician: 'Aman Tech', repair_cost: 1500, image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+      { id: '8', brand: 'Samsung', model: 'Galaxy S22', imei: '358240951999901', storage: 128, ram: 8, colour: 'White', condition: 'Defective', purchase_amount: 24500, paid_by: 'Aadarsh', intake_date: '14 Sep 2026', status: 'REJECTED', rejection_reason: 'Motherboard dead', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+      { id: '9', brand: 'OnePlus', model: '9R', imei: '867985064111222', storage: 128, ram: 8, colour: 'Blue', condition: 'Defective', purchase_amount: 16000, paid_by: 'Neha', intake_date: '13 Sep 2026', status: 'REJECTED', rejection_reason: 'Liquid damage', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' }
+    ];
+
+    function App() {
+      const [currentRoute, setCurrentRoute] = useState('dashboard');
+      const [devices, setDevices] = useState(initialDevices);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [actionMenuId, setActionMenuId] = useState(null);
+
+      // Add device state
+      const [newDevice, setNewDevice] = useState({
+        brand: '', model: '', storage: '128', ram: '6', colour: 'Midnight',
+        purchase_amount: '', paid_by: 'Rohit', imei: '', condition: 'Good'
+      });
+
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      const handleAddSubmit = (e) => {
+        e.preventDefault();
+        const created = {
+          id: String(Date.now()),
+          ...newDevice,
+          purchase_amount: parseFloat(newDevice.purchase_amount),
+          intake_date: '17 Sep 2026',
+          status: 'OLD_INVENTORY',
+          image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
+        };
+        setDevices([created, ...devices]);
+        setShowAddModal(false);
+      };
+
+      const changeStatus = (id, newStatus) => {
+        setDevices(devices.map(d => d.id === id ? { ...d, status: newStatus } : d));
+        setActionMenuId(null);
+      };
+
+      // Filter devices
+      const filteredDevices = devices.filter(d => {
+        const matchesSearch = searchQuery === '' || 
+          d.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          d.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (d.imei && d.imei.includes(searchQuery));
+
+        if (!matchesSearch) return false;
+
+        if (currentRoute === 'old-inventory') return true;
+        if (currentRoute === 'in-hand-stock') return d.status === 'IN_HAND';
+        if (currentRoute === 'repair-stock') return d.status === 'IN_REPAIR';
+        if (currentRoute === 'rejected-stock') return d.status === 'REJECTED';
+        return true;
+      });
+
+      // Stats
+      const totalCount = 5248 + devices.length - initialDevices.length;
+      const oldInvCount = 3786 + devices.filter(d => d.status === 'OLD_INVENTORY').length - 2;
+      const inHandCount = 620 + devices.filter(d => d.status === 'IN_HAND').length - 4;
+      const repairCount = 842 + devices.filter(d => d.status === 'IN_REPAIR').length - 1;
+      const rejectedCount = 42 + devices.filter(d => d.status === 'REJECTED').length - 2;
+
+      return (
+        <div className="flex min-h-screen bg-[#f4f7fb]">
+          {/* Sidebar */}
+          <aside className="w-64 bg-[#0b132b] text-slate-400 flex flex-col p-6 border-r border-slate-800 flex-shrink-0">
+            <div className="flex items-center gap-3 pb-8 text-white">
+              <i data-lucide="smartphone" className="w-8 h-8 text-sky-400"></i>
+              <div>
+                <div className="font-extrabold text-lg tracking-tight">MR.X.Change</div>
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Exchange</div>
+              </div>
+            </div>
+
+            <nav className="flex-1 space-y-1">
+              {[
+                { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                { id: 'old-inventory', label: 'Old Inventory', icon: 'layers' },
+                { id: 'in-hand-stock', label: 'In-hand Stock', icon: 'smartphone' },
+                { id: 'repair-stock', label: 'Repair Stock', icon: 'wrench' },
+                { id: 'rejected-stock', label: 'Rejected Stock', icon: 'trash-2' },
+                { id: 'reports', label: 'Reports', icon: 'bar-chart-3' },
+              ].map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentRoute(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition ${
+                    currentRoute === item.id ? 'bg-[#0284c7] text-white shadow-lg shadow-sky-900/30' : 'hover:bg-[#1c2541] hover:text-white'
+                  }`}
+                >
+                  <i data-lucide={item.icon} className="w-5 h-5"></i>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="pt-6 border-t border-slate-800">
+              <div className="flex items-center gap-3 text-slate-400 hover:text-red-400 cursor-pointer text-sm font-semibold p-2">
+                <i data-lucide="log-out" className="w-5 h-5"></i>
+                <span>Logout</span>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col h-screen overflow-y-auto">
+            {/* Topbar */}
+            <header className="h-[70px] bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-20">
+              <div className="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-full w-96 border border-slate-200/60">
+                <i data-lucide="search" className="w-4 h-4 text-slate-500"></i>
+                <input 
+                  type="text" 
+                  placeholder="Search by model, IMEI, color, or ID..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm w-full text-slate-800"
+                />
+              </div>
+
+              <div className="flex items-center gap-5">
+                <div className="relative p-2 text-slate-600 hover:bg-slate-50 rounded-full cursor-pointer">
+                  <i data-lucide="bell" className="w-5 h-5"></i>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                </div>
+
+                <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+                  <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-sm">
+                    AS
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-slate-900">Aadarsh Sharma</div>
+                    <div className="text-xs text-slate-500 font-medium">Staff Member</div>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* Page Content */}
+            <main className="p-8 flex-1">
+              {currentRoute === 'dashboard' && (
+                <div>
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h1 className="text-2xl font-extrabold text-slate-900">Dashboard</h1>
+                      <p className="text-slate-500 text-sm mt-1">Welcome back, Aadarsh! Here's an overview of your inventory.</p>
+                    </div>
+                    <span className="text-sky-600 font-bold text-xs bg-sky-50 px-3 py-1.5 rounded-md border border-sky-100">
+                      Monday, 15 Sep 2026
+                    </span>
+                  </div>
+
+                  {/* 5 KPI Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                    {[
+                      { title: 'Total Mobiles', val: totalCount.toLocaleString(), sub: '↑ +12% Across all', color: 'bg-sky-50 text-sky-600', icon: 'smartphone' },
+                      { title: 'Old Inventory', val: oldInvCount.toLocaleString(), sub: '↑ +8% Processing', color: 'bg-emerald-50 text-emerald-600', icon: 'layers' },
+                      { title: 'In-hand Stock', val: inHandCount.toLocaleString(), sub: '↑ +5% Ready for sale', color: 'bg-amber-50 text-amber-600', icon: 'shopping-bag' },
+                      { title: 'Repair Stock', val: repairCount.toLocaleString(), sub: '↓ -3% Under repair', color: 'bg-rose-50 text-rose-600', icon: 'wrench' },
+                      { title: 'Rejected Stock', val: rejectedCount.toLocaleString(), sub: '— 0% Defected', color: 'bg-slate-100 text-slate-600', icon: 'trash-2' },
+                    ].map((card, i) => (
+                      <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200/80 custom-shadow flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${card.color}`}>
+                          <i data-lucide={card.icon} className="w-6 h-6"></i>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-slate-500">{card.title}</div>
+                          <div className="text-xl font-extrabold text-slate-900">{card.val}</div>
+                          <div className="text-[11px] font-semibold text-emerald-600">{card.sub}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Recent Devices Table */}
+                  <div className="bg-white rounded-2xl border border-slate-200 custom-shadow p-6">
+                    <div className="flex justify-between items-center mb-5">
+                      <h2 className="text-lg font-bold text-slate-900">Recently Added Mobiles</h2>
+                      <button onClick={() => setCurrentRoute('old-inventory')} className="text-sky-600 font-bold text-sm flex items-center gap-1">
+                        View All <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="p-3">#</th>
+                            <th className="p-3">Image</th>
+                            <th className="p-3">Model / Name</th>
+                            <th className="p-3">IMEI</th>
+                            <th className="p-3">Storage</th>
+                            <th className="p-3">Color</th>
+                            <th className="p-3">Condition</th>
+                            <th className="p-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {devices.slice(0, 5).map((d, idx) => (
+                            <tr key={d.id} className="hover:bg-slate-50">
+                              <td className="p-3 font-semibold text-slate-400">{idx + 1}</td>
+                              <td className="p-3">
+                                <img src={d.image_url} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                              </td>
+                              <td className="p-3 font-bold text-slate-900">{d.model}</td>
+                              <td className="p-3 text-sky-600 font-semibold">{d.imei || 'N/A'}</td>
+                              <td className="p-3">{d.storage} GB</td>
+                              <td className="p-3">{d.colour}</td>
+                              <td className="p-3"><span className="text-emerald-600 font-bold">{d.condition}</span></td>
+                              <td className="p-3">
+                                <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                                  d.status === 'IN_HAND' ? 'badge-in-hand' :
+                                  d.status === 'OLD_INVENTORY' ? 'badge-old-inv' :
+                                  d.status === 'IN_REPAIR' ? 'badge-repair' : 'badge-rejected'
+                                }`}>
+                                  {d.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentRoute === 'old-inventory' && (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h1 className="text-2xl font-extrabold text-slate-900">Old Inventory</h1>
+                      <p className="text-slate-500 text-sm mt-1">All incoming mobile devices before repair and final listing.</p>
+                      <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="mt-4 bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 shadow-lg shadow-sky-600/30"
+                      >
+                        <i data-lucide="plus" className="w-4 h-4"></i> Add Mobile
+                      </button>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+                        <i data-lucide="smartphone" className="w-8 h-8 text-sky-600"></i>
+                        <div>
+                          <div className="text-xs text-slate-500 font-bold">Total Mobiles</div>
+                          <div className="text-xl font-extrabold text-slate-900">5,248</div>
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+                        <i data-lucide="database" className="w-8 h-8 text-emerald-600"></i>
+                        <div>
+                          <div className="text-xs text-slate-500 font-bold">Database Capacity</div>
+                          <div className="text-xl font-extrabold text-emerald-600">5000+ Devices</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-200 custom-shadow overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">#</th>
+                          <th className="p-4">Image</th>
+                          <th className="p-4">Model / Name</th>
+                          <th className="p-4">IMEI</th>
+                          <th className="p-4">Storage</th>
+                          <th className="p-4">RAM</th>
+                          <th className="p-4">Color</th>
+                          <th className="p-4">Condition</th>
+                          <th className="p-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredDevices.map((d, idx) => (
+                          <tr key={d.id} className="hover:bg-slate-50">
+                            <td className="p-4 font-semibold text-slate-400">{idx + 1}</td>
+                            <td className="p-4">
+                              <img src={d.image_url} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                            </td>
+                            <td className="p-4 font-bold text-slate-900">{d.brand} {d.model}</td>
+                            <td className="p-4 text-sky-600 font-semibold">{d.imei || 'N/A'}</td>
+                            <td className="p-4">{d.storage} GB</td>
+                            <td className="p-4">{d.ram} GB</td>
+                            <td className="p-4">{d.colour}</td>
+                            <td className="p-4"><span className="text-emerald-600 font-bold">{d.condition}</span></td>
+                            <td className="p-4 relative">
+                              <button 
+                                onClick={() => setActionMenuId(actionMenuId === d.id ? null : d.id)}
+                                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600"
+                              >
+                                <i data-lucide="more-vertical" className="w-4 h-4"></i>
+                              </button>
+
+                              {actionMenuId === d.id && (
+                                <div className="absolute right-4 top-12 bg-white border border-slate-200 rounded-xl shadow-xl w-44 z-30 py-2">
+                                  <button onClick={() => changeStatus(d.id, 'IN_HAND')} className="w-full text-left px-4 py-2 text-xs font-bold text-emerald-600 hover:bg-slate-50 flex items-center gap-2">
+                                    <i data-lucide="shopping-bag" className="w-4 h-4"></i> Move to Resell (In-hand)
+                                  </button>
+                                  <button onClick={() => changeStatus(d.id, 'IN_REPAIR')} className="w-full text-left px-4 py-2 text-xs font-bold text-amber-600 hover:bg-slate-50 flex items-center gap-2">
+                                    <i data-lucide="wrench" className="w-4 h-4"></i> Move to Repair Stock
+                                  </button>
+                                  <button onClick={() => changeStatus(d.id, 'REJECTED')} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-slate-50 flex items-center gap-2">
+                                    <i data-lucide="trash-2" className="w-4 h-4"></i> Move to Rejected Stock
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {currentRoute === 'in-hand-stock' && (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h1 className="text-2xl font-extrabold text-slate-900">In-hand Stock</h1>
+                      <p className="text-slate-500 text-sm mt-1">Mobiles currently available for sale.</p>
+                    </div>
+                    <button onClick={() => window.print()} className="bg-slate-900 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                      <i data-lucide="printer" className="w-4 h-4"></i> Print Report
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Total In-hand Stock</div>
+                      <div className="text-2xl font-extrabold text-slate-900 mt-1">620</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Unique Models</div>
+                      <div className="text-2xl font-extrabold text-emerald-600 mt-1">48</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Total Storage (GB)</div>
+                      <div className="text-2xl font-extrabold text-purple-600 mt-1">12,480</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Total RAM (GB)</div>
+                      <div className="text-2xl font-extrabold text-amber-600 mt-1">3,420</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-200 custom-shadow overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">#</th>
+                          <th className="p-4">Model / Name</th>
+                          <th className="p-4">IMEI</th>
+                          <th className="p-4">Storage</th>
+                          <th className="p-4">Color</th>
+                          <th className="p-4">Purchase Price</th>
+                          <th className="p-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredDevices.map((d, idx) => (
+                          <tr key={d.id} className="hover:bg-slate-50">
+                            <td className="p-4 font-semibold text-slate-400">{idx + 1}</td>
+                            <td className="p-4 font-bold text-slate-900">{d.brand} {d.model}</td>
+                            <td className="p-4 text-sky-600 font-semibold">{d.imei || 'N/A'}</td>
+                            <td className="p-4">{d.storage} GB</td>
+                            <td className="p-4">{d.colour}</td>
+                            <td className="p-4 font-extrabold text-slate-900">₹{d.purchase_amount.toLocaleString('en-IN')}</td>
+                            <td className="p-4">
+                              <button 
+                                onClick={() => {
+                                  alert(`Sale recorded for ${d.brand} ${d.model}! Stock moved to SOLD.`);
+                                  changeStatus(d.id, 'SOLD');
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+                              >
+                                Record Sale
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {currentRoute === 'repair-stock' && (
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Repair Stock</h1>
+                  <p className="text-slate-500 text-sm mb-6">Mobiles currently under repair process.</p>
+                  <div className="bg-white rounded-2xl border border-slate-200 custom-shadow overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">#</th>
+                          <th className="p-4">Mobile Brand</th>
+                          <th className="p-4">Mobile Model</th>
+                          <th className="p-4">Storage</th>
+                          <th className="p-4">Repair Issue</th>
+                          <th className="p-4">Paid By</th>
+                          <th className="p-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredDevices.map((d, idx) => (
+                          <tr key={d.id} className="hover:bg-slate-50">
+                            <td className="p-4 font-semibold text-slate-400">{idx + 1}</td>
+                            <td className="p-4 font-bold">{d.brand}</td>
+                            <td className="p-4 font-bold text-slate-900">{d.model}</td>
+                            <td className="p-4">{d.storage} GB</td>
+                            <td className="p-4 text-amber-600 font-semibold">{d.repair_issue || 'Display/Glass repair'}</td>
+                            <td className="p-4 text-slate-500">{d.paid_by}</td>
+                            <td className="p-4">
+                              <button 
+                                onClick={() => changeStatus(d.id, 'IN_HAND')}
+                                className="bg-sky-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+                              >
+                                Complete Repair
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {currentRoute === 'rejected-stock' && (
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Rejected Stock</h1>
+                  <p className="text-slate-500 text-sm mb-6">Mobiles rejected due to non-repairable condition.</p>
+                  <div className="bg-white rounded-2xl border border-slate-200 custom-shadow overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">#</th>
+                          <th className="p-4">Brand</th>
+                          <th className="p-4">Model</th>
+                          <th className="p-4">Paid Amount</th>
+                          <th className="p-4">Last Reason of Rejection</th>
+                          <th className="p-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredDevices.map((d, idx) => (
+                          <tr key={d.id} className="hover:bg-slate-50">
+                            <td className="p-4 font-semibold text-slate-400">{idx + 1}</td>
+                            <td className="p-4 font-bold">{d.brand}</td>
+                            <td className="p-4 font-bold text-slate-900">{d.model}</td>
+                            <td className="p-4 font-bold">₹{d.purchase_amount.toLocaleString('en-IN')}</td>
+                            <td className="p-4 text-red-600 font-semibold">{d.rejection_reason || 'Motherboard dead'}</td>
+                            <td className="p-4">
+                              <button 
+                                onClick={() => changeStatus(d.id, 'IN_REPAIR')}
+                                className="bg-slate-200 hover:bg-slate-300 font-bold px-3 py-1.5 rounded-lg text-xs"
+                              >
+                                Retry Repair
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {currentRoute === 'reports' && (
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Reports & Analytics</h1>
+                  <p className="text-slate-500 text-sm mb-6">Get insights into inventory, repairs, and performance.</p>
+
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Total Mobiles</div>
+                      <div className="text-2xl font-extrabold text-slate-900 mt-1">1,248</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">In-hand Stock</div>
+                      <div className="text-2xl font-extrabold text-emerald-600 mt-1">682</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Repair Stock</div>
+                      <div className="text-2xl font-extrabold text-amber-600 mt-1">156</div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 custom-shadow">
+                      <div className="text-xs text-slate-500 font-bold">Total Value</div>
+                      <div className="text-2xl font-extrabold text-sky-600 mt-1">₹18,42,500</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 custom-shadow">
+                    <h2 className="text-lg font-bold text-slate-900 mb-4">Export Reports</h2>
+                    <div className="flex gap-4">
+                      {['XML', 'CSV', 'PDF', 'PPT'].map(fmt => (
+                        <button key={fmt} onClick={() => alert(`Exporting ${fmt} Report...`)} className="px-6 py-3 border border-slate-200 rounded-xl font-bold text-sm hover:border-sky-600 hover:text-sky-600">
+                          📄 {fmt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+
+          {/* Add Mobile Modal */}
+          {showAddModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                  <h3 className="font-extrabold text-lg text-slate-900">Add Mobile to Old Inventory</h3>
+                  <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+                </div>
+                <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Brand *</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="e.g. Apple, Samsung" 
+                        value={newDevice.brand}
+                        onChange={(e) => setNewDevice({ ...newDevice, brand: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Model Name *</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="e.g. iPhone 14 Pro" 
+                        value={newDevice.model}
+                        onChange={(e) => setNewDevice({ ...newDevice, model: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Purchased Amount (₹) *</label>
+                      <input 
+                        type="number" 
+                        required 
+                        placeholder="e.g. 28000" 
+                        value={newDevice.purchase_amount}
+                        onChange={(e) => setNewDevice({ ...newDevice, purchase_amount: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Paid By *</label>
+                      <select 
+                        value={newDevice.paid_by}
+                        onChange={(e) => setNewDevice({ ...newDevice, paid_by: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      >
+                        <option>Rohit</option>
+                        <option>Aadarsh</option>
+                        <option>Neha</option>
+                        <option>Aman</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Storage (GB)</label>
+                      <select 
+                        value={newDevice.storage}
+                        onChange={(e) => setNewDevice({ ...newDevice, storage: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      >
+                        <option value="64">64 GB</option>
+                        <option value="128">128 GB</option>
+                        <option value="256">256 GB</option>
+                        <option value="512">512 GB</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">RAM (GB)</label>
+                      <select 
+                        value={newDevice.ram}
+                        onChange={(e) => setNewDevice({ ...newDevice, ram: e.target.value })}
+                        className="w-full p-2.5 border-2 border-slate-900 rounded-lg text-sm font-semibold"
+                      >
+                        <option value="4">4 GB</option>
+                        <option value="6">6 GB</option>
+                        <option value="8">8 GB</option>
+                        <option value="12">12 GB</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm font-bold text-slate-600">Cancel</button>
+                    <button type="submit" className="bg-sky-600 text-white font-bold px-6 py-2 rounded-lg text-sm shadow-lg shadow-sky-600/30">Save Mobile</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
