@@ -4,13 +4,14 @@ import jwt from 'jsonwebtoken';
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    const identifier = req.body.email || req.body.username || req.body.identifier;
+    const { password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Username/Email and password are required' });
     }
 
     const pool = getPool();
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ? AND active = 1', [email]);
+    const [users] = await pool.query('SELECT * FROM users WHERE (email = ? OR auth_identifier = ?) AND active = 1', [identifier, identifier]);
     if (users.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }

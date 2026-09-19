@@ -4,7 +4,11 @@ import { getDevices, getDeviceById, createDevice, updateDeviceStatus } from '../
 import { createRepair, updateRepair } from '../controllers/repairController.js';
 import { createRejection, resolveRejection } from '../controllers/rejectionController.js';
 import { createSale, getSalesList } from '../controllers/saleController.js';
-import { getDashboardStats, getInHandStats, getReportsData, exportInventory } from '../controllers/statsController.js';
+import { getDashboardStats, getInHandStats, getSuperadminAnalytics } from '../controllers/statsController.js';
+import { getLedger, createLedgerEntry } from '../controllers/ledgerController.js';
+import { getExpenses, createExpense } from '../controllers/expenseController.js';
+import { getInvestments, createInvestment } from '../controllers/investmentController.js';
+import { exportCsv, exportPdf } from '../controllers/exportController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
@@ -17,10 +21,9 @@ router.get('/auth/profile', authenticateToken, getProfile);
 // Dashboard & Analytics
 router.get('/dashboard/stats', authenticateToken, getDashboardStats);
 router.get('/dashboard/in-hand-stats', authenticateToken, getInHandStats);
-router.get('/reports', authenticateToken, getReportsData);
-router.get('/exports/inventory', authenticateToken, exportInventory);
+router.get('/superadmin/analytics', authenticateToken, getSuperadminAnalytics);
 
-// Devices
+// Devices (Intake, In-hand, Repair, Rejected)
 router.get('/devices', authenticateToken, getDevices);
 router.get('/devices/:id', authenticateToken, getDeviceById);
 router.post('/devices', authenticateToken, upload.single('image'), createDevice);
@@ -37,5 +40,21 @@ router.patch('/rejections/:id/resolve', authenticateToken, resolveRejection);
 // Sales
 router.post('/sales', authenticateToken, createSale);
 router.get('/sales', authenticateToken, getSalesList);
+
+// Central Ledger (Superadmin)
+router.get('/ledger', authenticateToken, getLedger);
+router.post('/ledger', authenticateToken, createLedgerEntry);
+
+// Expenses (Superadmin)
+router.get('/expenses', authenticateToken, getExpenses);
+router.post('/expenses', authenticateToken, createExpense);
+
+// Investments & ROI (Superadmin)
+router.get('/investments', authenticateToken, getInvestments);
+router.post('/investments', authenticateToken, createInvestment);
+
+// Exports: CSV and PDF
+router.get('/exports/csv', authenticateToken, exportCsv);
+router.get('/exports/pdf', authenticateToken, exportPdf);
 
 export default router;

@@ -7,8 +7,8 @@ import {
   Wrench,
   CheckCircle
 } from 'lucide-react';
-import { deviceService } from '../../services/api';
-import { CurrencyAmount } from '../../components/common/UIComponents';
+import { deviceService } from '../services/api';
+import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 
 export default function RejectedStock() {

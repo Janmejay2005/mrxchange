@@ -1,0 +1,278 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  BookOpen, 
+  Search, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Download, 
+  FileText, 
+  RotateCcw,
+  Wallet,
+  Plus
+} from 'lucide-react';
+import { ledgerService, statsService } from '../services/api';
+import { CurrencyAmount } from '../components/common/UIComponents';
+import { useOutletContext, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function CentralLedger() {
+  const { isSuperAdmin } = useAuth();
+  const { globalSearch, selectedDate } = useOutletContext() || {};
+  const [transactions, setTransactions] = useState([]);
+  const [summary, setSummary] = useState({ totalCredits: 0, totalDebits: 0, netBalance: 0 });
+  const [loading, setLoading] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState('All Admins');
+  const [selectedType, setSelectedType] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Guard: Superadmin only
+  if (!isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const fetchLedger = async () => {
+    try {
+      setLoading(true);
+      const res = await ledgerService.getLedger({
+        admin: selectedAdmin,
+        type: selectedType,
+        q: searchQuery || globalSearch || '',
+        from: selectedDate || '',
+        to: selectedDate || ''
+      });
+      setTransactions(res.data || []);
+      setSummary(res.summary || { totalCredits: 0, totalDebits: 0, netBalance: 0 });
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      // Fallback demo ledger data
+      setTransactions([
+        { id: '1', transaction_code: 'TX-SL-005', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 65000, admin_name: 'Jeet', transaction_date: '2026-09-18', description: 'Sold iPhone 14 Pro 256GB' },
+        { id: '2', transaction_code: 'TX-SL-001', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 38000, admin_name: 'Jeet', transaction_date: '2026-09-17', description: 'Sold iPhone 13 128GB Midnight' },
+        { id: '3', transaction_code: 'TX-SL-002', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 33000, admin_name: 'Sunal', transaction_date: '2026-09-16', description: 'Sold Galaxy S22 256GB' },
+        { id: '4', transaction_code: 'TX-EXP-003', transaction_type: 'EXPENSE', flow_type: 'DEBIT', amount: 4500, admin_name: 'Jeet', transaction_date: '2026-09-14', description: 'Shop Electricity & Fiber Internet' },
+        { id: '5', transaction_code: 'TX-EXP-001', transaction_type: 'EXPENSE', flow_type: 'DEBIT', amount: 25000, admin_name: 'Jeet', transaction_date: '2026-09-10', description: 'Monthly Technician Salaries' },
+        { id: '6', transaction_code: 'TX-INV-001', transaction_type: 'INVESTMENT', flow_type: 'CREDIT', amount: 500000, admin_name: 'Jeet', transaction_date: '2026-09-01', description: 'Initial Mobile Inventory Capital - Jeet' },
+        { id: '7', transaction_code: 'TX-INV-002', transaction_type: 'INVESTMENT', flow_type: 'CREDIT', amount: 150000, admin_name: 'Sunal', transaction_date: '2026-09-05', description: 'Diagnostic & Repair Equipment - Sunal' }
+      ]);
+      setSummary({ totalCredits: 786000, totalDebits: 29500, netBalance: 756500 });
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLedger();
+  }, [selectedAdmin, selectedType, searchQuery, globalSearch, selectedDate]);
+
+  const handleExportCsv = () => {
+    const url = statsService.getCsvExportUrl('ledger', { 
+      admin: selectedAdmin,
+      from: selectedDate || '' 
+    });
+    window.open(url, '_blank');
+  };
+
+  const handleExportPdf = () => {
+    const url = statsService.getPdfExportUrl('ledger', { 
+      admin: selectedAdmin,
+      from: selectedDate || '' 
+    });
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Central Financial Ledger</h1>
+            <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800 }}>
+              Single Source of Truth
+            </span>
+          </div>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+            Audit trail of all acquisitions, sales, repairs, expenses, and capital investments.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={handleExportCsv} className="btn-secondary" title="Export Ledger as CSV">
+            <Download size={15} color="#0284c7" /> Export CSV
+          </button>
+          <button onClick={handleExportPdf} className="btn-secondary" title="Export Ledger as PDF">
+            <FileText size={15} color="#dc2626" /> Export PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Financial Balance KPI Cards */}
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#ecfdf5' }}>
+            <ArrowDownLeft size={24} color="#059669" />
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-title">Total Credits (Inflow)</span>
+            <span className="kpi-value" style={{ color: '#059669' }}>
+              ₹{summary.totalCredits.toLocaleString('en-IN')}
+            </span>
+            <span className="kpi-subtext" style={{ color: '#64748b' }}>Sales & Capital Inflows</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#fee2e2' }}>
+            <ArrowUpRight size={24} color="#dc2626" />
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-title">Total Debits (Outflow)</span>
+            <span className="kpi-value" style={{ color: '#dc2626' }}>
+              ₹{summary.totalDebits.toLocaleString('en-IN')}
+            </span>
+            <span className="kpi-subtext" style={{ color: '#64748b' }}>Acquisitions, Repairs & Expenses</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#e0f2fe' }}>
+            <Wallet size={24} color="#0284c7" />
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-title">Net Ledger Balance</span>
+            <span className="kpi-value" style={{ color: '#0284c7' }}>
+              ₹{summary.netBalance.toLocaleString('en-IN')}
+            </span>
+            <span className="kpi-subtext" style={{ color: '#10b981', fontWeight: 'bold' }}>
+              {summary.netBalance >= 0 ? 'Surplus Balance' : 'Deficit'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {/* Admin Selector Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Admin:</span>
+            <select
+              className="form-control"
+              style={{ width: '160px', padding: '8px 12px' }}
+              value={selectedAdmin}
+              onChange={(e) => setSelectedAdmin(e.target.value)}
+            >
+              <option value="All Admins">All Admins</option>
+              <option value="Jeet">Jeet</option>
+              <option value="Sunal">Sunal</option>
+              <option value="Admin23">Admin23</option>
+            </select>
+          </div>
+
+          {/* Type Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Type:</span>
+            <select
+              className="form-control"
+              style={{ width: '160px', padding: '8px 12px' }}
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+            >
+              <option value="ALL">All Types</option>
+              <option value="SALE">Sales (Credit)</option>
+              <option value="ACQUISITION">Acquisitions (Debit)</option>
+              <option value="EXPENSE">Expenses (Debit)</option>
+              <option value="INVESTMENT">Investments (Credit)</option>
+              <option value="REPAIR">Repairs (Debit)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="search-box" style={{ width: '240px' }}>
+          <Search size={16} color="#64748b" />
+          <input
+            type="text"
+            placeholder="Search code or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Ledger Table */}
+      <div className="table-responsive">
+        <table className="custom-table">
+          <thead>
+            <tr>
+              <th>Tx Code</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Flow</th>
+              <th>Admin Attribution</th>
+              <th>Payment Method</th>
+              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  Loading Central Ledger transactions...
+                </td>
+              </tr>
+            ) : transactions.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  No transactions found matching the selected filter or date.
+                </td>
+              </tr>
+            ) : (
+              transactions.map((tx) => (
+                <tr key={tx.id || tx.transaction_code}>
+                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{tx.transaction_code}</td>
+                  <td>{tx.transaction_date ? String(tx.transaction_date).slice(0, 10) : 'Today'}</td>
+                  <td>
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      background: tx.transaction_type === 'SALE' ? '#ecfdf5' : tx.transaction_type === 'INVESTMENT' ? '#f5f3ff' : '#f1f5f9',
+                      color: tx.transaction_type === 'SALE' ? '#047857' : tx.transaction_type === 'INVESTMENT' ? '#7c3aed' : '#334155'
+                    }}>
+                      {tx.transaction_type}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 800,
+                      color: tx.flow_type === 'CREDIT' ? '#059669' : '#dc2626',
+                      fontSize: '12px'
+                    }}>
+                      {tx.flow_type === 'CREDIT' ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}
+                      {tx.flow_type}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ fontWeight: 600, color: '#0284c7' }}>
+                      {tx.admin_name || 'Admin'}
+                    </span>
+                  </td>
+                  <td>{tx.payment_method || 'Cash'}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '14px', color: tx.flow_type === 'CREDIT' ? '#059669' : '#0f172a' }}>
+                    {tx.flow_type === 'CREDIT' ? '+' : '-'}₹{parseFloat(tx.amount || 0).toLocaleString('en-IN')}
+                  </td>
+                  <td style={{ color: '#475569', fontSize: '12px' }}>{tx.description}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

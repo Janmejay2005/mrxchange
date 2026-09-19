@@ -1,17 +1,21 @@
 import React from 'react';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Search, Menu, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import GlobalCalendar from '../common/GlobalCalendar';
 
-export default function Topbar({ onToggleSidebar, onSearch, searchQuery }) {
-  const { user } = useAuth();
+export default function Topbar({ onToggleSidebar, onSearch, searchQuery, selectedDate, onDateChange }) {
+  const { user, isSuperAdmin } = useAuth();
 
   return (
     <header className="topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Hamburger Menu - Available on Laptop, Desktop and Mobile */}
         <button 
           onClick={onToggleSidebar}
-          style={{ display: 'none' }}
-          className="mobile-menu-btn"
+          className="menu-toggle-btn"
+          aria-label="Toggle navigation menu"
+          title="Toggle Navigation Menu"
+          type="button"
         >
           <Menu size={22} />
         </button>
@@ -20,37 +24,39 @@ export default function Topbar({ onToggleSidebar, onSearch, searchQuery }) {
           <Search size={18} color="#64748b" />
           <input 
             type="text" 
-            placeholder="Search by model, IMEI, color, or inventory ID..." 
+            placeholder="Search model, color, device ID..." 
             value={searchQuery || ''}
             onChange={(e) => onSearch && onSearch(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="topbar-actions">
-        <button style={{ position: 'relative', padding: '8px', color: '#64748b' }}>
-          <Bell size={20} />
-          <span style={{
-            position: 'absolute',
-            top: 6,
-            right: 6,
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: '#ef4444'
-          }} />
-        </button>
+      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Global Calendar - Available on Every Page per PRD */}
+        <GlobalCalendar 
+          selectedDate={selectedDate} 
+          onDateChange={onDateChange} 
+        />
 
+        {/* User Profile Info (Role switch removed per request for clean mobile compatibility) */}
         <div className="user-pill">
-          <div className="avatar-circle">
-            {user?.auth_identifier || 'AS'}
+          <div 
+            className="avatar-circle"
+            style={{
+              backgroundColor: isSuperAdmin ? '#7c3aed' : '#0284c7'
+            }}
+          >
+            {user?.auth_identifier ? user.auth_identifier.slice(0, 2).toUpperCase() : (isSuperAdmin ? 'AD' : 'ST')}
           </div>
           <div className="user-info">
-            <span className="user-name">{user?.name || 'Aadarsh Sharma'}</span>
-            <span className="user-role">{user?.role === 'ADMIN' ? 'Administrator' : 'Staff'}</span>
+            <span className="user-name">{user?.auth_identifier || user?.name || (isSuperAdmin ? 'Admin23' : 'Staff23')}</span>
+            <span className="user-role" style={{ color: isSuperAdmin ? '#7c3aed' : '#0284c7', fontWeight: 700 }}>
+              {isSuperAdmin ? 'Superadmin' : 'Staff'}
+            </span>
           </div>
         </div>
       </div>
     </header>
   );
 }
+

@@ -7,8 +7,8 @@ import {
   Trash2,
   Home
 } from 'lucide-react';
-import { deviceService, repairService } from '../../services/api';
-import { CurrencyAmount } from '../../components/common/UIComponents';
+import { deviceService, repairService } from '../services/api';
+import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 
 export default function RepairStock() {

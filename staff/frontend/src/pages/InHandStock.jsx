@@ -9,8 +9,8 @@ import {
   ShoppingCart,
   Home
 } from 'lucide-react';
-import { deviceService, statsService, saleService } from '../../services/api';
-import { KPICard, CurrencyAmount } from '../../components/common/UIComponents';
+import { deviceService, statsService, saleService } from '../services/api';
+import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, Link } from 'react-router-dom';
 
 export default function InHandStock() {
@@ -196,13 +196,12 @@ export default function InHandStock() {
             <tr>
               <th>#</th>
               <th>Image</th>
-              <th>Model / Name</th>
-              <th>IMEI</th>
+              <th>Mobile Model</th>
+              <th>Color</th>
               <th>Storage</th>
               <th>RAM</th>
-              <th>Color</th>
-              <th>Purchase Price</th>
-              <th>Date Added</th>
+              <th>Paid Amount</th>
+              <th>Date</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -211,17 +210,18 @@ export default function InHandStock() {
               <tr key={device.id || idx}>
                 <td>{idx + 1}</td>
                 <td>
-                  <img 
-                    src={device.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
-                    alt={device.model} 
-                    className="device-thumb" 
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img 
+                      src={device.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
+                      alt="" 
+                      className="device-thumb" 
+                    />
+                    <span style={{ fontWeight: 700 }}>{device.model}</span>
+                  </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>{device.model}</td>
-                <td style={{ color: '#0284c7', fontWeight: 600 }}>{device.imei || 'N/A'}</td>
+                <td>{device.colour}</td>
                 <td>{device.storage} GB</td>
                 <td>{device.ram || 4} GB</td>
-                <td>{device.colour}</td>
                 <td style={{ fontWeight: 700 }}>
                   <CurrencyAmount amount={device.purchase_amount} />
                 </td>

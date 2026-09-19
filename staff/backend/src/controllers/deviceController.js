@@ -21,9 +21,21 @@ export async function getDevices(req, res) {
     let conditions = ['1=1'];
     let params = [];
 
-    if (status && status !== 'ALL') {
-      conditions.push('d.status = ?');
-      params.push(status);
+    const userRole = req.user?.role;
+    let targetStatus = status;
+
+    // Staff constraint: Staff only gets OLD_IN_HAND for in-hand requests
+    if (userRole === 'STAFF' && (status === 'IN_HAND' || status === 'NEW_IN_HAND')) {
+      targetStatus = 'OLD_IN_HAND';
+    }
+
+    if (targetStatus && targetStatus !== 'ALL') {
+      if (targetStatus === 'IN_HAND') {
+        conditions.push('(d.status = "OLD_IN_HAND" OR d.status = "NEW_IN_HAND" OR d.status = "IN_HAND")');
+      } else {
+        conditions.push('d.status = ?');
+        params.push(targetStatus);
+      }
     }
 
     if (q) {
@@ -63,6 +75,7 @@ export async function getDevices(req, res) {
     const [rows] = await pool.query(
       `SELECT d.*, 
               (SELECT url FROM device_images di WHERE di.device_id = d.id ORDER BY sort_order ASC, created_at ASC LIMIT 1) as image_url,
+              (SELECT GROUP_CONCAT(url ORDER BY sort_order ASC SEPARATOR '|||') FROM device_images di WHERE di.device_id = d.id) as all_images_concat,
               (SELECT description FROM rejections rj WHERE rj.device_id = d.id ORDER BY created_at DESC LIMIT 1) as last_rejection_reason,
               (SELECT issue_description FROM repairs rp WHERE rp.device_id = d.id AND rp.status = 'IN_PROGRESS' ORDER BY created_at DESC LIMIT 1) as active_repair_issue,
               (SELECT technician_name FROM repairs rp WHERE rp.device_id = d.id ORDER BY created_at DESC LIMIT 1) as active_technician
@@ -73,9 +86,16 @@ export async function getDevices(req, res) {
       [...params, parseInt(limit), offset]
     );
 
+    const formattedData = rows.map(r => ({
+      ...r,
+      images: r.all_images_concat 
+        ? r.all_images_concat.split('|||').filter(Boolean) 
+        : (r.image_url ? [r.image_url] : [])
+    }));
+
     res.json({
       success: true,
-      data: rows,
+      data: formattedData,
       pagination: {
         total,
         page: parseInt(page),
@@ -83,6 +103,7 @@ export async function getDevices(req, res) {
         totalPages: Math.ceil(total / parseInt(limit))
       }
     });
+
   } catch (error) {
     console.error('getDevices error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -161,46 +182,81 @@ export async function createDevice(req, res) {
       }
     }
 
+    // Condition Routing according to PRD
+    let initialStatus = 'OLD_INVENTORY';
+    if (condition && condition.toLowerCase() === 'fresh') {
+      initialStatus = 'NEW_IN_HAND';
+    } else if (condition && condition.toLowerCase() === 'repair') {
+      initialStatus = 'IN_REPAIR';
+    }
+
     const deviceId = uuidv4();
     const [countResult] = await pool.query('SELECT COUNT(*) as count FROM devices');
     const deviceCode = `MRX-${String(countResult[0].count + 1).padStart(5, '0')}`;
-    const today = new Date().toISOString().split('T')[0];
+    const today = req.body.date || new Date().toISOString().split('T')[0];
 
     await pool.query(`
       INSERT INTO devices (
         id, device_code, imei, brand, model, ram, storage, colour, \`condition\`,
         purchase_amount, paid_by, payment_method, supplier_name, intake_date, remarks,
         status, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OLD_INVENTORY', ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       deviceId, deviceCode, imei ? imei.trim() : null, brand, model, parseInt(ram),
       parseInt(storage), colour, condition, parseFloat(purchase_amount), paid_by,
-      payment_method, supplier_name || null, today, remarks || null, req.user?.id || null
+      payment_method, supplier_name || null, today, remarks || null, initialStatus, req.user?.id || null
     ]);
 
-    // Handle Image
-    if (image_data) {
-      await pool.query(`
-        INSERT INTO device_images (id, device_id, url) VALUES (?, ?, ?)
-      `, [uuidv4(), deviceId, image_data]);
+    // Record Central Ledger Transaction
+    await pool.query(`
+      INSERT INTO transactions (
+        id, transaction_code, transaction_type, flow_type, amount,
+        device_id, admin_name, payment_method, transaction_date, description
+      ) VALUES (?, ?, 'ACQUISITION', 'DEBIT', ?, ?, ?, ?, ?, ?)
+    `, [
+      uuidv4(),
+      `TX-ACQ-${String(countResult[0].count + 1).padStart(5, '0')}`,
+      parseFloat(purchase_amount),
+      deviceId,
+      paid_by || req.user?.name || 'Staff',
+      payment_method,
+      today,
+      `Device Intake: ${brand} ${model} (${condition})`
+    ]);
+
+    // Handle Multiple Images (At least 2 images supported per PRD)
+    const imagesToInsert = [];
+    if (Array.isArray(req.body.images) && req.body.images.length > 0) {
+      req.body.images.forEach(img => {
+        if (img && typeof img === 'string' && img.trim()) {
+          imagesToInsert.push(img.trim());
+        }
+      });
+    } else if (image_data) {
+      imagesToInsert.push(image_data);
     } else if (req.file) {
-      const imageUrl = `/uploads/${req.file.filename}`;
+      imagesToInsert.push(`/uploads/${req.file.filename}`);
+    }
+
+    for (let i = 0; i < imagesToInsert.length; i++) {
       await pool.query(`
-        INSERT INTO device_images (id, device_id, url) VALUES (?, ?, ?)
-      `, [uuidv4(), deviceId, imageUrl]);
+        INSERT INTO device_images (id, device_id, url, sort_order) VALUES (?, ?, ?, ?)
+      `, [uuidv4(), deviceId, imagesToInsert[i], i]);
     }
 
     // Status history
     await pool.query(`
       INSERT INTO device_status_history (id, device_id, from_status, to_status, reason, changed_by)
-      VALUES (?, ?, NULL, 'OLD_INVENTORY', 'Device added at intake', ?)
-    `, [uuidv4(), deviceId, req.user?.name || 'Staff']);
+      VALUES (?, ?, NULL, ?, 'Device intake entry', ?)
+    `, [uuidv4(), deviceId, initialStatus, req.user?.name || 'Staff']);
+
 
     res.status(201).json({
       success: true,
-      message: 'Mobile device added successfully to Old Inventory',
+      message: `Mobile device added successfully (${initialStatus})`,
       deviceId,
-      deviceCode
+      deviceCode,
+      status: initialStatus
     });
   } catch (error) {
     console.error('createDevice error:', error);
@@ -221,12 +277,14 @@ export async function updateDeviceStatus(req, res) {
     const device = devices[0];
     const fromStatus = device.status;
 
-    // Allowed transition checks
+    // Allowed transition checks per PRD
     const allowedTransitions = {
-      'OLD_INVENTORY': ['IN_HAND', 'IN_REPAIR', 'REJECTED'],
-      'IN_HAND': ['IN_REPAIR', 'REJECTED', 'SOLD'],
-      'IN_REPAIR': ['IN_HAND', 'REJECTED'],
-      'REJECTED': ['IN_REPAIR', 'IN_HAND', 'DISPOSED'],
+      'OLD_INVENTORY': ['OLD_IN_HAND', 'NEW_IN_HAND', 'IN_HAND', 'IN_REPAIR', 'REJECTED'],
+      'OLD_IN_HAND': ['IN_REPAIR', 'REJECTED', 'SOLD'],
+      'NEW_IN_HAND': ['IN_REPAIR', 'REJECTED', 'SOLD'],
+      'IN_HAND': ['OLD_IN_HAND', 'NEW_IN_HAND', 'IN_REPAIR', 'REJECTED', 'SOLD'],
+      'IN_REPAIR': ['OLD_IN_HAND', 'NEW_IN_HAND', 'IN_HAND', 'REJECTED'],
+      'REJECTED': ['IN_REPAIR', 'OLD_IN_HAND', 'NEW_IN_HAND', 'IN_HAND', 'DISPOSED'],
       'SOLD': [],
       'DISPOSED': []
     };
@@ -235,6 +293,13 @@ export async function updateDeviceStatus(req, res) {
       return res.status(400).json({
         success: false,
         message: `Cannot transition status from ${fromStatus} to ${status}`
+      });
+    }
+
+    if (status === 'REJECTED' && (!rejection_reason || rejection_reason.trim() === '')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is strictly mandatory before rejecting device'
       });
     }
 
@@ -252,11 +317,29 @@ export async function updateDeviceStatus(req, res) {
         `, [uuidv4(), id, repair_issue, technician || null, parseFloat(repair_cost || 0), req.user?.id || null]);
       }
 
-      if (status === 'REJECTED' && rejection_reason) {
+      if (status === 'REJECTED') {
         await conn.query(`
           INSERT INTO rejections (id, device_id, description, created_by)
           VALUES (?, ?, ?, ?)
         `, [uuidv4(), id, rejection_reason, req.user?.id || null]);
+
+        await conn.query(`
+          INSERT INTO transactions (
+            id, transaction_code, transaction_type, flow_type, amount,
+            device_id, admin_name, transaction_date, description
+          ) VALUES (?, ?, 'REJECTION', 'DEBIT', 0, ?, ?, CURDATE(), ?)
+        `, [
+          uuidv4(),
+          `TX-REJ-${Date.now().toString().slice(-6)}`,
+          id,
+          req.user?.name || 'Staff',
+          `Device Rejected: ${rejection_reason}`
+        ]);
+      }
+
+      // If completing repair and moving to In-hand
+      if (fromStatus === 'IN_REPAIR' && (status === 'OLD_IN_HAND' || status === 'NEW_IN_HAND' || status === 'IN_HAND')) {
+        await conn.query(`UPDATE repairs SET status = 'COMPLETED', completed_at = NOW() WHERE device_id = ? AND status = 'IN_PROGRESS'`, [id]);
       }
 
       await conn.query(`

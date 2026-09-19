@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_BASE = rawApiUrl ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`) : '/api';
 
 export async function fetchApi(endpoint, options = {}) {
   const token = localStorage.getItem('mrx_token');
@@ -12,17 +13,42 @@ export async function fetchApi(endpoint, options = {}) {
     delete headers['Content-Type'];
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (netErr) {
+    throw new Error(`Network connection error: ${netErr.message || 'Unable to connect to server'}`);
   }
-  return data;
+
+  // Safely parse JSON or text to prevent "Unexpected end of JSON input"
+  const contentType = response.headers.get('content-type') || '';
+  let data = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (_) {
+      data = null;
+    }
+  }
+
+  if (!response.ok) {
+    let errorMsg = data?.message || `HTTP ${response.status}: ${response.statusText}`;
+    if (!data) {
+      try {
+        const text = await response.text();
+        if (text && text.length < 200) errorMsg = text;
+      } catch (_) {}
+    }
+    throw new Error(errorMsg);
+  }
+
+  return data || {};
 }
+
 
 // Device Service
 export const deviceService = {
@@ -33,7 +59,7 @@ export const deviceService = {
   getDeviceById: (id) => fetchApi(`/devices/${id}`),
   createDevice: (formData) => fetchApi('/devices', {
     method: 'POST',
-    body: formData,
+    body: formData instanceof FormData ? formData : JSON.stringify(formData),
   }),
   updateStatus: (id, payload) => fetchApi(`/devices/${id}/status`, {
     method: 'PATCH',
@@ -74,13 +100,62 @@ export const saleService = {
   getSales: () => fetchApi('/sales'),
 };
 
-// Stats Service
-export const statsService = {
-  getDashboardStats: () => fetchApi('/dashboard/stats'),
-  getInHandStats: () => fetchApi('/dashboard/in-hand-stats'),
-  getReports: (params = {}) => {
+// Central Ledger Service (Superadmin)
+export const ledgerService = {
+  getLedger: (params = {}) => {
     const query = new URLSearchParams(params).toString();
-    return fetchApi(`/reports?${query}`);
+    return fetchApi(`/ledger?${query}`);
   },
-  getExportUrl: (format, scopes) => `${API_BASE}/exports/inventory?format=${format}&scopes=${scopes}`,
+  createEntry: (payload) => fetchApi('/ledger', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+};
+
+// Expenses Service (Superadmin)
+export const expenseService = {
+  getExpenses: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchApi(`/expenses?${query}`);
+  },
+  createExpense: (payload) => fetchApi('/expenses', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+};
+
+// Investments Service (Superadmin)
+export const investmentService = {
+  getInvestments: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchApi(`/investments?${query}`);
+  },
+  createInvestment: (payload) => fetchApi('/investments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+};
+
+// Stats & Analytics Service
+export const statsService = {
+  getDashboardStats: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchApi(`/dashboard/stats?${query}`);
+  },
+  getInHandStats: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchApi(`/dashboard/in-hand-stats?${query}`);
+  },
+  getSuperadminAnalytics: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchApi(`/superadmin/analytics?${query}`);
+  },
+  getCsvExportUrl: (scope, filters = {}) => {
+    const query = new URLSearchParams({ scope, ...filters }).toString();
+    return `${API_BASE}/exports/csv?${query}`;
+  },
+  getPdfExportUrl: (scope, filters = {}) => {
+    const query = new URLSearchParams({ scope, ...filters }).toString();
+    return `${API_BASE}/exports/pdf?${query}`;
+  }
 };
