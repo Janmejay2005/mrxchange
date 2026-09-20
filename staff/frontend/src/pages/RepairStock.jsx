@@ -22,8 +22,8 @@ export default function RepairStock() {
   const [completeModal, setCompleteModal] = useState({
     isOpen: false,
     device: null,
-    destination: 'IN_HAND',
     actualCost: '',
+    paidBy: 'Rohit',
     notes: ''
   });
 
@@ -60,23 +60,33 @@ export default function RepairStock() {
 
   const handleCompleteRepair = async () => {
     try {
-      const { device, destination, actualCost, notes } = completeModal;
-      const targetStatus = destination === 'IN_HAND' ? 'OLD_IN_HAND' : 'REJECTED';
+      const { device, actualCost, paidBy, notes } = completeModal;
       await deviceService.updateStatus(device.id, {
-        status: targetStatus,
+        status: 'OLD_IN_HAND',
         reason: `Repair completed: ${notes || 'Ready for stock'}`,
-        repair_cost: actualCost
+        repair_cost: actualCost,
+        repair_paid_by: paidBy
       });
       setCompleteModal({ ...completeModal, isOpen: false });
-      if (targetStatus === 'REJECTED') {
-        navigate('/rejected-stocks');
-      } else {
-        navigate('/old-in-hand');
-      }
+      navigate('/old-in-hand');
     } catch (err) {
       console.error(err);
       setCompleteModal({ ...completeModal, isOpen: false });
-      navigate(completeModal.destination === 'REJECTED' ? '/rejected-stocks' : '/old-in-hand');
+      navigate('/old-in-hand');
+    }
+  };
+
+  const handleRejectDevice = async (device) => {
+    try {
+      setActiveMenuId(null);
+      await deviceService.updateStatus(device.id, {
+        status: 'REJECTED',
+        reason: 'Unrepairable damage'
+      });
+      navigate('/rejected-stocks');
+    } catch (err) {
+      console.error(err);
+      navigate('/rejected-stocks');
     }
   };
 
@@ -147,8 +157,8 @@ export default function RepairStock() {
                             setCompleteModal({
                               isOpen: true,
                               device,
-                              destination: 'IN_HAND',
                               actualCost: '1200',
+                              paidBy: 'Rohit',
                               notes: 'Repaired and tested OK'
                             });
                           }}
@@ -159,16 +169,7 @@ export default function RepairStock() {
                         </button>
                         <button 
                           className="menu-item" 
-                          onClick={() => {
-                            setActiveMenuId(null);
-                            setCompleteModal({
-                              isOpen: true,
-                              device,
-                              destination: 'REJECTED',
-                              actualCost: '0',
-                              notes: 'Unrepairable damage'
-                            });
-                          }}
+                          onClick={() => handleRejectDevice(device)}
                           style={{ color: '#dc2626' }}
                         >
                           <Trash2 size={16} />
@@ -201,25 +202,30 @@ export default function RepairStock() {
               </p>
 
               <div className="form-group">
-                <label className="form-label">Destination Stock *</label>
-                <select 
-                  className="form-control"
-                  value={completeModal.destination}
-                  onChange={(e) => setCompleteModal({ ...completeModal, destination: e.target.value })}
-                >
-                  <option value="IN_HAND">In-hand Stock (Pass QC & Ready to Sell)</option>
-                  <option value="REJECTED">Rejected Stock (Unrepairable)</option>
-                </select>
-              </div>
-
-              <div className="form-group">
                 <label className="form-label">Actual Repair Cost Incurred (₹ INR)</label>
                 <input 
                   type="number" 
                   className="form-control" 
+                  placeholder="e.g. 1200"
                   value={completeModal.actualCost}
                   onChange={(e) => setCompleteModal({ ...completeModal, actualCost: e.target.value })}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Paid By *</label>
+                <select 
+                  className="form-control"
+                  value={completeModal.paidBy}
+                  onChange={(e) => setCompleteModal({ ...completeModal, paidBy: e.target.value })}
+                >
+                  <option value="Rohit">Rohit</option>
+                  <option value="Aadarsh">Aadarsh</option>
+                  <option value="Neha">Neha</option>
+                  <option value="Aman">Aman</option>
+                  <option value="Jeet">Jeet</option>
+                  <option value="Sunal">Sunal</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -227,6 +233,7 @@ export default function RepairStock() {
                 <textarea 
                   className="form-control" 
                   rows="2"
+                  placeholder="Notes about repair work..."
                   value={completeModal.notes}
                   onChange={(e) => setCompleteModal({ ...completeModal, notes: e.target.value })}
                 />
