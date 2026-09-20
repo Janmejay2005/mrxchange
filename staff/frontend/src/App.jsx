@@ -62,10 +62,12 @@ export default function App() {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               
-              {/* Staff Accessible Pages */}
+              {/* Staff & Operational Accessible Pages */}
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="old-inventory" element={<OldInventory />} />
               <Route path="old-in-hand" element={<OldInHandStock />} />
+              <Route path="new-in-hand" element={<NewInHandStock />} />
+              <Route path="booked-exchange" element={<BookedAndExchange />} />
               <Route path="in-hand-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="resell-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="repair-stock" element={<RepairStock />} />
@@ -73,8 +75,6 @@ export default function App() {
               <Route path="reports" element={<Reports />} />
               
               {/* Superadmin Restricted Features */}
-              <Route path="booked-exchange" element={<SuperAdminRoute><BookedAndExchange /></SuperAdminRoute>} />
-              <Route path="new-in-hand" element={<SuperAdminRoute><NewInHandStock /></SuperAdminRoute>} />
               <Route path="pending-payments" element={<SuperAdminRoute><PendingAndReceivingPayments /></SuperAdminRoute>} />
               <Route path="profit-expense-statistic" element={<SuperAdminRoute><ProfitExpenseAndStatistic /></SuperAdminRoute>} />
               <Route path="central-ledger" element={<SuperAdminRoute><CentralLedger /></SuperAdminRoute>} />

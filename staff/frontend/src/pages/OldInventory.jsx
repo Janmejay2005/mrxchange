@@ -12,17 +12,29 @@ import AddMobileModal from '../components/modals/AddMobileModal';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { exportToPdf } from '../utils/pdfGenerator';
 
-const BRANDS = ['All Brands', 'Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing'];
+const BRANDS = ['All Brands', 'Google Pixel', 'Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing', 'Motorola'];
 const MODELS_BY_BRAND = {
-  'Apple': ['iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11', 'iPhone SE'],
-  'Samsung': ['Galaxy S23 Ultra', 'Galaxy S22', 'Galaxy A54', 'Galaxy A52', 'Galaxy M33'],
-  'OnePlus': ['OnePlus 11', 'OnePlus 10R', 'OnePlus 9R', 'OnePlus Nord 3'],
-  'Xiaomi': ['Redmi Note 12', 'Redmi Note 10', 'Mi 11X'],
-  'Vivo': ['Vivo V27', 'Vivo V21', 'Vivo Y200'],
-  'Oppo': ['Oppo Reno 10', 'Oppo F19', 'Oppo A78'],
-  'Realme': ['Realme 11 Pro', 'Realme 8'],
-  'Nothing': ['Phone (2)', 'Phone (1)']
+  'Google Pixel': ['Pixel 8 Pro', 'Pixel 8', 'Pixel 7a', 'Pixel 6 Pro'],
+  'Apple': ['iPhone 15 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11'],
+  'Samsung': ['Galaxy S24 Ultra', 'Galaxy S23 Ultra', 'Galaxy S22', 'Galaxy A54', 'Galaxy A52'],
+  'OnePlus': ['OnePlus 12', 'OnePlus 11', 'OnePlus 10R', 'OnePlus Nord 3'],
+  'Xiaomi': ['14 Ultra', 'Redmi Note 12', 'Redmi Note 10', 'Mi 11X'],
+  'Vivo': ['Vivo X100 Pro', 'Vivo V27', 'Vivo V21', 'Vivo Y200'],
+  'Oppo': ['Find N3 Flip', 'Reno 10 Pro+', 'Oppo F19', 'Oppo A78'],
+  'Realme': ['GT 5 Pro', 'Realme 11 Pro', 'Realme 8'],
+  'Nothing': ['Phone (2a)', 'Phone (2)', 'Phone (1)'],
+  'Motorola': ['Edge 50 Ultra', 'Edge 40']
 };
+
+const getSampleDevices = () => [
+  { id: '1', device_code: 'MRX-00001', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', condition: 'Like New', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '2026-09-15', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+  { id: '2', device_code: 'MRX-00002', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', condition: 'Excellent', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+  { id: '3', device_code: 'MRX-00003', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', condition: 'Good', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '2026-09-14', status: 'IN_REPAIR', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
+  { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Silky Black', condition: 'Like New', purchase_amount: 49000, paid_by: 'Neha', intake_date: '2026-09-13', status: 'REJECTED', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
+  { id: '5', device_code: 'MRX-00005', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', condition: 'Good', purchase_amount: 68000, paid_by: 'Aman', intake_date: '2026-09-13', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+  { id: '6', device_code: 'MRX-00006', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', condition: 'Good', purchase_amount: 19000, paid_by: 'Karan', intake_date: '2026-09-12', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+  { id: '7', device_code: 'MRX-00007', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, colour: 'Nordic Wood', condition: 'Excellent', purchase_amount: 43000, paid_by: 'Vikram', intake_date: '2026-09-11', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' }
+];
 
 export default function OldInventory() {
   const { globalSearch, selectedDate } = useOutletContext() || {};
@@ -44,18 +56,12 @@ export default function OldInventory() {
         from: selectedDate || '',
         to: selectedDate || ''
       });
-      setDevices(res.data || []);
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      setDevices(dataList.length > 0 ? dataList : getSampleDevices());
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Fallback sample data if backend is offline
-      setDevices([
-        { id: '1', device_code: 'MRX-00001', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '2', device_code: 'MRX-00002', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '3', device_code: 'MRX-00003', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'IN_REPAIR', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-        { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', condition: 'Good', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'REJECTED', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-        { id: '5', device_code: 'MRX-00005', brand: 'Apple', model: 'iPhone 11', storage: 64, ram: 4, colour: 'Green', condition: 'Fair', purchase_amount: 14000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-      ]);
+      setDevices(getSampleDevices());
       setLoading(false);
     }
   };

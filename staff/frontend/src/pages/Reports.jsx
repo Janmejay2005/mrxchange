@@ -48,81 +48,73 @@ export default function Reports() {
           brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
           status: selectedStatus === 'All Status' ? '' : selectedStatus
         });
-        rawDevices = devRes.data || [];
+        rawDevices = Array.isArray(devRes) ? devRes : (devRes?.data || []);
       } catch (e) {
         rawDevices = [];
       }
 
+      if (rawDevices.length === 0) {
+        // Fallback rich dataset if backend offline or empty
+        rawDevices = [
+          { id: 1, brand: 'Google Pixel', model: 'Pixel 8 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '15 Sep' },
+          { id: 2, brand: 'Apple', model: 'iPhone 15 Pro Max', purchase_amount: 105000, status: 'OLD_IN_HAND', intake_date: '14 Sep' },
+          { id: 3, brand: 'Samsung', model: 'Galaxy S24 Ultra', purchase_amount: 88000, status: 'IN_REPAIR', intake_date: '14 Sep' },
+          { id: 4, brand: 'OnePlus', model: 'OnePlus 12', purchase_amount: 49000, status: 'REJECTED', intake_date: '13 Sep' },
+          { id: 5, brand: 'Vivo', model: 'X100 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '13 Sep' },
+          { id: 6, brand: 'Nothing', model: 'Phone (2a)', purchase_amount: 19000, status: 'OLD_IN_HAND', intake_date: '12 Sep' },
+          { id: 7, brand: 'Xiaomi', model: '14 Ultra', purchase_amount: 74000, status: 'OLD_INVENTORY', intake_date: '11 Sep' },
+          { id: 8, brand: 'Realme', model: 'GT 5 Pro', purchase_amount: 31000, status: 'IN_REPAIR', intake_date: '10 Sep' },
+          { id: 9, brand: 'Motorola', model: 'Edge 50 Ultra', purchase_amount: 43000, status: 'OLD_IN_HAND', intake_date: '09 Sep' }
+        ];
+
+        // Apply filters locally on fallback list
+        if (selectedBrand !== 'All Brands') {
+          rawDevices = rawDevices.filter(d => d.brand === selectedBrand);
+        }
+        if (selectedStatus !== 'All Status') {
+          rawDevices = rawDevices.filter(d => d.status === selectedStatus);
+        }
+      }
+
       const totalVal = rawDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+
+      // Compute Brand distribution dynamically
+      const brandCounts = {};
+      rawDevices.forEach(d => {
+        brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1;
+      });
+      const brandDist = Object.keys(brandCounts).map(b => ({ brand: b, count: brandCounts[b] }));
+
+      // Compute Date distribution dynamically
+      const dateCounts = {};
+      rawDevices.forEach(d => {
+        const dt = d.intake_date || 'Recent';
+        dateCounts[dt] = (dateCounts[dt] || 0) + 1;
+      });
+      const dateDist = Object.keys(dateCounts).map(dt => ({ date: dt, count: dateCounts[dt] }));
 
       setReportData({
         kpis: {
-          total_mobiles: rawDevices.length || res?.data?.total_devices || 1248,
-          in_hand_count: rawDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'IN_HAND').length || 682,
-          repair_count: rawDevices.filter(d => d.status === 'IN_REPAIR').length || 156,
-          rejected_count: rawDevices.filter(d => d.status === 'REJECTED').length || 94,
-          old_inventory_count: rawDevices.filter(d => d.status === 'OLD_INVENTORY').length || 316,
-          total_valuation: totalVal || 1842500
+          total_mobiles: rawDevices.length,
+          in_hand_count: rawDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'IN_HAND').length,
+          repair_count: rawDevices.filter(d => d.status === 'IN_REPAIR').length,
+          rejected_count: rawDevices.filter(d => d.status === 'REJECTED').length,
+          old_inventory_count: rawDevices.filter(d => d.status === 'OLD_INVENTORY').length,
+          total_valuation: totalVal
         },
-        brand_distribution: [
-          { brand: 'Apple', count: 220 },
-          { brand: 'Samsung', count: 180 },
-          { brand: 'OnePlus', count: 140 },
-          { brand: 'Xiaomi', count: 120 },
-          { brand: 'Vivo', count: 100 },
-          { brand: 'Oppo', count: 90 },
-          { brand: 'Realme', count: 70 },
-          { brand: 'Nothing', count: 50 },
-          { brand: 'Others', count: 40 }
-        ],
-        date_distribution: [
-          { date: '10 Sep', count: 45 },
-          { date: '11 Sep', count: 62 },
-          { date: '12 Sep', count: 78 },
-          { date: '13 Sep', count: 95 },
-          { date: '14 Sep', count: 110 },
-          { date: '15 Sep', count: 140 }
-        ]
+        brand_distribution: brandDist.length > 0 ? brandDist : [{ brand: 'Google Pixel', count: 1 }],
+        date_distribution: dateDist.length > 0 ? dateDist : [{ date: 'Today', count: 1 }]
       });
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setReportData({
-        kpis: {
-          total_mobiles: 1248,
-          in_hand_count: 682,
-          repair_count: 156,
-          rejected_count: 94,
-          old_inventory_count: 316,
-          total_valuation: 1842500
-        },
-        brand_distribution: [
-          { brand: 'Apple', count: 220 },
-          { brand: 'Samsung', count: 180 },
-          { brand: 'OnePlus', count: 140 },
-          { brand: 'Xiaomi', count: 120 },
-          { brand: 'Vivo', count: 100 },
-          { brand: 'Oppo', count: 90 },
-          { brand: 'Realme', count: 70 },
-          { brand: 'Nothing', count: 50 },
-          { brand: 'Others', count: 40 }
-        ],
-        date_distribution: [
-          { date: '10 Sep', count: 45 },
-          { date: '11 Sep', count: 62 },
-          { date: '12 Sep', count: 78 },
-          { date: '13 Sep', count: 95 },
-          { date: '14 Sep', count: 110 },
-          { date: '15 Sep', count: 140 }
-        ]
-      });
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchReports();
-  }, []);
+  }, [dateRange, selectedBrand, selectedStatus]);
 
   const handleExport = async () => {
     try {
@@ -228,6 +220,7 @@ export default function Reports() {
           onChange={(e) => setSelectedBrand(e.target.value)}
         >
           <option>All Brands</option>
+          <option>Google Pixel</option>
           <option>Apple</option>
           <option>Samsung</option>
           <option>OnePlus</option>
@@ -235,6 +228,8 @@ export default function Reports() {
           <option>Vivo</option>
           <option>Oppo</option>
           <option>Realme</option>
+          <option>Nothing</option>
+          <option>Motorola</option>
         </select>
 
         <select 

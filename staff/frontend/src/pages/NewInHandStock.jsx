@@ -9,17 +9,32 @@ export default function NewInHandStock() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [stock, setStock] = useState([
-    { sno: 1, date: '08/09/2026', brand: 'Oppo', model: 'A57', storage: 128, ram: 8, color: 'Red', purchasedBy: 'Jeet', amount: 12000, procedure: 'Sell' },
-    { sno: 2, date: '08/09/2026', brand: 'Samsung', model: 'S23', storage: 256, ram: 12, color: 'Black', purchasedBy: 'Sonal', amount: 32000, procedure: 'Sell' },
-    { sno: 3, date: '09/09/2026', brand: 'OnePlus', model: 'Nord 3', storage: 128, ram: 8, color: 'Blue', purchasedBy: 'Rohit', amount: 25000, procedure: 'Hold' },
-    { sno: 4, date: '09/09/2026', brand: 'Apple', model: 'iPhone 14', storage: 128, ram: 6, color: 'White', purchasedBy: 'Neha', amount: 48000, procedure: 'Sell' },
-    { sno: 5, date: '10/09/2026', brand: 'Vivo', model: 'V27', storage: 128, ram: 8, color: 'Green', purchasedBy: 'Aman', amount: 28000, procedure: 'Sell' },
-    { sno: 6, date: '10/09/2026', brand: 'Realme', model: '11 Pro', storage: 256, ram: 12, color: 'Gray', purchasedBy: 'Karan', amount: 24000, procedure: 'Check' },
-    { sno: 7, date: '11/09/2026', brand: 'Xiaomi', model: 'Redmi Note 12', storage: 128, ram: 6, color: 'Black', purchasedBy: 'Rohit', amount: 18500, procedure: 'Sell' },
-    { sno: 8, date: '11/09/2026', brand: 'Nothing', model: 'Phone (1)', storage: 128, ram: 8, color: 'White', purchasedBy: 'Sonal', amount: 27000, procedure: 'Sell' },
-    { sno: 9, date: '12/09/2026', brand: 'Motorola', model: 'Edge 40', storage: 256, ram: 12, color: 'Blue', purchasedBy: 'Jeet', amount: 31000, procedure: 'Hold' },
-    { sno: 10, date: '12/09/2026', brand: 'iQOO', model: 'Neo 7', storage: 128, ram: 8, color: 'Black', purchasedBy: 'Neha', amount: 26500, procedure: 'Sell' }
+    { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
+    { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
+    { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
+    { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
+    { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
+    { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
+    { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
+    { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
+    { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
+    { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
   ]);
+
+  const filteredStock = stock.filter((item) => {
+    if (brand !== 'All' && item.brand !== brand) return false;
+    if (fromDate && item.date < fromDate) return false;
+    if (toDate && item.date > toDate) return false;
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const matchModel = item.model.toLowerCase().includes(q);
+      const matchBrand = item.brand.toLowerCase().includes(q);
+      const matchPerson = item.purchasedBy.toLowerCase().includes(q);
+      const matchColor = item.color.toLowerCase().includes(q);
+      if (!matchModel && !matchBrand && !matchPerson && !matchColor) return false;
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -50,11 +65,16 @@ export default function NewInHandStock() {
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Brand</label>
           <select className="form-control" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
-            <option>Oppo</option>
+            <option>Google Pixel</option>
+            <option>Apple</option>
             <option>Samsung</option>
             <option>OnePlus</option>
-            <option>Apple</option>
             <option>Vivo</option>
+            <option>Xiaomi</option>
+            <option>Nothing</option>
+            <option>Realme</option>
+            <option>Motorola</option>
+            <option>Oppo</option>
           </select>
         </div>
 
@@ -64,7 +84,7 @@ export default function NewInHandStock() {
             <input 
               type="text" 
               className="form-control" 
-              placeholder="Search by model, IMEI, or keyword..."
+              placeholder="Search by model, brand, color, or person..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ paddingLeft: '36px' }}
@@ -97,37 +117,45 @@ export default function NewInHandStock() {
             </tr>
           </thead>
           <tbody>
-            {stock.map((item) => (
-              <tr key={item.sno}>
-                <td>{item.sno}</td>
-                <td>{item.date}</td>
-                <td style={{ fontWeight: 600 }}>{item.brand}</td>
-                <td style={{ fontWeight: 700 }}>{item.model}</td>
-                <td>{item.storage}</td>
-                <td>{item.ram}</td>
-                <td>{item.color}</td>
-                <td>{item.purchasedBy}</td>
-                <td style={{ fontWeight: 700 }}>
-                  <CurrencyAmount amount={item.amount} />
-                </td>
-                <td>
-                  <span style={{ 
-                    fontWeight: 600, 
-                    color: item.procedure === 'Sell' ? '#0284c7' : item.procedure === 'Hold' ? '#d97706' : '#64748b' 
-                  }}>
-                    {item.procedure}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <button className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                      Sell
-                    </button>
-                    <button className="btn-secondary" style={{ padding: '4px 8px', borderRadius: '6px' }}>...</button>
-                  </div>
+            {filteredStock.length === 0 ? (
+              <tr>
+                <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  No devices match the specified filter criteria.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredStock.map((item, idx) => (
+                <tr key={item.sno}>
+                  <td>{idx + 1}</td>
+                  <td>{item.date}</td>
+                  <td style={{ fontWeight: 600 }}>{item.brand}</td>
+                  <td style={{ fontWeight: 700 }}>{item.model}</td>
+                  <td>{item.storage}</td>
+                  <td>{item.ram}</td>
+                  <td>{item.color}</td>
+                  <td>{item.purchasedBy}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    <CurrencyAmount amount={item.amount} />
+                  </td>
+                  <td>
+                    <span style={{ 
+                      fontWeight: 600, 
+                      color: item.procedure === 'Sell' ? '#0284c7' : item.procedure === 'Hold' ? '#d97706' : '#64748b' 
+                    }}>
+                      {item.procedure}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <button className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                        Sell
+                      </button>
+                      <button className="btn-secondary" style={{ padding: '4px 8px', borderRadius: '6px' }}>...</button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

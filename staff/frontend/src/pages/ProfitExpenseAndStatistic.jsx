@@ -33,24 +33,24 @@ export default function ProfitExpenseAndStatistic() {
   });
 
   const [phoneProfits] = useState([
-    { id: 1, date: '12 Sep 2026', model: 'iPhone 14', brand: 'Apple', purchase: 48000, selling: 60000, profit: 12000 },
-    { id: 2, date: '12 Sep 2026', model: 'S23', brand: 'Samsung', purchase: 32000, selling: 40000, profit: 8000 },
-    { id: 3, date: '11 Sep 2026', model: 'Nord 3', brand: 'OnePlus', purchase: 18000, selling: 25000, profit: 7000 },
-    { id: 4, date: '10 Sep 2026', model: 'V27', brand: 'Vivo', purchase: 22000, selling: 30000, profit: 8000 },
-    { id: 5, date: '10 Sep 2026', model: '11 Pro', brand: 'Realme', purchase: 16000, selling: 22000, profit: 6000 },
-    { id: 6, date: '09 Sep 2026', model: 'Find X5', brand: 'Oppo', purchase: 28000, selling: 36000, profit: 8000 },
-    { id: 7, date: '09 Sep 2026', model: 'T2 Pro', brand: 'Vivo', purchase: 14000, selling: 20000, profit: 6000 },
-    { id: 8, date: '08 Sep 2026', model: 'S24', brand: 'Samsung', purchase: 38000, selling: 50000, profit: 12000 },
-    { id: 9, date: '08 Sep 2026', model: 'Edge 40', brand: 'Motorola', purchase: 20000, selling: 27000, profit: 7000 },
-    { id: 10, date: '07 Sep 2026', model: 'Neo 7', brand: 'iQOO', purchase: 24000, selling: 32000, profit: 8000 }
+    { id: 1, date: '2026-09-15', admin: 'Aadarsh Sharma', model: 'Pixel 8 Pro', brand: 'Google Pixel', purchase: 68000, selling: 89000, profit: 21000 },
+    { id: 2, date: '2026-09-14', admin: 'Rohit Kumar', model: 'iPhone 15 Pro Max', brand: 'Apple', purchase: 105000, selling: 132000, profit: 27000 },
+    { id: 3, date: '2026-09-14', admin: 'Neha Patel', model: 'Galaxy S24 Ultra', brand: 'Samsung', purchase: 88000, selling: 114000, profit: 26000 },
+    { id: 4, date: '2026-09-13', admin: 'Vikram Singh', model: 'OnePlus 12', brand: 'OnePlus', purchase: 49000, selling: 64999, profit: 15999 },
+    { id: 5, date: '2026-09-12', admin: 'Aadarsh Sharma', model: 'X100 Pro', brand: 'Vivo', purchase: 68000, selling: 89999, profit: 21999 },
+    { id: 6, date: '2026-09-11', admin: 'Rohit Kumar', model: 'Phone (2a)', brand: 'Nothing', purchase: 19000, selling: 27999, profit: 8999 },
+    { id: 7, date: '2026-09-11', admin: 'Neha Patel', model: '14 Ultra', brand: 'Xiaomi', purchase: 74000, selling: 99999, profit: 25999 },
+    { id: 8, date: '2026-09-10', admin: 'Vikram Singh', model: 'GT 5 Pro', brand: 'Realme', purchase: 31000, selling: 42000, profit: 11000 },
+    { id: 9, date: '2026-09-09', admin: 'Aadarsh Sharma', model: 'Edge 50 Ultra', brand: 'Motorola', purchase: 43000, selling: 59999, profit: 16999 },
+    { id: 10, date: '2026-09-08', admin: 'Rohit Kumar', model: 'Find N3 Flip', brand: 'Oppo', purchase: 62000, selling: 84999, profit: 22999 }
   ]);
 
   const [expenses, setExpenses] = useState([
-    { id: 1, date: '01 Sep 2026', type: 'Shop Rent', amount: 12000, remarks: 'Monthly rent' },
-    { id: 2, date: '05 Sep 2026', type: 'Staff Salary', amount: 18000, remarks: 'Staff payment' },
-    { id: 3, date: '08 Sep 2026', type: 'Repair Cost', amount: 5500, remarks: 'Device repair' },
-    { id: 4, date: '10 Sep 2026', type: 'Transport', amount: 3000, remarks: 'Logistics' },
-    { id: 5, date: '12 Sep 2026', type: 'Utilities', amount: 2000, remarks: 'Electricity/Internet' }
+    { id: 1, date: '2026-09-01', admin: 'Aadarsh Sharma', type: 'Shop Rent', amount: 15000, remarks: 'Monthly shop rent' },
+    { id: 2, date: '2026-09-05', admin: 'Rohit Kumar', type: 'Staff Salary', amount: 22000, remarks: 'Staff salary payout' },
+    { id: 3, date: '2026-09-08', admin: 'Neha Patel', type: 'Repair Cost', amount: 6500, remarks: 'Parts & display replacement' },
+    { id: 4, date: '2026-09-10', admin: 'Vikram Singh', type: 'Transport', amount: 4200, remarks: 'Courier & inventory logistics' },
+    { id: 5, date: '2026-09-12', admin: 'Aadarsh Sharma', type: 'Utilities', amount: 3500, remarks: 'Electricity & broadband' }
   ]);
 
   const handleExpenseSubmit = (e) => {
@@ -58,6 +58,7 @@ export default function ProfitExpenseAndStatistic() {
     const newExp = {
       id: expenses.length + 1,
       date: expenseForm.date,
+      admin: selectedAdmin === 'All Super Admins' ? 'Aadarsh Sharma' : selectedAdmin,
       type: expenseForm.type,
       amount: Number(expenseForm.amount) || 1000,
       remarks: expenseForm.remarks || 'Business expense'
@@ -66,12 +67,33 @@ export default function ProfitExpenseAndStatistic() {
     setIsExpenseModalOpen(false);
   };
 
+  const filteredProfits = phoneProfits.filter(p => {
+    if (selectedAdmin !== 'All Super Admins' && p.admin !== selectedAdmin) return false;
+    if (fromDate && p.date < fromDate) return false;
+    if (toDate && p.date > toDate) return false;
+    return true;
+  });
+
+  const filteredExpenses = expenses.filter(e => {
+    if (selectedAdmin !== 'All Super Admins' && e.admin !== selectedAdmin) return false;
+    if (fromDate && e.date < fromDate) return false;
+    if (toDate && e.date > toDate) return false;
+    return true;
+  });
+
+  const totalInvestment = filteredProfits.reduce((sum, p) => sum + p.purchase, 0);
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + p.selling, 0);
+  const totalProfit = filteredProfits.reduce((sum, p) => sum + p.profit, 0);
+  const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const finalProfit = totalProfit - totalExpensesAmount;
+  const roi = totalInvestment > 0 ? ((finalProfit / totalInvestment) * 100).toFixed(2) : '0.00';
+
   const barChartData = {
     labels: ['Investment', 'Selling Amount', 'Profit', 'Expenses', 'Final Profit'],
     datasets: [
       {
-        label: 'Amount (in Lakhs/Thousands)',
-        data: [5.48, 7.14, 1.66, 0.425, 1.235],
+        label: 'Amount (in ₹)',
+        data: [totalInvestment, totalSelling, totalProfit, totalExpensesAmount, finalProfit],
         backgroundColor: ['#2563eb', '#16a34a', '#0284c7', '#ea580c', '#ec4899'],
         borderRadius: 6,
       }
@@ -82,7 +104,7 @@ export default function ProfitExpenseAndStatistic() {
     labels: ['Investment', 'Selling Amount', 'Total Profit', 'Total Expenses', 'Final Profit'],
     datasets: [
       {
-        data: [548000, 714000, 166000, 42500, 123500],
+        data: [totalInvestment, totalSelling, totalProfit, totalExpensesAmount, Math.max(0, finalProfit)],
         backgroundColor: ['#0284c7', '#16a34a', '#8b5cf6', '#ea580c', '#ec4899'],
         borderWidth: 0,
       }
@@ -142,7 +164,7 @@ export default function ProfitExpenseAndStatistic() {
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#e0f2fe' }}><TrendingUp size={24} color="#0284c7" /></div>
           <div className="kpi-info">
             <span className="kpi-title" style={{ fontSize: '12px' }}>Total Selling Amount</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>₹ 7,14,000</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>₹ {totalSelling.toLocaleString()}</span>
           </div>
         </div>
 
@@ -150,7 +172,7 @@ export default function ProfitExpenseAndStatistic() {
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#f3e8ff' }}><BarChart2 size={24} color="#8b5cf6" /></div>
           <div className="kpi-info">
             <span className="kpi-title" style={{ fontSize: '12px' }}>Total Profit</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>₹ 1,66,000</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>₹ {totalProfit.toLocaleString()}</span>
           </div>
         </div>
 
@@ -158,7 +180,7 @@ export default function ProfitExpenseAndStatistic() {
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#ffedd5' }}><Wallet size={24} color="#ea580c" /></div>
           <div className="kpi-info">
             <span className="kpi-title" style={{ fontSize: '12px' }}>Total Expenses</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c' }}>₹ 42,500</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c' }}>₹ {totalExpensesAmount.toLocaleString()}</span>
           </div>
         </div>
 
@@ -166,7 +188,7 @@ export default function ProfitExpenseAndStatistic() {
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#fce7f3' }}><DollarSign size={24} color="#ec4899" /></div>
           <div className="kpi-info">
             <span className="kpi-title" style={{ fontSize: '12px' }}>Final Profit</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#ec4899' }}>₹ 1,23,500</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#ec4899' }}>₹ {finalProfit.toLocaleString()}</span>
           </div>
         </div>
 
@@ -174,7 +196,7 @@ export default function ProfitExpenseAndStatistic() {
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#dcfce7' }}><Percent size={24} color="#16a34a" /></div>
           <div className="kpi-info">
             <span className="kpi-title" style={{ fontSize: '12px' }}>Return (ROI)</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>22.54%</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>{roi}%</span>
           </div>
         </div>
       </div>
@@ -201,17 +223,25 @@ export default function ProfitExpenseAndStatistic() {
                 </tr>
               </thead>
               <tbody>
-                {phoneProfits.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.id}</td>
-                    <td>{item.date}</td>
-                    <td style={{ fontWeight: 700 }}>{item.model}</td>
-                    <td>{item.brand}</td>
-                    <td>{item.purchase.toLocaleString()}</td>
-                    <td>{item.selling.toLocaleString()}</td>
-                    <td style={{ fontWeight: 800, color: '#16a34a' }}>{item.profit.toLocaleString()}</td>
+                {filteredProfits.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                      No phone profit entries match the selected filters.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredProfits.map((item, idx) => (
+                    <tr key={item.id}>
+                      <td>{idx + 1}</td>
+                      <td>{item.date}</td>
+                      <td style={{ fontWeight: 700 }}>{item.model}</td>
+                      <td>{item.brand}</td>
+                      <td>{item.purchase.toLocaleString()}</td>
+                      <td>{item.selling.toLocaleString()}</td>
+                      <td style={{ fontWeight: 800, color: '#16a34a' }}>{item.profit.toLocaleString()}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -238,15 +268,23 @@ export default function ProfitExpenseAndStatistic() {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((exp) => (
-                  <tr key={exp.id}>
-                    <td>{exp.id}</td>
-                    <td>{exp.date}</td>
-                    <td style={{ fontWeight: 600, color: '#0284c7' }}>{exp.type}</td>
-                    <td style={{ fontWeight: 700 }}><CurrencyAmount amount={exp.amount} /></td>
-                    <td style={{ fontSize: '12px', color: '#64748b' }}>{exp.remarks}</td>
+                {filteredExpenses.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                      No expenses match the selected filters.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredExpenses.map((exp, idx) => (
+                    <tr key={exp.id}>
+                      <td>{idx + 1}</td>
+                      <td>{exp.date}</td>
+                      <td style={{ fontWeight: 600, color: '#0284c7' }}>{exp.type}</td>
+                      <td style={{ fontWeight: 700 }}><CurrencyAmount amount={exp.amount} /></td>
+                      <td style={{ fontSize: '12px', color: '#64748b' }}>{exp.remarks}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

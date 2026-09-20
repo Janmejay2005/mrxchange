@@ -28,15 +28,15 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
   // Nav items with strict Role separation - Removed Central Ledger, Expenses, and Investments per request
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
-    { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
+    { label: 'Booked and Exchange', path: '/booked-exchange', icon: RefreshCw, role: 'ALL' },
+    { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package, role: 'ALL' },
     { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone, role: 'ALL' },
+    { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench, role: 'ALL' },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2, role: 'ALL' },
     { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
     
     // Superadmin Exclusive Features
-    { label: 'Booked and Exchange', path: '/booked-exchange', icon: RefreshCw, role: 'SUPERADMIN' },
-    { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package, role: 'SUPERADMIN' },
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'SUPERADMIN' },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'SUPERADMIN' },
   ];

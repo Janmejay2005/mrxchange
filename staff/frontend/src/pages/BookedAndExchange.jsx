@@ -20,23 +20,46 @@ export default function BookedAndExchange() {
     payBy: 'Staff',
     platform: 'Offline',
     accountId: '',
-    newBrand: 'Apple',
-    newModel: 'iPhone 15',
-    storage: '128',
-    ram: '6',
-    color: 'Black',
+    newBrand: 'Google Pixel',
+    newModel: 'Pixel 8 Pro',
+    storage: '256',
+    ram: '12',
+    color: 'Bay Blue',
     oldDeviceId: '',
     totalExchangeCost: 0,
     actualCost: 0
   });
 
   const [exchanges, setExchanges] = useState([
-    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15', newStorage: 128, newRam: 6, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 65000, oldBrand: 'Samsung', oldModel: 'S22', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Rohit', oldAmount: 28000, status: 'Booked' },
-    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'S24', newStorage: 256, newRam: 12, newColor: 'Gray', newPurchasedBy: 'Neha', newAmount: 72000, oldBrand: 'OnePlus', oldModel: '9R', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 18000, status: 'Booked' },
-    { id: 3, date: '13 Sep 2026', newBrand: 'OnePlus', newModel: '11', newStorage: 256, newRam: 12, newColor: 'Green', newPurchasedBy: 'Aman', newAmount: 61000, oldBrand: 'Redmi', oldModel: 'Note 10', oldStorage: 64, oldRam: 6, oldColor: 'Gray', oldPurchasedBy: 'Aman', oldAmount: 9500, status: 'Booked' },
-    { id: 4, date: '12 Sep 2026', newBrand: 'Vivo', newModel: 'V27', newStorage: 128, newRam: 8, newColor: 'Blue', newPurchasedBy: 'Karan', newAmount: 42000, oldBrand: 'Vivo', oldModel: 'V21', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Karan', oldAmount: 14000, status: 'Booked' },
-    { id: 5, date: '11 Sep 2026', newBrand: 'Oppo', newModel: 'Find X5', newStorage: 256, newRam: 12, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 68000, oldBrand: 'iPhone', oldModel: '11', oldStorage: 64, oldRam: 4, oldColor: 'Black', oldPurchasedBy: 'Rohit', oldAmount: 21000, status: 'Booked' }
+    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15 Pro Max', newStorage: 256, newRam: 8, newColor: 'Natural Titanium', newPurchasedBy: 'Jeet', newAmount: 125000, oldBrand: 'Samsung', oldModel: 'S23 Ultra', oldStorage: 256, oldRam: 12, oldColor: 'Phantom Black', oldPurchasedBy: 'Jeet', oldAmount: 58000, status: 'Booked' },
+    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'Galaxy S24 Ultra', newStorage: 512, newRam: 12, newColor: 'Titanium Gray', newPurchasedBy: 'Sonal', newAmount: 118000, oldBrand: 'OnePlus', oldModel: '11', oldStorage: 256, oldRam: 16, oldColor: 'Eternal Green', oldPurchasedBy: 'Sonal', oldAmount: 32000, status: 'Booked' },
+    { id: 3, date: '13 Sep 2026', newBrand: 'Google Pixel', newModel: 'Pixel 8 Pro', newStorage: 256, newRam: 12, newColor: 'Obsidian', newPurchasedBy: 'Rohit', newAmount: 92000, oldBrand: 'Google Pixel', oldModel: 'Pixel 6 Pro', oldStorage: 128, oldRam: 12, oldColor: 'Stormy Black', oldPurchasedBy: 'Rohit', oldAmount: 26000, status: 'Booked' },
+    { id: 4, date: '12 Sep 2026', newBrand: 'OnePlus', newModel: 'OnePlus 12', newStorage: 512, newRam: 16, newColor: 'Flowy Emerald', newPurchasedBy: 'Neha', newAmount: 64999, oldBrand: 'Xiaomi', oldModel: '12 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 22000, status: 'Booked' },
+    { id: 5, date: '11 Sep 2026', newBrand: 'Vivo', newModel: 'X100 Pro', newStorage: 512, newRam: 16, newColor: 'Asteroid Black', newPurchasedBy: 'Aman', newAmount: 89999, oldBrand: 'Vivo', oldModel: 'V27 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Magic Blue', oldPurchasedBy: 'Aman', oldAmount: 24000, status: 'Booked' },
+    { id: 6, date: '10 Sep 2026', newBrand: 'Nothing', newModel: 'Phone (2)', newStorage: 256, newRam: 12, newColor: 'Dark Gray', newPurchasedBy: 'Karan', newAmount: 44999, oldBrand: 'Nothing', oldModel: 'Phone (1)', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Karan', oldAmount: 18000, status: 'Booked' },
+    { id: 7, date: '09 Sep 2026', newBrand: 'Motorola', newModel: 'Edge 50 Ultra', newStorage: 512, newRam: 16, newColor: 'Peach Fuzz', newPurchasedBy: 'Vikram', newAmount: 59999, oldBrand: 'Motorola', oldModel: 'Edge 40', oldStorage: 256, oldRam: 8, oldColor: 'Eclipse Black', oldPurchasedBy: 'Vikram', oldAmount: 20000, status: 'Booked' },
+    { id: 8, date: '08 Sep 2026', newBrand: 'Xiaomi', newModel: '14 Ultra', newStorage: 512, newRam: 16, newColor: 'Black', newPurchasedBy: 'Ananya', newAmount: 99999, oldBrand: 'Oppo', oldModel: 'Reno 10 Pro+', oldStorage: 256, oldRam: 12, oldColor: 'Silver', oldPurchasedBy: 'Ananya', oldAmount: 29000, status: 'Booked' }
   ]);
+
+  const filteredExchanges = exchanges.filter(item => {
+    if (purchasedBy !== 'All' && item.newPurchasedBy !== purchasedBy && item.oldPurchasedBy !== purchasedBy) {
+      return false;
+    }
+    if (mobileBrand !== 'All' && item.newBrand !== mobileBrand && item.oldBrand !== mobileBrand) {
+      return false;
+    }
+    if (fromDate) {
+      const itemDate = new Date(item.date);
+      const fDate = new Date(fromDate);
+      if (!isNaN(itemDate) && !isNaN(fDate) && itemDate < fDate) return false;
+    }
+    if (toDate) {
+      const itemDate = new Date(item.date);
+      const tDate = new Date(toDate);
+      if (!isNaN(itemDate) && !isNaN(tDate) && itemDate > tDate) return false;
+    }
+    return true;
+  });
 
   const handleBookSubmit = (e) => {
     e.preventDefault();
@@ -109,10 +132,14 @@ export default function BookedAndExchange() {
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Purchased By</label>
           <select className="form-control" value={purchasedBy} onChange={(e) => setPurchasedBy(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
+            <option>Jeet</option>
+            <option>Sonal</option>
             <option>Rohit</option>
             <option>Neha</option>
             <option>Aman</option>
             <option>Karan</option>
+            <option>Vikram</option>
+            <option>Ananya</option>
           </select>
         </div>
         <div>
@@ -121,8 +148,13 @@ export default function BookedAndExchange() {
             <option>All</option>
             <option>Apple</option>
             <option>Samsung</option>
+            <option>Google Pixel</option>
             <option>OnePlus</option>
             <option>Vivo</option>
+            <option>Oppo</option>
+            <option>Xiaomi</option>
+            <option>Nothing</option>
+            <option>Motorola</option>
           </select>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
@@ -163,7 +195,14 @@ export default function BookedAndExchange() {
             </tr>
           </thead>
           <tbody>
-            {exchanges.map((row, idx) => (
+            {filteredExchanges.length === 0 ? (
+              <tr>
+                <td colSpan="17" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  No booked or exchange items match the selected filters.
+                </td>
+              </tr>
+            ) : (
+              filteredExchanges.map((row, idx) => (
               <tr key={row.id}>
                 <td>{idx + 1}</td>
                 <td>{row.date}</td>
@@ -231,7 +270,8 @@ export default function BookedAndExchange() {
                   )}
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

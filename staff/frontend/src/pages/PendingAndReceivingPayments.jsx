@@ -22,17 +22,33 @@ export default function PendingAndReceivingPayments() {
   });
 
   const [payments, setPayments] = useState([
-    { id: 1, date: '15 Sep 2026', customerName: 'Rohit', brand: 'Apple', model: 'iPhone 15', imei: '356789123456789', totalAmount: 65000, paidAmount: 50000, pendingAmount: 15000, status: 'Pending', mode: 'UPI', remarks: 'Balance next week' },
-    { id: 2, date: '14 Sep 2026', customerName: 'Neha', brand: 'Samsung', model: 'S24', imei: '352671234567890', totalAmount: 72000, paidAmount: 72000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Full payment' },
-    { id: 3, date: '13 Sep 2026', customerName: 'Aman', brand: 'OnePlus', model: '11', imei: '358912345678901', totalAmount: 61000, paidAmount: 30000, pendingAmount: 31000, status: 'Pending', mode: 'Card', remarks: 'Remaining later' },
-    { id: 4, date: '12 Sep 2026', customerName: 'Karan', brand: 'Vivo', model: 'V27', imei: '353456789012345', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid in full' },
-    { id: 5, date: '11 Sep 2026', customerName: 'Rohit', brand: 'Oppo', model: 'Find X5', imei: '357801234567890', totalAmount: 68000, paidAmount: 20000, pendingAmount: 48000, status: 'Pending', mode: 'UPI', remarks: 'Partial payment' },
-    { id: 6, date: '10 Sep 2026', customerName: 'Neha', brand: 'Realme', model: '11 Pro', imei: '359012345678901', totalAmount: 29000, paidAmount: 29000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid' },
-    { id: 7, date: '09 Sep 2026', customerName: 'Aman', brand: 'Apple', model: 'iPhone 14', imei: '352345678901234', totalAmount: 58000, paidAmount: 10000, pendingAmount: 48000, status: 'Pending', mode: 'Card', remarks: 'Customer will pay' },
-    { id: 8, date: '08 Sep 2026', customerName: 'Karan', brand: 'Samsung', model: 'S23', imei: '356901234567890', totalAmount: 70000, paidAmount: 70000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid' },
-    { id: 9, date: '07 Sep 2026', customerName: 'Rohit', brand: 'OnePlus', model: 'Nord 3', imei: '353789012345678', totalAmount: 33000, paidAmount: 15000, pendingAmount: 18000, status: 'Pending', mode: 'Cash', remarks: 'Balance pending' },
-    { id: 10, date: '06 Sep 2026', customerName: 'Neha', brand: 'Vivo', model: 'T2 Pro', imei: '358123456789012', totalAmount: 27000, paidAmount: 27000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid in full' }
+    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Patel', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
+    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Sharma', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
+    { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card', remarks: 'Installment 2 pending' },
+    { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid via GPay' },
+    { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI', remarks: 'Remaining next month' },
+    { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Full payment' },
+    { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card', remarks: 'Post-dated cheque' },
+    { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid' },
+    { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash', remarks: 'Balance due 25 Sep' }
   ]);
+
+  const filteredPayments = payments.filter((item) => {
+    if (paymentStatus !== 'All' && item.status !== paymentStatus) return false;
+    if (personCustomer !== 'All' && !item.customerName.toLowerCase().includes(personCustomer.toLowerCase())) return false;
+    if (mobileBrand !== 'All' && item.brand !== mobileBrand) return false;
+    if (fromDate) {
+      const itemDate = new Date(item.date);
+      const fDate = new Date(fromDate);
+      if (!isNaN(itemDate) && !isNaN(fDate) && itemDate < fDate) return false;
+    }
+    if (toDate) {
+      const itemDate = new Date(item.date);
+      const tDate = new Date(toDate);
+      if (!isNaN(itemDate) && !isNaN(tDate) && itemDate > tDate) return false;
+    }
+    return true;
+  });
 
   const handleSellSubmit = (e) => {
     e.preventDefault();
@@ -80,20 +96,30 @@ export default function PendingAndReceivingPayments() {
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Person / Customer</label>
           <select className="form-control" value={personCustomer} onChange={(e) => setPersonCustomer(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
+            <option>Jeet</option>
+            <option>Sonal</option>
             <option>Rohit</option>
             <option>Neha</option>
             <option>Aman</option>
             <option>Karan</option>
+            <option>Vikram</option>
+            <option>Sunal</option>
+            <option>Ananya</option>
           </select>
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Mobile Brand</label>
           <select className="form-control" value={mobileBrand} onChange={(e) => setMobileBrand(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
+            <option>Google Pixel</option>
             <option>Apple</option>
             <option>Samsung</option>
             <option>OnePlus</option>
             <option>Vivo</option>
+            <option>Xiaomi</option>
+            <option>Nothing</option>
+            <option>Realme</option>
+            <option>Motorola</option>
           </select>
         </div>
 
@@ -124,10 +150,17 @@ export default function PendingAndReceivingPayments() {
             </tr>
           </thead>
           <tbody>
-            {payments.map((row) => (
-              <tr key={row.id}>
-                <td>{row.id}</td>
-                <td>{row.date}</td>
+            {filteredPayments.length === 0 ? (
+              <tr>
+                <td colSpan="13" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  No payment records match the specified filter criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredPayments.map((row, idx) => (
+                <tr key={row.id}>
+                  <td>{idx + 1}</td>
+                  <td>{row.date}</td>
                 <td style={{ fontWeight: 600 }}>{row.customerName}</td>
                 <td style={{ fontWeight: 600 }}>{row.brand}</td>
                 <td style={{ fontWeight: 700 }}>{row.model}</td>
@@ -157,7 +190,8 @@ export default function PendingAndReceivingPayments() {
                   </button>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
