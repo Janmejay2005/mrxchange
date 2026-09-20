@@ -8,18 +8,26 @@ export default function NewInHandStock() {
   const [brand, setBrand] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [stock, setStock] = useState([
-    { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
-    { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
-    { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
-    { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
-    { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
-    { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
-    { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
-    { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
-    { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
-    { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
-  ]);
+  const [stock, setStock] = useState(() => {
+    const initial = [
+      { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
+      { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
+      { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
+      { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
+      { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
+      { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
+      { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
+      { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
+      { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
+      { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
+    ];
+    try {
+      const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      return [...deliveredItems, ...initial];
+    } catch (e) {
+      return initial;
+    }
+  });
 
   const filteredStock = stock.filter((item) => {
     if (brand !== 'All' && item.brand !== brand) return false;

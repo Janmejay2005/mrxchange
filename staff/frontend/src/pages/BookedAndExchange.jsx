@@ -87,16 +87,56 @@ export default function BookedAndExchange() {
   };
 
   const handleDeliverAction = (id) => {
+    const itemToDeliver = exchanges.find(item => item.id === id);
+    if (itemToDeliver) {
+      const newStockItem = {
+        sno: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        brand: itemToDeliver.newBrand,
+        model: itemToDeliver.newModel,
+        storage: itemToDeliver.newStorage,
+        ram: itemToDeliver.newRam,
+        color: itemToDeliver.newColor,
+        purchasedBy: itemToDeliver.newPurchasedBy,
+        amount: itemToDeliver.newAmount,
+        procedure: 'Sell'
+      };
+
+      const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
+    }
+
     setExchanges(prev => prev.filter(item => item.id !== id));
     setActiveMenuId(null);
-    alert('Device marked as Delivered! Moving to New In-hand Stock...');
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! New mobile transferred to New In-hand Stock.`);
     navigate('/new-in-hand');
   };
 
   const handleCancelAction = (id) => {
+    const itemToCancel = exchanges.find(item => item.id !== id);
+    if (itemToCancel) {
+      const oldStockItem = {
+        id: `MRX-${Date.now().toString().slice(-5)}`,
+        device_code: `MRX-${Date.now().toString().slice(-5)}`,
+        brand: itemToCancel.oldBrand,
+        model: itemToCancel.oldModel,
+        storage: itemToCancel.oldStorage,
+        ram: itemToCancel.oldRam,
+        colour: itemToCancel.oldColor,
+        purchase_amount: itemToCancel.oldAmount,
+        paid_by: itemToCancel.oldPurchasedBy,
+        intake_date: new Date().toISOString().split('T')[0],
+        status: 'OLD_IN_HAND',
+        image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
+      };
+
+      const existingOldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([oldStockItem, ...existingOldStock]));
+    }
+
     setExchanges(prev => prev.filter(item => item.id !== id));
     setActiveMenuId(null);
-    alert('Booking Cancelled! Moving device back to Old In-hand Inventory...');
+    alert(`Booking Cancelled! Exchanged old device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" transferred to Old In-hand Inventory.`);
     navigate('/old-in-hand');
   };
 

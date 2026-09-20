@@ -44,20 +44,23 @@ export default function OldInHandStock() {
         from: selectedDate || '',
         to: selectedDate || ''
       });
-      setDevices(res.data || []);
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      setDevices([...cancelledItems, ...dataList]);
 
       const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
       setStats(statsRes.data);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Fallback data
-      setDevices([
+      const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const fallback = [
         { id: '1', device_code: 'MRX-00001', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
         { id: '2', device_code: 'MRX-00002', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
         { id: '3', device_code: 'MRX-00003', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
         { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-      ]);
+      ];
+      setDevices([...cancelledItems, ...fallback]);
       setLoading(false);
     }
   };
