@@ -10,10 +10,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     storage: '128',
     ram: '6',
     colour: 'Midnight Black',
-    condition: 'Fresh', // Exactly 'Fresh' or 'Repair' per PRD
     purchase_amount: '',
     paid_by: 'Rohit',
-    repair: '',
     remarks: '',
     date: new Date().toISOString().split('T')[0]
   });
@@ -88,7 +86,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     setError('');
 
     if (!formData.brand || !formData.model || !formData.purchase_amount) {
-      setError('Please fill in Brand, Model Name, and Purchased Amount');
+      setError('Please select Mobile Brand, Model Name, and Purchased Amount');
       return;
     }
 
@@ -110,10 +108,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
         storage: '128',
         ram: '6',
         colour: 'Midnight Black',
-        condition: 'Fresh',
         purchase_amount: '',
         paid_by: 'Rohit',
-        repair: '',
         remarks: '',
         date: new Date().toISOString().split('T')[0]
       });
@@ -174,20 +170,31 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Mobile Brand *</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="e.g. Apple, Samsung, OnePlus" 
+                <select 
+                  className="form-control"
                   value={formData.brand}
                   onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                />
+                >
+                  <option value="">Select Brand</option>
+                  <option value="Apple">Apple</option>
+                  <option value="Samsung">Samsung</option>
+                  <option value="Google Pixel">Google Pixel</option>
+                  <option value="OnePlus">OnePlus</option>
+                  <option value="Xiaomi">Xiaomi</option>
+                  <option value="Vivo">Vivo</option>
+                  <option value="Oppo">Oppo</option>
+                  <option value="Realme">Realme</option>
+                  <option value="Nothing">Nothing</option>
+                  <option value="Motorola">Motorola</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Mobile Model *</label>
                 <input 
                   type="text" 
                   className="form-control" 
-                  placeholder="e.g. iPhone 13, Galaxy S22" 
+                  placeholder="e.g. iPhone 15 Pro, Galaxy S24" 
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 />
@@ -228,7 +235,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Row 3: Color & Condition */}
+            {/* Row 3: Color & Date Added */}
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Color (in words) *</label>
@@ -241,49 +248,13 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Condition * (Routing Target)</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, condition: 'Fresh' })}
-                    style={{
-                      padding: '9px',
-                      borderRadius: '8px',
-                      border: formData.condition === 'Fresh' ? '2px solid #10b981' : '1px solid #cbd5e1',
-                      background: formData.condition === 'Fresh' ? '#ecfdf5' : '#ffffff',
-                      color: formData.condition === 'Fresh' ? '#047857' : '#475569',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {formData.condition === 'Fresh' && <Check size={14} />}
-                    Fresh (In-hand)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, condition: 'Repair' })}
-                    style={{
-                      padding: '9px',
-                      borderRadius: '8px',
-                      border: formData.condition === 'Repair' ? '2px solid #f59e0b' : '1px solid #cbd5e1',
-                      background: formData.condition === 'Repair' ? '#fffbeb' : '#ffffff',
-                      color: formData.condition === 'Repair' ? '#b45309' : '#475569',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {formData.condition === 'Repair' && <Check size={14} />}
-                    Repair
-                  </button>
-                </div>
+                <label className="form-label">Date Added *</label>
+                <input 
+                  type="date" 
+                  className="form-control" 
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
               </div>
             </div>
 
@@ -314,29 +285,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   <option value="Jeet">Jeet</option>
                   <option value="Sunal">Sunal</option>
                 </select>
-              </div>
-            </div>
-
-            {/* Row 5: Repair Details & Date */}
-            <div className="form-row">
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Repair Notes / Estimated Cost</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="e.g. Screen replacement, ₹1500 estimate" 
-                  value={formData.repair}
-                  onChange={(e) => setFormData({ ...formData, repair: e.target.value })}
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Date Added *</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                />
               </div>
             </div>
 
@@ -372,16 +320,17 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                 </label>
               </div>
 
-              {/* Webcam Live Capture View */}
+              {/* Webcam Live Capture View (Rear/Back Camera preferred) */}
               {activeCameraSlot && (
                 <div style={{ textAlign: 'center', background: '#0b132b', borderRadius: '10px', padding: '12px', marginBottom: '14px' }}>
                   <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
-                    Capturing for {activeCameraSlot === 'image1' ? 'Image 1 (Front View)' : 'Image 2 (Back View)'}
+                    Capturing for {activeCameraSlot === 'image1' ? 'Image 1 (Front View)' : 'Image 2 (Back View)'} (Rear Camera)
                   </div>
                   <Webcam
                     audio={false}
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
+                    videoConstraints={{ facingMode: { ideal: "environment" } }}
                     style={{ width: '100%', maxHeight: '200px', borderRadius: '6px' }}
                   />
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '10px' }}>

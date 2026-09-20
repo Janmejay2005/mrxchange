@@ -372,14 +372,12 @@ export default function Reports() {
               { id: 'all_inventory', label: 'All Inventory Stock', desc: 'Combined devices registry' },
               { id: 'old_inventory', label: 'Old Inventory', desc: 'Historic stock items' },
               { id: 'old_in_hand', label: 'Old In-hand Stock', desc: 'Available for immediate sale' },
-              ...(isSuperAdmin ? [{ id: 'new_in_hand', label: 'New In-hand Stock', desc: 'Fresh acquisition stock' }] : []),
+              { id: 'new_in_hand', label: 'New In-hand Stock', desc: 'Fresh acquisition stock' },
               { id: 'repair', label: 'Repair Stock', desc: 'Under active repair' },
               { id: 'rejected', label: 'Rejected Stock', desc: 'Damaged / defective units' },
-              ...(isSuperAdmin ? [
-                { id: 'ledger', label: 'Central Ledger', desc: 'Financial transactions journal' },
-                { id: 'expenses', label: 'Operating Expenses', desc: 'Expense vouchers & categories' },
-                { id: 'investments', label: 'Investments & ROI', desc: 'Capital investments & returns' },
-              ] : [])
+              { id: 'pending_payments', label: 'Pending and Receiving Payments', desc: 'Customer payments & dues journal' },
+              { id: 'profit_expense_statistic', label: 'Profit, Expense and Statistic', desc: 'Financial profitability & expenses report' },
+              { id: 'booked_exchange', label: 'Book and Exchange', desc: 'Pre-booked & exchanged devices registry' },
             ].map(target => (
               <label 
                 key={target.id}

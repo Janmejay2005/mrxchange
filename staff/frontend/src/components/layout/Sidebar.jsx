@@ -34,11 +34,9 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench, role: 'ALL' },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2, role: 'ALL' },
-    { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
-    
-    // Superadmin Exclusive Features
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'SUPERADMIN' },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'SUPERADMIN' },
+    { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
   ];
 
   // Filter items based on logged-in user role
