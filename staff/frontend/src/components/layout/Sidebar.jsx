@@ -11,6 +11,9 @@ import {
   Package,
   CircleDollarSign,
   BarChart2,
+  BookOpen,
+  Receipt,
+  TrendingUp,
   LogOut,
   X
 } from 'lucide-react';
@@ -25,19 +28,31 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     navigate('/login');
   };
 
-  // Full 10-module Navigation structure matching reference screenshots
+  // Nav items with strict Role separation (Staff vs Superadmin)
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Old Inventory', path: '/old-inventory', icon: Layers },
-    { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
-    { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
-    { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
-    { label: 'Report', path: '/reports', icon: FileText },
-    { label: 'Booked and Exchange', path: '/booked-exchange', icon: RefreshCw },
-    { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package },
-    { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },
-    { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2 },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
+    { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
+    { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone, role: 'ALL' },
+    { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench, role: 'ALL' },
+    { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2, role: 'ALL' },
+    { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
+    
+    // Superadmin Exclusive Features
+    { label: 'Booked and Exchange', path: '/booked-exchange', icon: RefreshCw, role: 'SUPERADMIN' },
+    { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package, role: 'SUPERADMIN' },
+    { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'SUPERADMIN' },
+    { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'SUPERADMIN' },
+    { label: 'Central Ledger', path: '/central-ledger', icon: BookOpen, role: 'SUPERADMIN' },
+    { label: 'Expenses', path: '/expenses', icon: Receipt, role: 'SUPERADMIN' },
+    { label: 'Investments', path: '/investments', icon: TrendingUp, role: 'SUPERADMIN' },
   ];
+
+  // Filter items based on logged-in user role
+  const filteredNavItems = navItems.filter(item => {
+    if (item.role === 'ALL') return true;
+    if (item.role === 'SUPERADMIN') return isSuperAdmin;
+    return false;
+  });
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
@@ -47,7 +62,9 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
           <Smartphone size={28} color="#38bdf8" />
           <div>
             <div className="brand-title">MR.X.Change</div>
-            <div className="brand-sub">Mobile Exchange & Inventory</div>
+            <div className="brand-sub">
+              {isSuperAdmin ? 'Superadmin Portal' : 'Staff Portal'}
+            </div>
           </div>
         </div>
         <button 
@@ -61,7 +78,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
       </div>
 
       <ul className="nav-list">
-        {navItems.map((item, idx) => {
+        {filteredNavItems.map((item, idx) => {
           const Icon = item.icon;
           return (
             <li key={idx} className="nav-item">
@@ -80,14 +97,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
 
       <div className="sidebar-bottom">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', marginBottom: '8px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
-            {user?.auth_identifier ? String(user.auth_identifier).substring(0, 2).toUpperCase() : 'AS'}
+          <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: isSuperAdmin ? '#8b5cf6' : '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
+            {user?.auth_identifier ? String(user.auth_identifier).substring(0, 2).toUpperCase() : 'US'}
           </div>
           <div>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
-              {user?.name || user?.auth_identifier || 'Aadarsh Sharma'}
+              {user?.name || user?.auth_identifier || 'User'}
             </div>
-            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Staff</div>
+            <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+              {isSuperAdmin ? 'Superadmin' : 'Staff'}
+            </div>
           </div>
         </div>
         <button onClick={handleLogout} className="logout-btn">

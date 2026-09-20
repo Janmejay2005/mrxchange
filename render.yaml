@@ -3,8 +3,8 @@ services:
     name: mrx-change-backend
     env: node
     rootDir: staff/backend
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: cd staff/backend && npm install
+    startCommand: cd staff/backend && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

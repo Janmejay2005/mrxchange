@@ -26,6 +26,14 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function SuperAdminRoute({ children }) {
+  const { isSuperAdmin } = useAuth();
+  if (!isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(() => {
     const seen = sessionStorage.getItem('mrx_splash_shown');
@@ -53,6 +61,8 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Staff Accessible Pages */}
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="old-inventory" element={<OldInventory />} />
               <Route path="old-in-hand" element={<OldInHandStock />} />
@@ -62,16 +72,14 @@ export default function App() {
               <Route path="rejected-stocks" element={<RejectedStock />} />
               <Route path="reports" element={<Reports />} />
               
-              {/* Exact Screenshot Modules */}
-              <Route path="booked-exchange" element={<BookedAndExchange />} />
-              <Route path="new-in-hand" element={<NewInHandStock />} />
-              <Route path="pending-payments" element={<PendingAndReceivingPayments />} />
-              <Route path="profit-expense-statistic" element={<ProfitExpenseAndStatistic />} />
-              
-              {/* Additional Superadmin Financial Modules */}
-              <Route path="central-ledger" element={<CentralLedger />} />
-              <Route path="expenses" element={<Expenses />} />
-              <Route path="investments" element={<Investments />} />
+              {/* Superadmin Restricted Features */}
+              <Route path="booked-exchange" element={<SuperAdminRoute><BookedAndExchange /></SuperAdminRoute>} />
+              <Route path="new-in-hand" element={<SuperAdminRoute><NewInHandStock /></SuperAdminRoute>} />
+              <Route path="pending-payments" element={<SuperAdminRoute><PendingAndReceivingPayments /></SuperAdminRoute>} />
+              <Route path="profit-expense-statistic" element={<SuperAdminRoute><ProfitExpenseAndStatistic /></SuperAdminRoute>} />
+              <Route path="central-ledger" element={<SuperAdminRoute><CentralLedger /></SuperAdminRoute>} />
+              <Route path="expenses" element={<SuperAdminRoute><Expenses /></SuperAdminRoute>} />
+              <Route path="investments" element={<SuperAdminRoute><Investments /></SuperAdminRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

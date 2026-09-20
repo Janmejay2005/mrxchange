@@ -4,19 +4,13 @@ import { fetchApi } from '../services/api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // Default to Superadmin for full immediate inspection capability, with toggle to Staff
+  // Always require explicit login when opening application
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('mrx_user');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return {
-      id: 'admin-user-1',
-      name: 'System Superadmin',
-      email: 'admin23@mrx.com',
-      auth_identifier: 'Admin23',
-      role: 'SUPERADMIN'
-    };
+    return null; // Force user to see Login page first
   });
 
   const [loading, setLoading] = useState(false);
@@ -32,7 +26,6 @@ export function AuthProvider({ children }) {
   const login = async (identifier, password) => {
     setLoading(true);
     try {
-      // Try backend API login
       const res = await fetchApi('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ identifier, password })
@@ -44,7 +37,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return true;
     } catch (err) {
-      // Fallback local auth for testing
+      // Fallback role authentication for testing
       const idLower = (identifier || '').toLowerCase();
       const isAdmin = idLower.includes('admin') || identifier === 'Admin23';
 
