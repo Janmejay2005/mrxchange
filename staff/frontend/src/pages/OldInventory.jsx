@@ -1,39 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
-  RotateCcw, 
-  Printer, 
   FileText,
-  Download,
   Database,
-  Smartphone
+  Smartphone,
+  Filter
 } from 'lucide-react';
-import { deviceService, statsService } from '../services/api';
-import { StatusBadge, CurrencyAmount } from '../components/common/UIComponents';
+import { deviceService } from '../services/api';
+import { CurrencyAmount } from '../components/common/UIComponents';
 import AddMobileModal from '../components/modals/AddMobileModal';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { exportToPdf } from '../utils/pdfGenerator';
+
+const BRANDS = ['All Brands', 'Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing'];
+const MODELS_BY_BRAND = {
+  'Apple': ['iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11', 'iPhone SE'],
+  'Samsung': ['Galaxy S23 Ultra', 'Galaxy S22', 'Galaxy A54', 'Galaxy A52', 'Galaxy M33'],
+  'OnePlus': ['OnePlus 11', 'OnePlus 10R', 'OnePlus 9R', 'OnePlus Nord 3'],
+  'Xiaomi': ['Redmi Note 12', 'Redmi Note 10', 'Mi 11X'],
+  'Vivo': ['Vivo V27', 'Vivo V21', 'Vivo Y200'],
+  'Oppo': ['Oppo Reno 10', 'Oppo F19', 'Oppo A78'],
+  'Realme': ['Realme 11 Pro', 'Realme 8'],
+  'Nothing': ['Phone (2)', 'Phone (1)']
+};
 
 export default function OldInventory() {
   const { globalSearch, selectedDate } = useOutletContext() || {};
-  const [activeTab, setActiveTab] = useState('ALL');
+  const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const tabs = [
-    { label: 'All Stock', value: 'ALL' },
-    { label: 'Old Inventory', value: 'OLD_INVENTORY' },
-    { label: 'In-hand Stock', value: 'IN_HAND' },
-    { label: 'In Repair', value: 'IN_REPAIR' },
-    { label: 'Rejected', value: 'REJECTED' },
-  ];
+  // Synced Brand and Phone filters
+  const [selectedBrand, setSelectedBrand] = useState('All Brands');
+  const [selectedModel, setSelectedModel] = useState('All Models');
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
       const res = await deviceService.getDevices({
-        status: activeTab === 'ALL' ? '' : activeTab,
         q: globalSearch || '',
+        brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
         from: selectedDate || '',
         to: selectedDate || ''
       });
@@ -41,12 +48,12 @@ export default function OldInventory() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Fallback sample data if backend not connected
+      // Fallback sample data if backend is offline
       setDevices([
         { id: '1', device_code: 'MRX-00001', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '2', device_code: 'MRX-00002', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '3', device_code: 'MRX-00003', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-        { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', condition: 'Good', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
+        { id: '2', device_code: 'MRX-00002', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+        { id: '3', device_code: 'MRX-00003', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'IN_REPAIR', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
+        { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', condition: 'Good', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'REJECTED', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
         { id: '5', device_code: 'MRX-00005', brand: 'Apple', model: 'iPhone 11', storage: 64, ram: 4, colour: 'Green', condition: 'Fair', purchase_amount: 14000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
       ]);
       setLoading(false);
@@ -55,22 +62,53 @@ export default function OldInventory() {
 
   useEffect(() => {
     fetchInventory();
-  }, [activeTab, globalSearch, selectedDate]);
+  }, [globalSearch, selectedDate, selectedBrand]);
 
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('inventory', { 
-      status: activeTab === 'ALL' ? '' : activeTab,
-      from: selectedDate || '' 
-    });
-    window.open(url, '_blank');
+  const handleStatusChange = async (deviceId, newStatus) => {
+    try {
+      await deviceService.updateStatus(deviceId, { status: newStatus });
+      setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, status: newStatus } : d));
+      
+      // Automatic navigation based on new status option selected
+      if (newStatus === 'IN_REPAIR') {
+        alert('Device moved to Repair Stock! Navigating to Repair Stock page...');
+        navigate('/repair-stock');
+      } else if (newStatus === 'REJECTED') {
+        alert('Device moved to Rejected Stock! Navigating to Rejected Stock page...');
+        navigate('/rejected-stocks');
+      } else if (newStatus === 'OLD_IN_HAND') {
+        alert('Device moved to Old In-hand Stock!');
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update status');
+    }
   };
 
+  // Synced Phone/Model Options based on Selected Brand
+  const availableModels = selectedBrand === 'All Brands' 
+    ? Object.values(MODELS_BY_BRAND).flat() 
+    : (MODELS_BY_BRAND[selectedBrand] || []);
+
+  // Filtered devices list based on synchronized Brand and Phone dropdowns
+  const filteredDevices = devices.filter(d => {
+    if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
+    if (selectedModel !== 'All Models' && d.model !== selectedModel) return false;
+    return true;
+  });
+
   const handleExportPdf = () => {
-    const url = statsService.getPdfExportUrl('inventory', { 
-      status: activeTab === 'ALL' ? '' : activeTab,
-      from: selectedDate || '' 
-    });
-    window.open(url, '_blank');
+    const headers = ['Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount', 'Status'];
+    const rows = filteredDevices.map(d => [
+      d.device_code || d.id,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      `Rs. ${d.purchase_amount}`,
+      d.status
+    ]);
+    exportToPdf('Master Inventory Report', headers, rows, `Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -96,7 +134,7 @@ export default function OldInventory() {
             </div>
             <div className="kpi-info">
               <span className="kpi-title">Listed Devices</span>
-              <span className="kpi-value" style={{ fontSize: '22px' }}>{devices.length}</span>
+              <span className="kpi-value" style={{ fontSize: '22px' }}>{filteredDevices.length}</span>
             </div>
           </div>
 
@@ -113,43 +151,52 @@ export default function OldInventory() {
         </div>
       </div>
 
-      {/* Action Toolbar - Filter and Action buttons removed per PRD, CSV and PDF added */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <button onClick={handleExportCsv} className="btn-secondary" title="Export CSV report">
-          <Download size={15} color="#0284c7" /> Export CSV
-        </button>
-        <button onClick={handleExportPdf} className="btn-secondary" title="Generate PDF report">
-          <FileText size={15} color="#dc2626" /> Export PDF
-        </button>
-        <button onClick={() => fetchInventory()} className="btn-secondary">
-          <RotateCcw size={15} /> Reset
-        </button>
-        <button onClick={() => window.print()} className="btn-primary" style={{ background: '#0f172a' }}>
-          <Printer size={15} /> Print Out
-        </button>
-      </div>
+      {/* Action Toolbar with Synchronized Brand & Phone Filters - Removed CSV, Print Out, and Reset buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Brand Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Filter size={15} color="#64748b" />
+            <select 
+              className="form-control" 
+              style={{ width: '160px', padding: '7px 12px', fontSize: '13px' }}
+              value={selectedBrand}
+              onChange={(e) => {
+                setSelectedBrand(e.target.value);
+                setSelectedModel('All Models');
+              }}
+            >
+              {BRANDS.map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
 
-      {/* Tabs list */}
-      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '20px', marginBottom: '20px', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            style={{
-              padding: '10px 4px',
-              fontSize: '13px',
-              fontWeight: 700,
-              color: activeTab === tab.value ? '#0284c7' : '#64748b',
-              borderBottom: activeTab === tab.value ? '2px solid #0284c7' : 'none',
-              marginBottom: '-2px'
-            }}
-          >
-            {tab.label}
+          {/* Phone / Model Filter (Synced to Brand) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Smartphone size={15} color="#64748b" />
+            <select 
+              className="form-control" 
+              style={{ width: '180px', padding: '7px 12px', fontSize: '13px' }}
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+            >
+              <option value="All Models">All Phone Models</option>
+              {availableModels.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={handleExportPdf} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }} title="Generate PDF report">
+            <FileText size={15} /> Export PDF
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* Master Inventory Table - IMEI and Action button strictly removed per PRD */}
+      {/* Master Inventory Table */}
       <div className="table-responsive">
         <table className="custom-table">
           <thead>
@@ -165,7 +212,7 @@ export default function OldInventory() {
               <th>Paid Amount</th>
               <th>Paid By</th>
               <th>Date Added</th>
-              <th>Status</th>
+              <th>Status Dropdown</th>
             </tr>
           </thead>
           <tbody>
@@ -175,14 +222,14 @@ export default function OldInventory() {
                   Loading inventory...
                 </td>
               </tr>
-            ) : devices.length === 0 ? (
+            ) : filteredDevices.length === 0 ? (
               <tr>
                 <td colSpan="12" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                  No devices found matching current search or selected date.
+                  No devices found matching current filters.
                 </td>
               </tr>
             ) : (
-              devices.map((device, idx) => (
+              filteredDevices.map((device, idx) => (
                 <tr key={device.id || idx}>
                   <td><input type="checkbox" /></td>
                   <td style={{ fontWeight: 600, color: '#64748b' }}>{device.device_code || `MRX-${idx + 1}`}</td>
@@ -239,7 +286,32 @@ export default function OldInventory() {
                   <td>{device.paid_by || 'Staff'}</td>
                   <td>{device.intake_date ? String(device.intake_date).slice(0, 10) : 'Today'}</td>
                   <td>
-                    <StatusBadge status={device.status} />
+                    {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
+                    <select
+                      value={device.status || 'OLD_INVENTORY'}
+                      onChange={(e) => handleStatusChange(device.id, e.target.value)}
+                      className="form-control"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        borderRadius: '6px',
+                        backgroundColor: 
+                          device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#e0f2fe' :
+                          device.status === 'IN_REPAIR' ? '#fef3c7' :
+                          device.status === 'REJECTED' ? '#fee2e2' : '#f1f5f9',
+                        color: 
+                          device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#0284c7' :
+                          device.status === 'IN_REPAIR' ? '#d97706' :
+                          device.status === 'REJECTED' ? '#dc2626' : '#475569',
+                        border: '1px solid #cbd5e1'
+                      }}
+                    >
+                      <option value="OLD_INVENTORY">Old Inventory</option>
+                      <option value="OLD_IN_HAND">Old In-Hand</option>
+                      <option value="IN_REPAIR">Repair</option>
+                      <option value="REJECTED">Rejected Stock</option>
+                    </select>
                   </td>
                 </tr>
               ))

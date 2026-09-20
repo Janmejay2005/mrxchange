@@ -107,7 +107,6 @@ export default function RejectedStock() {
               <th>Paid By</th>
               <th>Date</th>
               <th>Last Reason of Rejection</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -127,21 +126,6 @@ export default function RejectedStock() {
                 <td style={{ color: '#dc2626', fontWeight: 600 }}>
                   {device.last_rejection_reason || 'Defective piece'}
                 </td>
-                <td>
-                  <button 
-                    onClick={() => setResolveModal({
-                      isOpen: true,
-                      device,
-                      resolution: 'Secondary Repair',
-                      destination: 'IN_REPAIR',
-                      notes: ''
-                    })}
-                    className="btn-secondary" 
-                    style={{ padding: '6px 10px', fontSize: '12px' }}
-                  >
-                    Resolve
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>
@@ -149,56 +133,8 @@ export default function RejectedStock() {
       </div>
 
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#64748b' }}>
-        <span>Showing 1–12 of 42 items</span>
+        <span>Showing all {devices.length} rejected stock items</span>
       </div>
-
-      {/* Resolve Modal */}
-      {resolveModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '440px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Resolve Rejected Device</h3>
-            </div>
-            <div className="modal-body">
-              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
-                Device: <strong>{resolveModal.device?.brand} {resolveModal.device?.model}</strong>
-              </p>
-
-              <div className="form-group">
-                <label className="form-label">Route Destination *</label>
-                <select 
-                  className="form-control"
-                  value={resolveModal.destination}
-                  onChange={(e) => setResolveModal({ ...resolveModal, destination: e.target.value })}
-                >
-                  <option value="IN_REPAIR">Send to Repair Stock (Secondary Attempt)</option>
-                  <option value="IN_HAND">Approve & Move to In-hand Stock (Admin QC Passed)</option>
-                  <option value="DISPOSED">Mark as Disposed / Scrap Parts</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Resolution Description</label>
-                <textarea 
-                  className="form-control" 
-                  rows="2"
-                  placeholder="Details of approval or re-work..."
-                  value={resolveModal.notes}
-                  onChange={(e) => setResolveModal({ ...resolveModal, notes: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setResolveModal({ ...resolveModal, isOpen: false })} className="btn-secondary">
-                Cancel
-              </button>
-              <button onClick={handleResolve} className="btn-primary">
-                Confirm Route
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,377 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  Search, 
-  Layers, 
-  HardDrive, 
-  Cpu, 
-  Download,
-  FileText,
-  ShoppingCart,
-  ShieldAlert,
-  X
-} from 'lucide-react';
-import { deviceService, statsService, saleService } from '../services/api';
-import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
-import { useOutletContext, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from 'react';
+import { Package, Plus, Home, Search } from 'lucide-react';
+import { CurrencyAmount } from '../components/common/UIComponents';
 
 export default function NewInHandStock() {
-  const { isSuperAdmin } = useAuth();
-  const { globalSearch, selectedDate } = useOutletContext() || {};
-  const [devices, setDevices] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [localSearch, setLocalSearch] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('All Brands');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [brand, setBrand] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Sell Modal State
-  const [sellModal, setSellModal] = useState({
-    isOpen: false,
-    device: null,
-    sellingPrice: '',
-    customerName: '',
-    customerPhone: '',
-    paymentMethod: 'UPI',
-    paymentType: 'COMPLETE',
-    soldBy: 'Admin23'
-  });
-
-  // Guard: Superadmin only
-  if (!isSuperAdmin) {
-    return <Navigate to="/old-in-hand" replace />;
-  }
-
-  const fetchNewInHandStock = async () => {
-    try {
-      setLoading(true);
-      const res = await deviceService.getDevices({
-        status: 'NEW_IN_HAND',
-        q: localSearch || globalSearch || '',
-        brand: selectedBrand,
-        from: selectedDate || '',
-        to: selectedDate || ''
-      });
-      setDevices(res.data || []);
-
-      const statsRes = await statsService.getInHandStats({ type: 'NEW_IN_HAND' });
-      setStats(statsRes.data);
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setDevices([
-        { id: '11', device_code: 'MRX-00011', brand: 'Apple', model: 'iPhone 14 Pro', storage: 256, ram: 6, colour: 'Space Black', purchase_amount: 58000, paid_by: 'Jeet', intake_date: '2026-09-18', status: 'NEW_IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '12', device_code: 'MRX-00012', brand: 'Samsung', model: 'Galaxy S23 Ultra', storage: 512, ram: 12, colour: 'Green', purchase_amount: 52000, paid_by: 'Sunal', intake_date: '2026-09-17', status: 'NEW_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '13', device_code: 'MRX-00013', brand: 'Google', model: 'Pixel 7 Pro', storage: 128, ram: 12, colour: 'Obsidian', purchase_amount: 34000, paid_by: 'Jeet', intake_date: '2026-09-17', status: 'NEW_IN_HAND', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
-      ]);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchNewInHandStock();
-  }, [localSearch, globalSearch, selectedBrand, selectedDate]);
-
-  const handleSellSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await saleService.createSale({
-        device_id: sellModal.device.id,
-        selling_price: parseFloat(sellModal.sellingPrice),
-        customer_name: sellModal.customerName,
-        customer_phone: sellModal.customerPhone,
-        payment_method: sellModal.paymentMethod,
-        payment_type: sellModal.paymentType,
-        sold_by: sellModal.soldBy
-      });
-      alert('Sale recorded and credited in Central Ledger!');
-      setSellModal({ ...sellModal, isOpen: false });
-      fetchNewInHandStock();
-    } catch (err) {
-      alert(err.message || 'Failed to record sale');
-    }
-  };
-
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('inventory', { status: 'NEW_IN_HAND' });
-    window.open(url, '_blank');
-  };
-
-  const handleExportPdf = () => {
-    const url = statsService.getPdfExportUrl('inventory', { status: 'NEW_IN_HAND' });
-    window.open(url, '_blank');
-  };
+  const [stock, setStock] = useState([
+    { sno: 1, date: '08/09/2026', brand: 'Oppo', model: 'A57', storage: 128, ram: 8, color: 'Red', purchasedBy: 'Jeet', amount: 12000, procedure: 'Sell' },
+    { sno: 2, date: '08/09/2026', brand: 'Samsung', model: 'S23', storage: 256, ram: 12, color: 'Black', purchasedBy: 'Sonal', amount: 32000, procedure: 'Sell' },
+    { sno: 3, date: '09/09/2026', brand: 'OnePlus', model: 'Nord 3', storage: 128, ram: 8, color: 'Blue', purchasedBy: 'Rohit', amount: 25000, procedure: 'Hold' },
+    { sno: 4, date: '09/09/2026', brand: 'Apple', model: 'iPhone 14', storage: 128, ram: 6, color: 'White', purchasedBy: 'Neha', amount: 48000, procedure: 'Sell' },
+    { sno: 5, date: '10/09/2026', brand: 'Vivo', model: 'V27', storage: 128, ram: 8, color: 'Green', purchasedBy: 'Aman', amount: 28000, procedure: 'Sell' },
+    { sno: 6, date: '10/09/2026', brand: 'Realme', model: '11 Pro', storage: 256, ram: 12, color: 'Gray', purchasedBy: 'Karan', amount: 24000, procedure: 'Check' },
+    { sno: 7, date: '11/09/2026', brand: 'Xiaomi', model: 'Redmi Note 12', storage: 128, ram: 6, color: 'Black', purchasedBy: 'Rohit', amount: 18500, procedure: 'Sell' },
+    { sno: 8, date: '11/09/2026', brand: 'Nothing', model: 'Phone (1)', storage: 128, ram: 8, color: 'White', purchasedBy: 'Sonal', amount: 27000, procedure: 'Sell' },
+    { sno: 9, date: '12/09/2026', brand: 'Motorola', model: 'Edge 40', storage: 256, ram: 12, color: 'Blue', purchasedBy: 'Jeet', amount: 31000, procedure: 'Hold' },
+    { sno: 10, date: '12/09/2026', brand: 'iQOO', model: 'Neo 7', storage: 128, ram: 8, color: 'Black', purchasedBy: 'Neha', amount: 26500, procedure: 'Sell' }
+  ]);
 
   return (
     <div>
-      {/* Header with Superadmin badge */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header & Breadcrumbs */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>New In-hand Stock</h1>
-            <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800 }}>
-              Superadmin Only
-            </span>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>New In-hand Stock</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>List of newly purchased mobiles currently in hand.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
+            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>New In-hand Stock</span>
           </div>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-            Fresh arrivals routed from intake • Distinct from Old In-hand • {selectedDate ? `Date: ${selectedDate}` : 'All Fresh Stock'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleExportCsv} className="btn-secondary" title="Export CSV">
-            <Download size={15} color="#0284c7" /> CSV
-          </button>
-          <button onClick={handleExportPdf} className="btn-secondary" title="Export PDF">
-            <FileText size={15} color="#dc2626" /> PDF
+          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
+            <Plus size={16} /> Add Stock
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="kpi-grid">
-        <KPICard 
-          title="Fresh In-hand Units" 
-          value={stats?.total_in_hand || devices.length} 
-          icon={Sparkles}
-          iconBg="#f5f3ff"
-          iconColor="#7c3aed"
-        />
-        <KPICard 
-          title="Unique Models" 
-          value={stats?.unique_models || '3'} 
-          icon={Layers}
-          iconBg="#ecfdf5"
-          iconColor="#059669"
-        />
-        <KPICard 
-          title="Total Storage (GB)" 
-          value={stats?.total_storage?.toLocaleString() || '896'} 
-          icon={HardDrive}
-          iconBg="#e0f2fe"
-          iconColor="#0284c7"
-        />
-        <KPICard 
-          title="Total RAM (GB)" 
-          value={stats?.total_ram?.toLocaleString() || '30'} 
-          icon={Cpu}
-          iconBg="#ffedd5"
-          iconColor="#ea580c"
-        />
-      </div>
-
-      {/* Filter toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <div className="search-box" style={{ width: '280px' }}>
-          <Search size={16} color="#64748b" />
-          <input 
-            type="text" 
-            placeholder="Search fresh in-hand devices..." 
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-          />
+      {/* Top Filter Bar */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>From Date</label>
+          <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>To Date</label>
+          <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Brand</label>
+          <select className="form-control" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
+            <option>All</option>
+            <option>Oppo</option>
+            <option>Samsung</option>
+            <option>OnePlus</option>
+            <option>Apple</option>
+            <option>Vivo</option>
+          </select>
         </div>
 
-        <select 
-          className="form-control" 
-          style={{ width: '180px' }}
-          value={selectedBrand}
-          onChange={(e) => setSelectedBrand(e.target.value)}
-        >
-          <option value="All Brands">All Brands</option>
-          <option value="Apple">Apple</option>
-          <option value="Samsung">Samsung</option>
-          <option value="Google">Google</option>
-          <option value="OnePlus">OnePlus</option>
-        </select>
+        <div style={{ flex: 1, minWidth: '220px', marginTop: '18px' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="Search by model, IMEI, or keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ paddingLeft: '36px' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+          <button onClick={() => { setFromDate(''); setToDate(''); setBrand('All'); setSearchQuery(''); }} className="btn-secondary">Clear</button>
+          <button className="btn-primary">Apply</button>
+        </div>
       </div>
 
-      {/* Table: Brand, Model, Storage, RAM, Color Name, Purchase Price, Purchased By, Date Added, Action (Sell) */}
-      {/* IMEI is omitted per PRD */}
+      {/* New In-hand Stock Table */}
       <div className="table-responsive">
         <table className="custom-table">
           <thead>
             <tr>
-              <th>Image</th>
-              <th>Brand</th>
+              <th>Sno</th>
+              <th>Date</th>
+              <th>Brand Name</th>
               <th>Model</th>
-              <th>Storage</th>
-              <th>RAM</th>
-              <th>Color Name</th>
-              <th>Purchase Price</th>
+              <th>Storage (GB)</th>
+              <th>RAM (GB)</th>
+              <th>Color</th>
               <th>Purchased By</th>
-              <th>Date Added</th>
-              <th style={{ textAlign: 'center' }}>Action</th>
+              <th>Purchased Amount (₹)</th>
+              <th>Further Procedure</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                  Loading fresh stock...
+            {stock.map((item) => (
+              <tr key={item.sno}>
+                <td>{item.sno}</td>
+                <td>{item.date}</td>
+                <td style={{ fontWeight: 600 }}>{item.brand}</td>
+                <td style={{ fontWeight: 700 }}>{item.model}</td>
+                <td>{item.storage}</td>
+                <td>{item.ram}</td>
+                <td>{item.color}</td>
+                <td>{item.purchasedBy}</td>
+                <td style={{ fontWeight: 700 }}>
+                  <CurrencyAmount amount={item.amount} />
                 </td>
-              </tr>
-            ) : devices.length === 0 ? (
-              <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                  No New In-hand devices found.
+                <td>
+                  <span style={{ 
+                    fontWeight: 600, 
+                    color: item.procedure === 'Sell' ? '#0284c7' : item.procedure === 'Hold' ? '#d97706' : '#64748b' 
+                  }}>
+                    {item.procedure}
+                  </span>
                 </td>
-              </tr>
-            ) : (
-              devices.map((d) => (
-                <tr key={d.id}>
-                  <td>
-                    {d.images && d.images.length > 1 ? (
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <img 
-                          src={d.images[0]} 
-                          alt="Front" 
-                          className="device-thumb" 
-                          title="Front View"
-                        />
-                        <img 
-                          src={d.images[1]} 
-                          alt="Back" 
-                          className="device-thumb" 
-                          title="Back View"
-                        />
-                      </div>
-                    ) : (
-                      <img 
-                        src={d.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
-                        alt={d.model} 
-                        className="device-thumb" 
-                      />
-                    )}
-                  </td>
-
-                  <td style={{ fontWeight: 700 }}>{d.brand}</td>
-                  <td>{d.model}</td>
-                  <td>{d.storage} GB</td>
-                  <td>{d.ram} GB</td>
-                  <td><span style={{ fontWeight: 600 }}>{d.colour}</span></td>
-                  <td><CurrencyAmount amount={d.purchase_amount} /></td>
-                  <td><span style={{ color: '#7c3aed', fontWeight: 600 }}>{d.paid_by || 'Jeet'}</span></td>
-                  <td>{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSellModal({
-                        isOpen: true,
-                        device: d,
-                        sellingPrice: '',
-                        customerName: '',
-                        customerPhone: '',
-                        paymentMethod: 'UPI',
-                        paymentType: 'COMPLETE',
-                        soldBy: 'Admin23'
-                      })}
-                      className="btn-primary"
-                      style={{ padding: '6px 14px', fontSize: '12px', background: '#059669' }}
-                    >
-                      <ShoppingCart size={13} /> Sell
+                <td>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                      Sell
                     </button>
-                  </td>
-                </tr>
-              ))
-            )}
+                    <button className="btn-secondary" style={{ padding: '4px 8px', borderRadius: '6px' }}>...</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* Sell Modal */}
-      {sellModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3 style={{ fontSize: '18px', fontWeight: 800 }}>
-                Sell Fresh {sellModal.device?.brand} {sellModal.device?.model}
-              </h3>
-              <button onClick={() => setSellModal({ ...sellModal, isOpen: false })}>
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSellSubmit}>
-              <div className="modal-body">
-                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
-                  <div><strong>Purchase Price:</strong> ₹{parseFloat(sellModal.device?.purchase_amount || 0).toLocaleString('en-IN')}</div>
-                  <div><strong>Purchased By:</strong> {sellModal.device?.paid_by}</div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Selling Price (₹ INR) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="Enter selling price"
-                    value={sellModal.sellingPrice}
-                    onChange={(e) => setSellModal({ ...sellModal, sellingPrice: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Customer Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Customer name"
-                      value={sellModal.customerName}
-                      onChange={(e) => setSellModal({ ...sellModal, customerName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Customer Phone</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="10-digit number"
-                      value={sellModal.customerPhone}
-                      onChange={(e) => setSellModal({ ...sellModal, customerPhone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentMethod}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentMethod: e.target.value })}
-                    >
-                      <option value="UPI">UPI</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Card">Credit/Debit Card</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Payment Type</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentType}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentType: e.target.value })}
-                    >
-                      <option value="COMPLETE">Complete Payment</option>
-                      <option value="INSTALLMENT">Installment</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" onClick={() => setSellModal({ ...sellModal, isOpen: false })} className="btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" style={{ background: '#059669' }}>
-                  Complete Sale & Record in Ledger
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

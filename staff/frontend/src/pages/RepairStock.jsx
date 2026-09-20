@@ -9,10 +9,11 @@ import {
 } from 'lucide-react';
 import { deviceService, repairService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 
 export default function RepairStock() {
   const { globalSearch } = useOutletContext() || {};
+  const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -67,8 +68,8 @@ export default function RepairStock() {
         repair_cost: actualCost
       });
       setCompleteModal({ ...completeModal, isOpen: false });
-      alert(`Repair complete! Device moved to ${destination === 'IN_HAND' ? 'In-hand Stock' : 'Rejected Stock'}.`);
-      fetchRepairStock();
+      alert(`Repair complete! Device moved to ${destination === 'IN_HAND' ? 'Old Inventory' : 'Rejected Stock'}.`);
+      navigate(destination === 'REJECTED' ? '/rejected-stocks' : '/old-inventory');
     } catch (err) {
       alert(err.message || 'Failed to complete repair');
     }
@@ -179,15 +180,7 @@ export default function RepairStock() {
       </div>
 
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#64748b' }}>
-        <span>Showing 1–10 of 38 items</span>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }}>&lt;</button>
-          <button className="btn-primary" style={{ padding: '6px 12px' }}>1</button>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }}>2</button>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }}>3</button>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }}>4</button>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }}>&gt;</button>
-        </div>
+        <span>Showing all {devices.length} repair stock items</span>
       </div>
 
       {/* Repair Completion Modal */}

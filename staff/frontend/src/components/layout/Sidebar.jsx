@@ -4,13 +4,13 @@ import {
   LayoutDashboard, 
   Layers, 
   Smartphone, 
-  Sparkles,
   Wrench, 
   Trash2, 
-  BarChart3, 
-  BookOpen,
-  Receipt,
-  TrendingUp,
+  FileText, 
+  RefreshCw,
+  Package,
+  CircleDollarSign,
+  BarChart2,
   LogOut,
   X
 } from 'lucide-react';
@@ -25,27 +25,19 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     navigate('/login');
   };
 
-  // Dynamic Navigation based on Staff vs Superadmin Role
+  // Full 10-module Navigation structure matching reference screenshots
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
-    { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
-    { label: 'Old In-hand', path: '/old-in-hand', icon: Smartphone, role: 'ALL' },
-    // New In-hand is visible to Superadmin only
-    { label: 'New In-hand', path: '/new-in-hand', icon: Sparkles, role: 'SUPERADMIN' },
-    { label: 'Repair Stock', path: '/repair-stock', icon: Wrench, role: 'ALL' },
-    { label: 'Rejected Stock', path: '/rejected-stocks', icon: Trash2, role: 'ALL' },
-    // Financial & Ledger modules for Superadmin
-    { label: 'Central Ledger', path: '/central-ledger', icon: BookOpen, role: 'SUPERADMIN' },
-    { label: 'Expenses', path: '/expenses', icon: Receipt, role: 'SUPERADMIN' },
-    { label: 'Investments & ROI', path: '/investments', icon: TrendingUp, role: 'SUPERADMIN' },
-    { label: 'Reports', path: '/reports', icon: BarChart3, role: 'ALL' },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Old Inventory', path: '/old-inventory', icon: Layers },
+    { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
+    { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
+    { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
+    { label: 'Report', path: '/reports', icon: FileText },
+    { label: 'Booked and Exchange', path: '/booked-exchange', icon: RefreshCw },
+    { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package },
+    { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },
+    { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2 },
   ];
-
-  const filteredNavItems = navItems.filter(item => {
-    if (item.role === 'ALL') return true;
-    if (item.role === 'SUPERADMIN') return isSuperAdmin;
-    return true;
-  });
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
@@ -55,9 +47,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
           <Smartphone size={28} color="#38bdf8" />
           <div>
             <div className="brand-title">MR.X.Change</div>
-            <div className="brand-sub">
-              {isSuperAdmin ? 'Superadmin Portal' : 'Staff Portal'}
-            </div>
+            <div className="brand-sub">Mobile Exchange & Inventory</div>
           </div>
         </div>
         <button 
@@ -71,7 +61,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
       </div>
 
       <ul className="nav-list">
-        {filteredNavItems.map((item, idx) => {
+        {navItems.map((item, idx) => {
           const Icon = item.icon;
           return (
             <li key={idx} className="nav-item">
@@ -89,8 +79,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
       </ul>
 
       <div className="sidebar-bottom">
-        <div style={{ padding: '4px 12px 12px 12px', fontSize: '11px', color: '#64748b' }}>
-          Logged in as: <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>{user?.auth_identifier || 'User'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', marginBottom: '8px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
+            {user?.auth_identifier ? String(user.auth_identifier).substring(0, 2).toUpperCase() : 'AS'}
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+              {user?.name || user?.auth_identifier || 'Aadarsh Sharma'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Staff</div>
+          </div>
         </div>
         <button onClick={handleLogout} className="logout-btn">
           <LogOut size={18} />

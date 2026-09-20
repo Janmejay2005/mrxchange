@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import SplashScreen from '../common/SplashScreen';
 
 export default function Shell() {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -10,10 +9,6 @@ export default function Shell() {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showSplash, setShowSplash] = useState(() => {
-    const seen = sessionStorage.getItem('mrx_splash_seen');
-    return !seen;
-  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,43 +30,35 @@ export default function Shell() {
     }
   };
 
-  const handleSplashFinish = () => {
-    sessionStorage.setItem('mrx_splash_seen', 'true');
-    setShowSplash(false);
-  };
-
   return (
-    <>
-      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
-
-      <div className="app-container">
-        {/* Mobile Drawer Backdrop */}
-        {mobileDrawerOpen && (
-          <div 
-            className="sidebar-backdrop" 
-            onClick={() => setMobileDrawerOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-        <Sidebar 
-          isOpen={mobileDrawerOpen} 
-          isCollapsed={desktopCollapsed} 
-          onClose={() => setMobileDrawerOpen(false)} 
+    <div className="app-container">
+      {/* Mobile Drawer Backdrop */}
+      {mobileDrawerOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setMobileDrawerOpen(false)}
+          aria-hidden="true"
         />
-        <div className="main-content">
-          <Topbar 
-            onToggleSidebar={handleToggleSidebar} 
-            searchQuery={globalSearch}
-            onSearch={setGlobalSearch}
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-          />
-          <main className="page-body">
-            <Outlet context={{ globalSearch, selectedDate, setSelectedDate }} />
-          </main>
-        </div>
+      )}
+      <Sidebar 
+        isOpen={mobileDrawerOpen} 
+        isCollapsed={desktopCollapsed} 
+        onClose={() => setMobileDrawerOpen(false)} 
+      />
+      <div className="main-content">
+        <Topbar 
+          onToggleSidebar={handleToggleSidebar} 
+          searchQuery={globalSearch}
+          onSearch={setGlobalSearch}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+        />
+        <main className="page-body">
+          <Outlet context={{ globalSearch, selectedDate, setSelectedDate }} />
+        </main>
       </div>
-    </>
+    </div>
   );
 }
+
 

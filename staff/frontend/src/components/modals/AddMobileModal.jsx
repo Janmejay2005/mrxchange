@@ -98,10 +98,26 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       setLoading(true);
       await deviceService.createDevice({
         ...formData,
+        purchase_amount: parseFloat(formData.purchase_amount) || 0,
         image_data: images.image1 || images.image2 || null,
         images: allImagesList
       });
       setLoading(false);
+      // Reset form
+      setFormData({
+        brand: '',
+        model: '',
+        storage: '128',
+        ram: '6',
+        colour: 'Midnight Black',
+        condition: 'Fresh',
+        purchase_amount: '',
+        paid_by: 'Rohit',
+        repair: '',
+        remarks: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setImages({ image1: null, image2: null, additional: [] });
       onSuccess && onSuccess();
       onClose();
     } catch (err) {
@@ -150,7 +166,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
           >
             {error && (
               <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#dc2626', borderRadius: '8px', fontSize: '13px', border: '1px solid #fecaca' }}>
-                {error}
+                ⚠️ {error}
               </div>
             )}
 
@@ -164,7 +180,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   placeholder="e.g. Apple, Samsung, OnePlus" 
                   value={formData.brand}
                   onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -175,7 +190,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   placeholder="e.g. iPhone 13, Galaxy S22" 
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                  required
                 />
               </div>
             </div>
@@ -224,7 +238,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   placeholder="e.g. Space Grey, Phantom Black, Sierra Blue" 
                   value={formData.colour}
                   onChange={(e) => setFormData({ ...formData, colour: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -284,7 +297,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   placeholder="e.g. 24000" 
                   value={formData.purchase_amount}
                   onChange={(e) => setFormData({ ...formData, purchase_amount: e.target.value })}
-                  required
                   min="0"
                 />
               </div>
@@ -324,7 +336,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   className="form-control" 
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
             </div>
@@ -341,7 +352,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               />
             </div>
 
-            {/* DUAL IMAGE UPLOAD SECTION: At least 2 images */}
+            {/* DUAL IMAGE UPLOAD SECTION */}
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
@@ -361,7 +372,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                 </label>
               </div>
 
-              {/* Webcam Live Capture View if Active */}
+              {/* Webcam Live Capture View */}
               {activeCameraSlot && (
                 <div style={{ textAlign: 'center', background: '#0b132b', borderRadius: '10px', padding: '12px', marginBottom: '14px' }}>
                   <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
@@ -546,7 +557,13 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary" style={{ minWidth: '160px', justifyContent: 'center' }}>
+            <button 
+              type="button"
+              onClick={handleSubmit} 
+              disabled={loading} 
+              className="btn-primary" 
+              style={{ minWidth: '160px', justifyContent: 'center' }}
+            >
               {loading ? 'Saving Device...' : 'Add Mobile Device'}
             </button>
           </div>
@@ -555,4 +572,3 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     </div>
   );
 }
-
