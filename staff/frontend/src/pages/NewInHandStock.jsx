@@ -33,9 +33,6 @@ export default function NewInHandStock() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>New In-hand Stock</span>
           </div>
-          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
-            <Plus size={16} /> Add Stock
-          </button>
         </div>
       </div>
 

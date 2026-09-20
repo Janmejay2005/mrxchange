@@ -32,7 +32,8 @@ export default function RejectedStock() {
         status: 'REJECTED',
         q: globalSearch || ''
       });
-      setDevices(res.data);
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      setDevices(dataList);
       setLoading(false);
     } catch (err) {
       console.error(err);

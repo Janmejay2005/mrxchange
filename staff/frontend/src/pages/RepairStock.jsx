@@ -34,7 +34,8 @@ export default function RepairStock() {
         status: 'IN_REPAIR',
         q: globalSearch || ''
       });
-      setDevices(res.data);
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      setDevices(dataList);
       setLoading(false);
     } catch (err) {
       console.error(err);

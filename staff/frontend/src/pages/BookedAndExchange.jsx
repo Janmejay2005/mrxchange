@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { RefreshCw, Plus, Home, Search, X } from 'lucide-react';
+import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import { useNavigate } from 'react-router-dom';
 
 export default function BookedAndExchange() {
+  const navigate = useNavigate();
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [purchasedBy, setPurchasedBy] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   // Book Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,16 +31,11 @@ export default function BookedAndExchange() {
   });
 
   const [exchanges, setExchanges] = useState([
-    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15', newStorage: 128, newRam: 6, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 65000, oldBrand: 'Samsung', oldModel: 'S22', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Rohit', oldAmount: 28000 },
-    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'S24', newStorage: 256, newRam: 12, newColor: 'Gray', newPurchasedBy: 'Neha', newAmount: 72000, oldBrand: 'OnePlus', oldModel: '9R', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 18000 },
-    { id: 3, date: '13 Sep 2026', newBrand: 'OnePlus', newModel: '11', newStorage: 256, newRam: 12, newColor: 'Green', newPurchasedBy: 'Aman', newAmount: 61000, oldBrand: 'Redmi', oldModel: 'Note 10', oldStorage: 64, oldRam: 6, oldColor: 'Gray', oldPurchasedBy: 'Aman', oldAmount: 9500 },
-    { id: 4, date: '12 Sep 2026', newBrand: 'Vivo', newModel: 'V27', newStorage: 128, newRam: 8, newColor: 'Blue', newPurchasedBy: 'Karan', newAmount: 42000, oldBrand: 'Vivo', oldModel: 'V21', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Karan', oldAmount: 14000 },
-    { id: 5, date: '11 Sep 2026', newBrand: 'Oppo', newModel: 'Find X5', newStorage: 256, newRam: 12, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 68000, oldBrand: 'iPhone', oldModel: '11', oldStorage: 64, oldRam: 4, oldColor: 'Black', oldPurchasedBy: 'Rohit', oldAmount: 21000 },
-    { id: 6, date: '10 Sep 2026', newBrand: 'Realme', newModel: '11 Pro', newStorage: 128, newRam: 8, newColor: 'Yellow', newPurchasedBy: 'Neha', newAmount: 29000, oldBrand: 'Realme', oldModel: '8', oldStorage: 128, oldRam: 6, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 10500 },
-    { id: 7, date: '09 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 14', newStorage: 128, newRam: 6, newColor: 'Purple', newPurchasedBy: 'Aman', newAmount: 58000, oldBrand: 'Samsung', oldModel: 'A52', oldStorage: 128, oldRam: 8, oldColor: 'Black', oldPurchasedBy: 'Aman', oldAmount: 16000 },
-    { id: 8, date: '08 Sep 2026', newBrand: 'Samsung', newModel: 'S23', newStorage: 256, newRam: 12, newColor: 'White', newPurchasedBy: 'Karan', newAmount: 70000, oldBrand: 'Nothing', oldModel: 'Phone (1)', oldStorage: 128, oldRam: 8, oldColor: 'Black', oldPurchasedBy: 'Karan', oldAmount: 13000 },
-    { id: 9, date: '07 Sep 2026', newBrand: 'OnePlus', newModel: 'Nord 3', newStorage: 128, newRam: 8, newColor: 'Green', newPurchasedBy: 'Rohit', newAmount: 33000, oldBrand: 'OnePlus', oldModel: '9R', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Rohit', oldAmount: 15000 },
-    { id: 10, date: '06 Sep 2026', newBrand: 'Vivo', newModel: 'T2 Pro', newStorage: 128, newRam: 8, newColor: 'Silver', newPurchasedBy: 'Neha', newAmount: 27000, oldBrand: 'Redmi', oldModel: 'Note 10', oldStorage: 64, oldRam: 6, oldColor: 'Gray', oldPurchasedBy: 'Neha', oldAmount: 8500 }
+    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15', newStorage: 128, newRam: 6, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 65000, oldBrand: 'Samsung', oldModel: 'S22', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Rohit', oldAmount: 28000, status: 'Booked' },
+    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'S24', newStorage: 256, newRam: 12, newColor: 'Gray', newPurchasedBy: 'Neha', newAmount: 72000, oldBrand: 'OnePlus', oldModel: '9R', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 18000, status: 'Booked' },
+    { id: 3, date: '13 Sep 2026', newBrand: 'OnePlus', newModel: '11', newStorage: 256, newRam: 12, newColor: 'Green', newPurchasedBy: 'Aman', newAmount: 61000, oldBrand: 'Redmi', oldModel: 'Note 10', oldStorage: 64, oldRam: 6, oldColor: 'Gray', oldPurchasedBy: 'Aman', oldAmount: 9500, status: 'Booked' },
+    { id: 4, date: '12 Sep 2026', newBrand: 'Vivo', newModel: 'V27', newStorage: 128, newRam: 8, newColor: 'Blue', newPurchasedBy: 'Karan', newAmount: 42000, oldBrand: 'Vivo', oldModel: 'V21', oldStorage: 128, oldRam: 8, oldColor: 'Blue', oldPurchasedBy: 'Karan', oldAmount: 14000, status: 'Booked' },
+    { id: 5, date: '11 Sep 2026', newBrand: 'Oppo', newModel: 'Find X5', newStorage: 256, newRam: 12, newColor: 'Black', newPurchasedBy: 'Rohit', newAmount: 68000, oldBrand: 'iPhone', oldModel: '11', oldStorage: 64, oldRam: 4, oldColor: 'Black', oldPurchasedBy: 'Rohit', oldAmount: 21000, status: 'Booked' }
   ]);
 
   const handleBookSubmit = (e) => {
@@ -58,10 +56,25 @@ export default function BookedAndExchange() {
       oldRam: 8,
       oldColor: 'Black',
       oldPurchasedBy: 'Staff',
-      oldAmount: 18000
+      oldAmount: 18000,
+      status: 'Booked'
     };
     setExchanges([newEntry, ...exchanges]);
     setIsModalOpen(false);
+  };
+
+  const handleDeliverAction = (id) => {
+    setExchanges(prev => prev.filter(item => item.id !== id));
+    setActiveMenuId(null);
+    alert('Device marked as Delivered! Moving to New In-hand Stock...');
+    navigate('/new-in-hand');
+  };
+
+  const handleCancelAction = (id) => {
+    setExchanges(prev => prev.filter(item => item.id !== id));
+    setActiveMenuId(null);
+    alert('Booking Cancelled! Moving device back to Old In-hand Inventory...');
+    navigate('/old-in-hand');
   };
 
   return (
@@ -137,7 +150,7 @@ export default function BookedAndExchange() {
               <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
               <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
               <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount</th>
+              <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount 🔄 Exchange</th>
 
               {/* Old Mobile Subheaders */}
               <th style={{ backgroundColor: '#f1f5f9' }}>Brand Name</th>
@@ -146,7 +159,7 @@ export default function BookedAndExchange() {
               <th style={{ backgroundColor: '#f1f5f9' }}>RAM (GB)</th>
               <th style={{ backgroundColor: '#f1f5f9' }}>Color</th>
               <th style={{ backgroundColor: '#f1f5f9' }}>Purchased By</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount</th>
+              <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount 🔄 Exchange</th>
             </tr>
           </thead>
           <tbody>
@@ -164,6 +177,7 @@ export default function BookedAndExchange() {
                 <td>{row.newPurchasedBy}</td>
                 <td style={{ fontWeight: 700 }}>
                   <CurrencyAmount amount={row.newAmount} />
+                  <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                 </td>
 
                 {/* Old Mobile Cells */}
@@ -175,10 +189,46 @@ export default function BookedAndExchange() {
                 <td>{row.oldPurchasedBy}</td>
                 <td style={{ fontWeight: 700 }}>
                   <CurrencyAmount amount={row.oldAmount} />
+                  <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                 </td>
 
-                <td>
-                  <button className="btn-secondary" style={{ padding: '4px 8px' }}>...</button>
+                <td style={{ position: 'relative' }}>
+                  <button 
+                    onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                    className="btn-secondary" 
+                    style={{ padding: '6px' }}
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+
+                  {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
+                  {activeMenuId === row.id && (
+                    <div style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '100%',
+                      zIndex: 50,
+                      background: '#ffffff',
+                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                      borderRadius: '8px',
+                      padding: '6px',
+                      minWidth: '180px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <button 
+                        onClick={() => handleDeliverAction(row.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                      >
+                        <CheckCircle size={14} /> Delivered (New In-hand)
+                      </button>
+                      <button 
+                        onClick={() => handleCancelAction(row.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                      >
+                        <XCircle size={14} /> Cancel (Old In-hand)
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
@@ -186,11 +236,11 @@ export default function BookedAndExchange() {
         </table>
       </div>
 
-      {/* Book a Mobile Modal */}
+      {/* Book a Mobile Modal with Scroll feature and Exchange Icon */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '580px', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div className="modal-card" style={{ maxWidth: '580px', maxHeight: '85vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7' }}>Book a Mobile</h2>
                 <p style={{ fontSize: '13px', color: '#64748b' }}>Enter the details to book a mobile for exchange.</p>
@@ -205,7 +255,7 @@ export default function BookedAndExchange() {
                   <input type="text" className="form-control" placeholder="Enter customer name" value={bookForm.customerName} onChange={(e) => setBookForm({ ...bookForm, customerName: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="form-label">Purchased Amount (New Phone) *</label>
+                  <label className="form-label">Purchased Amount (New Phone) 🔄 Exchange *</label>
                   <input type="number" className="form-control" placeholder="₹ Enter amount" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />
                 </div>
 
@@ -259,7 +309,7 @@ export default function BookedAndExchange() {
               </div>
 
               <div style={{ marginTop: '16px' }}>
-                <label className="form-label">Exchange By (Old Phone) *</label>
+                <label className="form-label">Exchange By (Old Phone) 🔄 *</label>
                 <div style={{ padding: '12px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd', fontSize: '13px', color: '#0369a1' }}>
                   <Search size={15} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
                   Select a mobile from in-hand inventory to auto-fill details (brand, model, storage, color, etc.)

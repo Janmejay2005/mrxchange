@@ -190,6 +190,8 @@ input, select, textarea {
   border-right: 1px solid #1e293b;
   transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
   z-index: 30;
+  overflow-y: auto;
+  max-height: 100vh;
 }
 
 .sidebar.collapsed {
@@ -223,6 +225,7 @@ input, select, textarea {
   gap: 6px;
   list-style: none;
   flex: 1;
+  overflow-y: auto;
 }
 
 .nav-item a {
@@ -502,7 +505,7 @@ input, select, textarea {
   display: flex;
   flex-direction: column;
   max-height: 90vh;
-  overflow: hidden;
+  overflow-y: auto;
   animation: modalPop 0.2s ease-out;
 }
 
@@ -541,7 +544,7 @@ input, select, textarea {
   background: #f8fafc;
 }
 
-/* Input Fields with clear borders as per PRD */
+/* Input Fields with clear borders */
 .form-group {
   margin-bottom: 16px;
 }
@@ -557,7 +560,7 @@ input, select, textarea {
 .form-control {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid #0f172a; /* Clearly visible black input boxes as per PRD */
+  border: 1.5px solid #0f172a;
   border-radius: 8px;
   font-size: 14px;
   color: #0f172a;
@@ -779,5 +782,43 @@ input, select, textarea {
   }
   .topbar-actions {
     gap: 10px;
+  }
+}
+
+/* Print Media Styles */
+@media print {
+  .sidebar,
+  .topbar,
+  .btn-primary,
+  .btn-secondary,
+  .modal-overlay,
+  .sidebar-backdrop,
+  .action-menu,
+  .sidebar-close-btn,
+  .mobile-menu-btn,
+  .menu-toggle-btn {
+    display: none !important;
+  }
+  .app-container {
+    display: block !important;
+  }
+  .main-content {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+  .page-body {
+    padding: 0 !important;
+  }
+  .table-responsive {
+    overflow: visible !important;
+    border: none !important;
+  }
+  .custom-table {
+    width: 100% !important;
+  }
+  .custom-table th, .custom-table td {
+    padding: 8px !important;
+    border: 1px solid #cbd5e1 !important;
   }
 }

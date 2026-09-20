@@ -11,9 +11,6 @@ import {
   Package,
   CircleDollarSign,
   BarChart2,
-  BookOpen,
-  Receipt,
-  TrendingUp,
   LogOut,
   X
 } from 'lucide-react';
@@ -28,7 +25,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     navigate('/login');
   };
 
-  // Nav items with strict Role separation (Staff vs Superadmin)
+  // Nav items with strict Role separation - Removed Central Ledger, Expenses, and Investments per request
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
     { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
@@ -42,9 +39,6 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'New In-hand Stock', path: '/new-in-hand', icon: Package, role: 'SUPERADMIN' },
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'SUPERADMIN' },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'SUPERADMIN' },
-    { label: 'Central Ledger', path: '/central-ledger', icon: BookOpen, role: 'SUPERADMIN' },
-    { label: 'Expenses', path: '/expenses', icon: Receipt, role: 'SUPERADMIN' },
-    { label: 'Investments', path: '/investments', icon: TrendingUp, role: 'SUPERADMIN' },
   ];
 
   // Filter items based on logged-in user role
@@ -55,7 +49,10 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
   });
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside 
+      className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+      style={{ overflowY: 'auto', maxHeight: '100vh', scrollbarWidth: 'thin' }}
+    >
 
       <div className="brand-logo-container">
         <div className="brand-logo">
@@ -77,7 +74,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
         </button>
       </div>
 
-      <ul className="nav-list">
+      <ul className="nav-list" style={{ overflowY: 'auto', flex: 1 }}>
         {filteredNavItems.map((item, idx) => {
           const Icon = item.icon;
           return (
