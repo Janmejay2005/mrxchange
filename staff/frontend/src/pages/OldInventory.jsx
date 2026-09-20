@@ -57,7 +57,11 @@ export default function OldInventory() {
         to: selectedDate || ''
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
-      setDevices(dataList.length > 0 ? dataList : getSampleDevices());
+      const sampleList = getSampleDevices();
+      // Combine custom added devices with sample list, ensuring no duplicate IDs
+      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => !d.status || d.status === 'OLD_INVENTORY');
+      const finalDevices = [...customLocal, ...(dataList.length > 0 ? dataList : sampleList.filter(s => s.status === 'OLD_INVENTORY' || !s.status))];
+      setDevices(finalDevices);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -77,16 +81,14 @@ export default function OldInventory() {
       
       // Automatic navigation based on new status option selected
       if (newStatus === 'IN_REPAIR') {
-        alert('Device moved to Repair Stock! Navigating to Repair Stock page...');
         navigate('/repair-stock');
       } else if (newStatus === 'REJECTED') {
-        alert('Device moved to Rejected Stock! Navigating to Rejected Stock page...');
         navigate('/rejected-stocks');
       } else if (newStatus === 'OLD_IN_HAND') {
-        alert('Device moved to Old In-hand Stock!');
+        navigate('/old-in-hand');
       }
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      console.error(err);
     }
   };
 

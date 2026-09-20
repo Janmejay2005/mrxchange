@@ -139,7 +139,6 @@ export default function PendingAndReceivingPayments() {
               <th>Customer Name</th>
               <th>Brand</th>
               <th>Model</th>
-              <th>IMEI / Device ID</th>
               <th>Total Amount (₹)</th>
               <th>Paid Amount (₹)</th>
               <th>Pending Amount (₹)</th>
@@ -152,7 +151,7 @@ export default function PendingAndReceivingPayments() {
           <tbody>
             {filteredPayments.length === 0 ? (
               <tr>
-                <td colSpan="13" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                <td colSpan="12" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   No payment records match the specified filter criteria.
                 </td>
               </tr>
@@ -164,7 +163,6 @@ export default function PendingAndReceivingPayments() {
                 <td style={{ fontWeight: 600 }}>{row.customerName}</td>
                 <td style={{ fontWeight: 600 }}>{row.brand}</td>
                 <td style={{ fontWeight: 700 }}>{row.model}</td>
-                <td style={{ color: '#0284c7', fontSize: '12px' }}>{row.imei}</td>
                 <td style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
                 <td style={{ fontWeight: 700 }}><CurrencyAmount amount={row.paidAmount} /></td>
                 <td style={{ fontWeight: 700, color: row.pendingAmount > 0 ? '#ea580c' : '#059669' }}>

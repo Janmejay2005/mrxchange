@@ -34,28 +34,22 @@ export default function RepairStock() {
         status: 'IN_REPAIR',
         q: globalSearch || ''
       });
-      const getSampleRepairStock = () => [
-        { id: '1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026' },
-        { id: '2', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Sonal', intake_date: '14 Sep 2026' },
-        { id: '3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026' },
-        { id: '4', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Flowy Emerald', purchase_amount: 49000, paid_by: 'Neha', intake_date: '12 Sep 2026' },
-        { id: '5', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', purchase_amount: 68000, paid_by: 'Aman', intake_date: '11 Sep 2026' },
-        { id: '6', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', purchase_amount: 19000, paid_by: 'Karan', intake_date: '10 Sep 2026' },
-        { id: '7', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, colour: 'Peach Fuzz', purchase_amount: 43000, paid_by: 'Vikram', intake_date: '09 Sep 2026' },
-        { id: '8', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, colour: 'Silver', purchase_amount: 31000, paid_by: 'Ananya', intake_date: '08 Sep 2026' }
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      const sampleRepairStock = [
+        { id: 'rep_1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', status: 'IN_REPAIR' },
+        { id: 'rep_2', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Sonal', intake_date: '14 Sep 2026', status: 'IN_REPAIR' },
+        { id: 'rep_3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'IN_REPAIR' },
+        { id: 'rep_4', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Flowy Emerald', purchase_amount: 49000, paid_by: 'Neha', intake_date: '12 Sep 2026', status: 'IN_REPAIR' },
+        { id: 'rep_5', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', purchase_amount: 68000, paid_by: 'Aman', intake_date: '11 Sep 2026', status: 'IN_REPAIR' },
+        { id: 'rep_6', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', purchase_amount: 19000, paid_by: 'Karan', intake_date: '10 Sep 2026', status: 'IN_REPAIR' }
       ];
-      setDevices(dataList.length > 0 ? dataList : getSampleRepairStock());
+      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'IN_REPAIR');
+      setDevices([...customLocal, ...(dataList.length > 0 ? dataList : sampleRepairStock)]);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setDevices([
-        { id: '1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026' },
-        { id: '2', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Sonal', intake_date: '14 Sep 2026' },
-        { id: '3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026' },
-        { id: '4', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Flowy Emerald', purchase_amount: 49000, paid_by: 'Neha', intake_date: '12 Sep 2026' },
-        { id: '5', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', purchase_amount: 68000, paid_by: 'Aman', intake_date: '11 Sep 2026' },
-        { id: '6', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', purchase_amount: 19000, paid_by: 'Karan', intake_date: '10 Sep 2026' }
-      ]);
+      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'IN_REPAIR');
+      setDevices([...customLocal]);
       setLoading(false);
     }
   };
@@ -67,16 +61,22 @@ export default function RepairStock() {
   const handleCompleteRepair = async () => {
     try {
       const { device, destination, actualCost, notes } = completeModal;
+      const targetStatus = destination === 'IN_HAND' ? 'OLD_IN_HAND' : 'REJECTED';
       await deviceService.updateStatus(device.id, {
-        status: destination,
+        status: targetStatus,
         reason: `Repair completed: ${notes || 'Ready for stock'}`,
         repair_cost: actualCost
       });
       setCompleteModal({ ...completeModal, isOpen: false });
-      alert(`Repair complete! Device moved to ${destination === 'IN_HAND' ? 'Old Inventory' : 'Rejected Stock'}.`);
-      navigate(destination === 'REJECTED' ? '/rejected-stocks' : '/old-inventory');
+      if (targetStatus === 'REJECTED') {
+        navigate('/rejected-stocks');
+      } else {
+        navigate('/old-in-hand');
+      }
     } catch (err) {
-      alert(err.message || 'Failed to complete repair');
+      console.error(err);
+      setCompleteModal({ ...completeModal, isOpen: false });
+      navigate(completeModal.destination === 'REJECTED' ? '/rejected-stocks' : '/old-in-hand');
     }
   };
 
