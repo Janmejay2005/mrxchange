@@ -62,21 +62,20 @@ export default function App() {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               
-              {/* Staff & Operational Accessible Pages */}
+              {/* Operational & Navigable Application Pages */}
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="old-inventory" element={<OldInventory />} />
               <Route path="old-in-hand" element={<OldInHandStock />} />
-              <Route path="new-in-hand" element={<NewInHandStock />} />
-              <Route path="booked-exchange" element={<BookedAndExchange />} />
-              <Route path="in-hand-stock" element={<Navigate to="/old-in-hand" replace />} />
-              <Route path="resell-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="repair-stock" element={<RepairStock />} />
               <Route path="rejected-stocks" element={<RejectedStock />} />
+              <Route path="booked-exchange" element={<BookedAndExchange />} />
+              <Route path="new-in-hand" element={<NewInHandStock />} />
+              <Route path="pending-payments" element={<PendingAndReceivingPayments />} />
+              <Route path="profit-expense-statistic" element={<ProfitExpenseAndStatistic />} />
               <Route path="reports" element={<Reports />} />
-              
-              {/* Superadmin Restricted Features */}
-              <Route path="pending-payments" element={<SuperAdminRoute><PendingAndReceivingPayments /></SuperAdminRoute>} />
-              <Route path="profit-expense-statistic" element={<SuperAdminRoute><ProfitExpenseAndStatistic /></SuperAdminRoute>} />
+
+              <Route path="in-hand-stock" element={<Navigate to="/old-in-hand" replace />} />
+              <Route path="resell-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="central-ledger" element={<SuperAdminRoute><CentralLedger /></SuperAdminRoute>} />
               <Route path="expenses" element={<SuperAdminRoute><Expenses /></SuperAdminRoute>} />
               <Route path="investments" element={<SuperAdminRoute><Investments /></SuperAdminRoute>} />
