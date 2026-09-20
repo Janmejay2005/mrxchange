@@ -192,11 +192,11 @@ export default function RepairStock() {
       {/* Repair Completion Modal */}
       {completeModal.isOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '440px' }}>
+          <div className="modal-card" style={{ maxWidth: '440px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Complete Repair Action</h3>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 120px)', padding: '20px' }}>
               <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
                 Device: <strong>{completeModal.device?.brand} {completeModal.device?.model}</strong>
               </p>
