@@ -101,6 +101,13 @@ export default function OldInventory() {
 
       await deviceService.updateStatus(deviceId, updatedDevice, updatedDevice);
       
+      if (newStatus === 'OLD_IN_HAND') {
+        const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+        const filtered = oldInHandStock.filter(d => String(d.id) !== String(deviceId));
+        filtered.unshift(updatedDevice);
+        localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
+      }
+      
       // Immediately remove device from Old Inventory view
       setDevices(prev => prev.filter(d => String(d.id) !== String(deviceId)));
       

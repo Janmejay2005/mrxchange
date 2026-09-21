@@ -64,7 +64,17 @@ export default function OldInHandStock() {
         { id: 'old_hand_4', device_code: 'MRX-00104', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' }
       ];
 
-      const combinedData = [...cancelledItems, ...dataList];
+      const rawCombined = [...cancelledItems, ...dataList];
+      const seenKeys = new Set();
+      const combinedData = [];
+      for (const item of rawCombined) {
+        const key = String(item.id || item.device_code);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          combinedData.push(item);
+        }
+      }
+
       const dataIds = new Set(combinedData.map(d => String(d.id)));
       const dataCodes = new Set(combinedData.map(d => d.device_code).filter(Boolean));
 
