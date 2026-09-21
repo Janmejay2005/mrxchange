@@ -47,6 +47,80 @@ export default function NewInHandStock() {
     image_url: ''
   });
 
+  const [stock, setStock] = useState(() => {
+    const initial = [
+      { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
+      { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
+      { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
+      { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
+      { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
+      { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
+      { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
+      { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
+      { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
+      { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
+    ];
+    try {
+      const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      return [...deliveredItems, ...initial];
+    } catch (e) {
+      return initial;
+    }
+  });
+
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const filteredStock = stock.filter((item) => {
+    if (brand !== 'All' && item.brand !== brand) return false;
+    if (selectedDate) {
+      const itemYMD = toYMD(item.date);
+      const selYMD = toYMD(selectedDate);
+      if (itemYMD && selYMD && itemYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const itemYMD = toYMD(item.date);
+      const fYMD = toYMD(fromDate);
+      if (itemYMD && fYMD && itemYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const itemYMD = toYMD(item.date);
+      const tYMD = toYMD(toDate);
+      if (itemYMD && tYMD && itemYMD > tYMD) return false;
+    }
+    const q = (searchQuery || globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchModel = item.model.toLowerCase().includes(q);
+      const matchBrand = item.brand.toLowerCase().includes(q);
+      const matchPerson = (item.purchasedBy || '').toLowerCase().includes(q);
+      const matchColor = (item.color || '').toLowerCase().includes(q);
+      if (!matchModel && !matchBrand && !matchPerson && !matchColor) return false;
+    }
+    return true;
+  });
+
+  const openSellModal = (item = null) => {
+    setSelectedStockItem(item);
+    setSellForm({
+      quantity: 1,
+      soldBy: 'Staff',
+      soldTo: item ? item.purchasedBy || '' : '',
+      paymentType: 'installment',
+      actualAmount: item ? item.amount || '' : '',
+      paidAmount: item ? item.amount || '' : '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setIsSellModalOpen(true);
+  };
+
   const openEditModal = (item) => {
     setEditForm({
       sno: item.sno,
