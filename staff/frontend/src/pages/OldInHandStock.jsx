@@ -7,10 +7,11 @@ import {
   Cpu, 
   Download,
   FileText,
-  ShoppingCart,
-  Tag
+  Edit,
+  Trash2,
+  X
 } from 'lucide-react';
-import { deviceService, statsService, saleService } from '../services/api';
+import { deviceService, statsService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
@@ -32,16 +33,17 @@ export default function OldInHandStock() {
     summaryInfo: []
   });
 
-  // Sell Modal State
-  const [sellModal, setSellModal] = useState({
+  // Edit Modal State
+  const [editModal, setEditModal] = useState({
     isOpen: false,
     device: null,
-    sellingPrice: '',
-    customerName: '',
-    customerPhone: '',
-    paymentMethod: 'UPI',
-    paymentType: 'COMPLETE',
-    soldBy: 'Rohit'
+    brand: '',
+    model: '',
+    storage: '',
+    ram: '',
+    colour: '',
+    purchase_amount: '',
+    paid_by: ''
   });
 
   const fetchOldInHandStock = async () => {
@@ -121,23 +123,67 @@ export default function OldInHandStock() {
     return true;
   });
 
-  const handleSellSubmit = async (e) => {
+  const handleEditClick = (d) => {
+    setEditModal({
+      isOpen: true,
+      device: d,
+      brand: d.brand || '',
+      model: d.model || '',
+      storage: String(d.storage || ''),
+      ram: String(d.ram || ''),
+      colour: d.colour || '',
+      purchase_amount: String(d.purchase_amount || ''),
+      paid_by: d.paid_by || ''
+    });
+  };
+
+  const handleEditSave = (e) => {
     e.preventDefault();
-    try {
-      await saleService.createSale({
-        device_id: sellModal.device.id,
-        selling_price: parseFloat(sellModal.sellingPrice),
-        customer_name: sellModal.customerName,
-        customer_phone: sellModal.customerPhone,
-        payment_method: sellModal.paymentMethod,
-        payment_type: sellModal.paymentType,
-        sold_by: sellModal.soldBy
-      });
-      alert('Sale transaction recorded successfully!');
-      setSellModal({ ...sellModal, isOpen: false });
-      fetchOldInHandStock();
-    } catch (err) {
-      alert(err.message || 'Failed to record sale');
+    const updated = devices.map(d => {
+      if (d.id === editModal.device.id) {
+        return {
+          ...d,
+          brand: editModal.brand,
+          model: editModal.model,
+          storage: Number(editModal.storage) || d.storage,
+          ram: Number(editModal.ram) || d.ram,
+          colour: editModal.colour,
+          purchase_amount: Number(editModal.purchase_amount) || d.purchase_amount,
+          paid_by: editModal.paid_by
+        };
+      }
+      return d;
+    });
+    setDevices(updated);
+
+    const localItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+    const updatedLocal = localItems.map(item => {
+      if (item.id === editModal.device.id) {
+        return {
+          ...item,
+          brand: editModal.brand,
+          model: editModal.model,
+          storage: Number(editModal.storage) || item.storage,
+          ram: Number(editModal.ram) || item.ram,
+          colour: editModal.colour,
+          purchase_amount: Number(editModal.purchase_amount) || item.purchase_amount,
+          paid_by: editModal.paid_by
+        };
+      }
+      return item;
+    });
+    localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedLocal));
+
+    setEditModal({ ...editModal, isOpen: false });
+    alert('Device details updated successfully!');
+  };
+
+  const handleDeleteClick = (deviceId) => {
+    if (window.confirm('Are you sure you want to delete this old in-hand device?')) {
+      setDevices(prev => prev.filter(d => d.id !== deviceId));
+      const localItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const updatedLocal = localItems.filter(item => item.id !== deviceId);
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedLocal));
     }
   };
 
@@ -249,8 +295,7 @@ export default function OldInHandStock() {
         </select>
       </div>
 
-      {/* Table: Brand, Model, Storage, RAM, Color Name, Paid Amount, Purchased By, Date Added, Action (Sell) */}
-      {/* IMEI is omitted per PRD */}
+      {/* Table: Brand, Model, Storage, RAM, Color Name, Paid Amount, Purchased By, Date Added, Action (Edit / Delete) */}
       <div className="table-responsive">
         <table className="custom-table">
           <thead>
@@ -317,23 +362,26 @@ export default function OldInHandStock() {
                   <td><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
                   <td>{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSellModal({
-                        isOpen: true,
-                        device: d,
-                        sellingPrice: '',
-                        customerName: '',
-                        customerPhone: '',
-                        paymentMethod: 'UPI',
-                        paymentType: 'COMPLETE',
-                        soldBy: 'Rohit'
-                      })}
-                      className="btn-primary"
-                      style={{ padding: '6px 14px', fontSize: '12px', background: '#059669' }}
-                    >
-                      <ShoppingCart size={13} /> Sell
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(d)}
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px', color: '#0284c7', borderColor: '#bae6fd' }}
+                        title="Edit Device"
+                      >
+                        <Edit size={13} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(d.id)}
+                        className="btn-danger"
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        title="Delete Device"
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -342,94 +390,105 @@ export default function OldInHandStock() {
         </table>
       </div>
 
-      {/* Sell Modal */}
-      {sellModal.isOpen && (
+      {/* Edit Modal */}
+      {editModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3 style={{ fontSize: '18px', fontWeight: 800 }}>
-                Sell {sellModal.device?.brand} {sellModal.device?.model}
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+                Edit Device: {editModal.device?.brand} {editModal.device?.model}
               </h3>
-              <button onClick={() => setSellModal({ ...sellModal, isOpen: false })}>
+              <button onClick={() => setEditModal({ ...editModal, isOpen: false })}>
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSellSubmit}>
+            <form onSubmit={handleEditSave}>
               <div className="modal-body">
-                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
-                  <div><strong>Purchase Price:</strong> ₹{parseFloat(sellModal.device?.purchase_amount || 0).toLocaleString('en-IN')}</div>
-                  <div><strong>Purchased By:</strong> {sellModal.device?.paid_by}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Brand *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editModal.brand}
+                      onChange={(e) => setEditModal({ ...editModal, brand: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Model *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editModal.model}
+                      onChange={(e) => setEditModal({ ...editModal, model: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Storage (GB) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editModal.storage}
+                      onChange={(e) => setEditModal({ ...editModal, storage: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">RAM (GB) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editModal.ram}
+                      onChange={(e) => setEditModal({ ...editModal, ram: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Color Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editModal.colour}
+                      onChange={(e) => setEditModal({ ...editModal, colour: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Purchased By</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editModal.paid_by}
+                      onChange={(e) => setEditModal({ ...editModal, paid_by: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Selling Price (₹ INR) *</label>
+                  <label className="form-label">Purchase Price (₹ INR) *</label>
                   <input
                     type="number"
                     className="form-control"
-                    placeholder="Enter selling price"
-                    value={sellModal.sellingPrice}
-                    onChange={(e) => setSellModal({ ...sellModal, sellingPrice: e.target.value })}
+                    value={editModal.purchase_amount}
+                    onChange={(e) => setEditModal({ ...editModal, purchase_amount: e.target.value })}
                     required
                   />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Customer Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Customer name"
-                      value={sellModal.customerName}
-                      onChange={(e) => setSellModal({ ...sellModal, customerName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Customer Phone</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="10-digit number"
-                      value={sellModal.customerPhone}
-                      onChange={(e) => setSellModal({ ...sellModal, customerPhone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentMethod}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentMethod: e.target.value })}
-                    >
-                      <option value="UPI">UPI</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Card">Credit/Debit Card</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Payment Type</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentType}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentType: e.target.value })}
-                    >
-                      <option value="COMPLETE">Complete Payment</option>
-                      <option value="INSTALLMENT">Installment</option>
-                    </select>
-                  </div>
                 </div>
               </div>
 
               <div className="modal-footer">
-                <button type="button" onClick={() => setSellModal({ ...sellModal, isOpen: false })} className="btn-secondary">
+                <button type="button" onClick={() => setEditModal({ ...editModal, isOpen: false })} className="btn-secondary">
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" style={{ background: '#059669' }}>
-                  Complete Sale & Record in Ledger
+                <button type="submit" className="btn-primary" style={{ background: '#0284c7' }}>
+                  Save Changes
                 </button>
               </div>
             </form>

@@ -106,6 +106,22 @@ export default function BookedAndExchange() {
   const totalExchangeValue = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
   const netPayableBalance = totalBookingValue - totalExchangeValue;
 
+  const getOldInHandDevices = () => {
+    const sampleStock = [
+      { id: 'old_hand_1', device_code: 'MRX-00101', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit' },
+      { id: 'old_hand_2', device_code: 'MRX-00102', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh' },
+      { id: 'old_hand_3', device_code: 'MRX-00103', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha' },
+      { id: 'old_hand_4', device_code: 'MRX-00104', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit' }
+    ];
+    const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+    const storedIds = new Set(stored.map(s => String(s.id)));
+    const combined = [...stored];
+    sampleStock.forEach(s => {
+      if (!storedIds.has(String(s.id))) combined.push(s);
+    });
+    return combined;
+  };
+
   const handleBookSubmit = (e) => {
     e.preventDefault();
     const oldAmt = Number(bookForm.oldAmount) || 0;

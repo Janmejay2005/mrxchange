@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Plus, Home, Search, FileText } from 'lucide-react';
+import { Package, Plus, Home, Search, FileText, X } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
@@ -18,6 +18,19 @@ export default function NewInHandStock() {
     rows: [],
     filename: '',
     summaryInfo: []
+  });
+
+  // Book / Sell Modal State
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [sellForm, setSellForm] = useState({
+    quantity: 1,
+    soldBy: 'Staff',
+    soldTo: '',
+    paymentType: 'installment', // 'installment' | 'complete'
+    actualAmount: '',
+    paidAmount: '',
+    date: new Date().toISOString().split('T')[0]
   });
 
   const [stock, setStock] = useState(() => {
@@ -80,8 +93,28 @@ export default function NewInHandStock() {
     return true;
   });
 
+  const openSellModal = (item = null) => {
+    setSelectedStockItem(item);
+    setSellForm({
+      quantity: 1,
+      soldBy: 'Staff',
+      soldTo: item ? item.purchasedBy || '' : '',
+      paymentType: 'installment',
+      actualAmount: item ? item.amount || '' : '',
+      paidAmount: item ? item.amount || '' : '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setIsSellModalOpen(true);
+  };
+
+  const handleSellSubmit = (e) => {
+    e.preventDefault();
+    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold / booked successfully! Recorded for ${sellForm.soldTo}.`);
+    setIsSellModalOpen(false);
+  };
+
   const handleExportPdf = () => {
-    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchased By', 'Amount (Rs)', 'Status'];
+    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchased By', 'Amount (Rs)', 'Further Procedure'];
     const rows = filteredStock.map((item, idx) => [
       idx + 1,
       item.date,
@@ -92,7 +125,7 @@ export default function NewInHandStock() {
       item.color || '-',
       item.purchasedBy || '-',
       `Rs. ${item.amount.toLocaleString()}`,
-      item.procedure || 'Sell'
+      'Book / Sell'
     ]);
     const totalVal = filteredStock.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     setExportModalConfig({
@@ -119,8 +152,11 @@ export default function NewInHandStock() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>New In-hand Stock</span>
           </div>
-          <button onClick={handleExportPdf} className="btn-primary">
+          <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
+          </button>
+          <button onClick={() => openSellModal(null)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
+            <Plus size={16} /> Book / Sell Device
           </button>
         </div>
       </div>
@@ -187,13 +223,12 @@ export default function NewInHandStock() {
               <th>Purchased By</th>
               <th>Purchased Amount (₹)</th>
               <th>Further Procedure</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   No devices match the specified filter criteria.
                 </td>
               </tr>
@@ -212,19 +247,10 @@ export default function NewInHandStock() {
                     <CurrencyAmount amount={item.amount} />
                   </td>
                   <td>
-                    <span style={{ 
-                      fontWeight: 600, 
-                      color: item.procedure === 'Sell' ? '#0284c7' : item.procedure === 'Hold' ? '#d97706' : '#64748b' 
-                    }}>
-                      {item.procedure}
-                    </span>
-                  </td>
-                  <td>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <button className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                        Sell
+                      <button onClick={() => openSellModal(item)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                        Book / Sell
                       </button>
-                      <button className="btn-secondary" style={{ padding: '4px 8px', borderRadius: '6px' }}>...</button>
                     </div>
                   </td>
                 </tr>
@@ -233,6 +259,161 @@ export default function NewInHandStock() {
           </tbody>
         </table>
       </div>
+
+      {/* Book / Sell Device Modal matching user diagram */}
+      {isSellModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Book / Sell Device</h2>
+                {selectedStockItem && (
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                    {selectedStockItem.brand} {selectedStockItem.model} ({selectedStockItem.storage}GB / {selectedStockItem.ram}GB)
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleSellSubmit}>
+              {/* -> Quantity */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Quantity</label>
+                <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setSellForm(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))} 
+                    style={{ padding: '8px 16px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 800, fontSize: '16px', color: '#334155' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ width: '44px', textAlign: 'center', fontWeight: 800, fontSize: '15px', color: '#0f172a' }}>
+                    {sellForm.quantity}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={() => setSellForm(prev => ({ ...prev, quantity: prev.quantity + 1 }))} 
+                    style={{ padding: '8px 16px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 800, fontSize: '16px', color: '#334155' }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* -> Sold by */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label">Sold by *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="Enter salesperson / staff name" 
+                  value={sellForm.soldBy} 
+                  onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              {/* -> Sold to (Party name) */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label">Sold to (Party name) *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="Enter customer / party name" 
+                  value={sellForm.soldTo} 
+                  onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              {/* -> Installment or complete */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label">Installment or complete *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '4px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSellForm({ ...sellForm, paymentType: 'installment' })}
+                    style={{
+                      padding: '9px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      background: sellForm.paymentType === 'installment' ? '#0284c7' : 'transparent',
+                      color: sellForm.paymentType === 'installment' ? '#ffffff' : '#64748b',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Installment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSellForm({ ...sellForm, paymentType: 'complete' })}
+                    style={{
+                      padding: '9px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      background: sellForm.paymentType === 'complete' ? '#059669' : 'transparent',
+                      color: sellForm.paymentType === 'complete' ? '#ffffff' : '#64748b',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Complete
+                  </button>
+                </div>
+              </div>
+
+              {/* -> Actual amount */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label">Actual amount (₹) *</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="₹ Total sale price" 
+                  value={sellForm.actualAmount} 
+                  onChange={(e) => setSellForm({ ...sellForm, actualAmount: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              {/* -> Paid amount */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label">Paid amount (₹) *</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="₹ Paid amount" 
+                  value={sellForm.paidAmount} 
+                  onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              {/* -> Date */}
+              <div style={{ marginBottom: '20px' }}>
+                <label className="form-label">Date *</label>
+                <input 
+                  type="date" 
+                  className="form-control" 
+                  value={sellForm.date} 
+                  onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Confirm Sale / Booking</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* PDF Export Preview Dialogue Modal */}
       <PdfExportModal
