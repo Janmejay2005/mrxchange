@@ -15,11 +15,13 @@ import {
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export default function ProfitExpenseAndStatistic() {
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'profit' | 'expenses' | 'statistics'
   const [selectedAdmin, setSelectedAdmin] = useState('All Super Admins');
   const [fromDate, setFromDate] = useState('');
@@ -79,17 +81,66 @@ export default function ProfitExpenseAndStatistic() {
     setIsExpenseModalOpen(false);
   };
 
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const filteredProfits = phoneProfits.filter(p => {
     if (selectedAdmin !== 'All Super Admins' && p.admin !== selectedAdmin) return false;
-    if (fromDate && p.date < fromDate) return false;
-    if (toDate && p.date > toDate) return false;
+    if (selectedDate) {
+      const pYMD = toYMD(p.date);
+      const selYMD = toYMD(selectedDate);
+      if (pYMD && selYMD && pYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const pYMD = toYMD(p.date);
+      const fYMD = toYMD(fromDate);
+      if (pYMD && fYMD && pYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const pYMD = toYMD(p.date);
+      const tYMD = toYMD(toDate);
+      if (pYMD && tYMD && pYMD > tYMD) return false;
+    }
+    const q = (globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchModel = p.model.toLowerCase().includes(q);
+      const matchBrand = p.brand.toLowerCase().includes(q);
+      if (!matchModel && !matchBrand) return false;
+    }
     return true;
   });
 
   const filteredExpenses = expenses.filter(e => {
     if (selectedAdmin !== 'All Super Admins' && e.admin !== selectedAdmin) return false;
-    if (fromDate && e.date < fromDate) return false;
-    if (toDate && e.date > toDate) return false;
+    if (selectedDate) {
+      const eYMD = toYMD(e.date);
+      const selYMD = toYMD(selectedDate);
+      if (eYMD && selYMD && eYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const eYMD = toYMD(e.date);
+      const fYMD = toYMD(fromDate);
+      if (eYMD && fYMD && eYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const eYMD = toYMD(e.date);
+      const tYMD = toYMD(toDate);
+      if (eYMD && tYMD && eYMD > tYMD) return false;
+    }
+    const q = (globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchType = e.type.toLowerCase().includes(q);
+      const matchRemarks = (e.remarks || '').toLowerCase().includes(q);
+      if (!matchType && !matchRemarks) return false;
+    }
     return true;
   });
 

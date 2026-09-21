@@ -13,7 +13,7 @@ import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function RejectedStock() {
-  const { globalSearch } = useOutletContext() || {};
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -66,7 +66,27 @@ export default function RejectedStock() {
 
   useEffect(() => {
     fetchRejectedStock();
-  }, [globalSearch]);
+  }, [globalSearch, selectedDate]);
+
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const filteredDevices = devices.filter(d => {
+    if (selectedDate) {
+      const devYMD = toYMD(d.intake_date || d.created_at || d.date);
+      const selYMD = toYMD(selectedDate);
+      if (devYMD && selYMD && devYMD !== selYMD) return false;
+    }
+    return true;
+  });
 
   const handleResolve = async () => {
     try {
@@ -84,8 +104,8 @@ export default function RejectedStock() {
   };
 
   const handleExportPdf = () => {
-    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Paid By', 'Date', 'Rejection Reason'];
-    const rows = devices.map((d, idx) => [
+    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Reason'];
+    const rows = filteredDevices.map((d, idx) => [
       idx + 1,
       d.brand,
       d.model,
@@ -93,11 +113,9 @@ export default function RejectedStock() {
       `${d.ram} GB`,
       d.colour || '-',
       `Rs. ${d.purchase_amount}`,
-      d.paid_by || 'Rohit',
-      d.intake_date || '-',
-      d.last_rejection_reason || 'Defective piece'
+      d.last_rejection_reason || 'Rejected'
     ]);
-    const totalVal = devices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    const totalVal = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
     setExportModalConfig({
       isOpen: true,
       title: 'Rejected Stock PDF Report',
@@ -146,7 +164,7 @@ export default function RejectedStock() {
             </tr>
           </thead>
           <tbody>
-            {devices.map((device, idx) => (
+            {filteredDevices.map((device, idx) => (
               <tr key={device.id || idx}>
                 <td>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{device.brand}</td>

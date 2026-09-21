@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function PendingAndReceivingPayments() {
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('All');
@@ -43,19 +45,42 @@ export default function PendingAndReceivingPayments() {
     { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash', remarks: 'Balance due 25 Sep' }
   ]);
 
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const filteredPayments = payments.filter((item) => {
     if (paymentStatus !== 'All' && item.status !== paymentStatus) return false;
     if (personCustomer !== 'All' && !item.customerName.toLowerCase().includes(personCustomer.toLowerCase())) return false;
     if (mobileBrand !== 'All' && item.brand !== mobileBrand) return false;
+    if (selectedDate) {
+      const itemYMD = toYMD(item.date);
+      const selYMD = toYMD(selectedDate);
+      if (itemYMD && selYMD && itemYMD !== selYMD) return false;
+    }
     if (fromDate) {
-      const itemDate = new Date(item.date);
-      const fDate = new Date(fromDate);
-      if (!isNaN(itemDate) && !isNaN(fDate) && itemDate < fDate) return false;
+      const itemYMD = toYMD(item.date);
+      const fYMD = toYMD(fromDate);
+      if (itemYMD && fYMD && itemYMD < fYMD) return false;
     }
     if (toDate) {
-      const itemDate = new Date(item.date);
-      const tDate = new Date(toDate);
-      if (!isNaN(itemDate) && !isNaN(tDate) && itemDate > tDate) return false;
+      const itemYMD = toYMD(item.date);
+      const tYMD = toYMD(toDate);
+      if (itemYMD && tYMD && itemYMD > tYMD) return false;
+    }
+    const q = (globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchCustomer = item.customerName.toLowerCase().includes(q);
+      const matchBrand = item.brand.toLowerCase().includes(q);
+      const matchModel = item.model.toLowerCase().includes(q);
+      if (!matchCustomer && !matchBrand && !matchModel) return false;
     }
     return true;
   });

@@ -27,20 +27,26 @@ export default function BookedAndExchange() {
   // Book Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookForm, setBookForm] = useState({
-    customerName: '',
-    purchasedAmount: '',
-    via: 'Cash',
-    payBy: 'Staff',
-    platform: 'Offline',
-    accountId: '',
+    // Exchange Old Phone
+    oldBrand: 'Samsung',
+    oldModel: 'Galaxy S22',
+    oldStorage: '128',
+    oldRam: '8',
+    oldAmount: '25000',
+    oldPayBy: 'Staff',
+
+    // Booking New Phone
+    exchangeValue: '25000',
     newBrand: 'Google Pixel',
     newModel: 'Pixel 8 Pro',
-    storage: '256',
-    ram: '12',
-    color: 'Bay Blue',
-    oldDeviceId: '',
-    totalExchangeCost: 0,
-    actualCost: 0
+    newStorage: '256',
+    newRam: '12',
+    newColor: 'Bay Blue',
+    newPayBy: 'Jeet Patel',
+    platform: 'Offline / Store',
+    purchasedAmount: '64000',
+    via: 'Cash',
+    accountId: ''
   });
 
   const [exchanges, setExchanges] = useState([
@@ -102,23 +108,27 @@ export default function BookedAndExchange() {
 
   const handleBookSubmit = (e) => {
     e.preventDefault();
+    const oldAmt = Number(bookForm.oldAmount) || 0;
+    const newAmt = Number(bookForm.purchasedAmount) || 0;
+    const exVal = Number(bookForm.exchangeValue) || oldAmt;
+
     const newEntry = {
       id: exchanges.length + 1,
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       newBrand: bookForm.newBrand,
       newModel: bookForm.newModel,
-      newStorage: bookForm.storage,
-      newRam: bookForm.ram,
-      newColor: bookForm.color,
-      newPurchasedBy: bookForm.customerName || 'Customer',
-      newAmount: Number(bookForm.purchasedAmount) || 50000,
-      oldBrand: 'Samsung',
-      oldModel: 'S21',
-      oldStorage: 128,
-      oldRam: 8,
-      oldColor: 'Black',
-      oldPurchasedBy: 'Staff',
-      oldAmount: 18000,
+      newStorage: Number(bookForm.newStorage) || 256,
+      newRam: Number(bookForm.newRam) || 12,
+      newColor: bookForm.newColor || 'Standard',
+      newPurchasedBy: bookForm.newPayBy || 'Customer',
+      newAmount: newAmt + exVal,
+      oldBrand: bookForm.oldBrand,
+      oldModel: bookForm.oldModel,
+      oldStorage: Number(bookForm.oldStorage) || 128,
+      oldRam: Number(bookForm.oldRam) || 8,
+      oldColor: 'Default',
+      oldPurchasedBy: bookForm.oldPayBy || 'Staff',
+      oldAmount: oldAmt,
       status: 'Booked'
     };
     setExchanges([newEntry, ...exchanges]);
@@ -703,89 +713,206 @@ export default function BookedAndExchange() {
         </div>
       )}
 
-      {/* Book a Mobile Modal with Scroll feature and Exchange Icon */}
+      {/* Book a Mobile Modal matching diagram */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '580px', maxHeight: '85vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
+          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7' }}>Book a Mobile</h2>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Enter the details to book a mobile for exchange.</p>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7' }}>Book & Exchange Phone</h2>
+                <p style={{ fontSize: '13px', color: '#64748b' }}>Enter old phone trade-in valuation and new phone pre-order booking details.</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
             <form onSubmit={handleBookSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div>
-                  <label className="form-label">Purchased by (New Phone) *</label>
-                  <input type="text" className="form-control" placeholder="Enter customer name" value={bookForm.customerName} onChange={(e) => setBookForm({ ...bookForm, customerName: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="form-label">Purchased Amount (New Phone) 🔄 Exchange *</label>
-                  <input type="number" className="form-control" placeholder="₹ Enter amount" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />
+              {/* SECTION 1: Exchange Old Phone */}
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#334155', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  🔄 Exchange Old Phone
                 </div>
 
-                <div>
-                  <label className="form-label">Via *</label>
-                  <select className="form-control" value={bookForm.via} onChange={(e) => setBookForm({ ...bookForm, via: e.target.value })}>
-                    <option>Cash</option>
-                    <option>UPI</option>
-                    <option>Card</option>
-                    <option>Bank Transfer</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Pay By *</label>
-                  <select className="form-control" value={bookForm.payBy} onChange={(e) => setBookForm({ ...bookForm, payBy: e.target.value })}>
-                    <option>Staff</option>
-                    <option>Rohit</option>
-                    <option>Neha</option>
-                  </select>
-                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label className="form-label">Old Phone Brand *</label>
+                    <select className="form-control" value={bookForm.oldBrand} onChange={(e) => setBookForm({ ...bookForm, oldBrand: e.target.value })}>
+                      <option value="Samsung">Samsung</option>
+                      <option value="Apple">Apple</option>
+                      <option value="Google Pixel">Google Pixel</option>
+                      <option value="OnePlus">OnePlus</option>
+                      <option value="Xiaomi">Xiaomi</option>
+                      <option value="Vivo">Vivo</option>
+                      <option value="Oppo">Oppo</option>
+                      <option value="Realme">Realme</option>
+                      <option value="Nothing">Nothing</option>
+                      <option value="Motorola">Motorola</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Old Phone Model *</label>
+                    <input type="text" className="form-control" placeholder="e.g. S22 Ultra / iPhone 13" value={bookForm.oldModel} onChange={(e) => setBookForm({ ...bookForm, oldModel: e.target.value })} required />
+                  </div>
 
-                <div>
-                  <label className="form-label">Platform *</label>
-                  <select className="form-control" value={bookForm.platform} onChange={(e) => setBookForm({ ...bookForm, platform: e.target.value })}>
-                    <option>Offline / Store</option>
-                    <option>Website</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Account ID</label>
-                  <input type="text" className="form-control" placeholder="Enter account ID / UTR" value={bookForm.accountId} onChange={(e) => setBookForm({ ...bookForm, accountId: e.target.value })} />
-                </div>
+                  <div>
+                    <label className="form-label">Storage (GB) *</label>
+                    <select className="form-control" value={bookForm.oldStorage} onChange={(e) => setBookForm({ ...bookForm, oldStorage: e.target.value })}>
+                      <option value="64">64 GB</option>
+                      <option value="128">128 GB</option>
+                      <option value="256">256 GB</option>
+                      <option value="512">512 GB</option>
+                      <option value="1024">1 TB</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">RAM (GB) *</label>
+                    <select className="form-control" value={bookForm.oldRam} onChange={(e) => setBookForm({ ...bookForm, oldRam: e.target.value })}>
+                      <option value="4">4 GB</option>
+                      <option value="6">6 GB</option>
+                      <option value="8">8 GB</option>
+                      <option value="12">12 GB</option>
+                      <option value="16">16 GB</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="form-label">New Phone Brand *</label>
-                  <select className="form-control" value={bookForm.newBrand} onChange={(e) => setBookForm({ ...bookForm, newBrand: e.target.value })}>
-                    <option>Apple</option>
-                    <option>Samsung</option>
-                    <option>OnePlus</option>
-                    <option>Vivo</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Storage *</label>
-                  <select className="form-control" value={bookForm.storage} onChange={(e) => setBookForm({ ...bookForm, storage: e.target.value })}>
-                    <option value="64">64 GB</option>
-                    <option value="128">128 GB</option>
-                    <option value="256">256 GB</option>
-                  </select>
+                  <div>
+                    <label className="form-label">Old Phone Amount (Valuation ₹) *</label>
+                    <input 
+                      type="number" 
+                      className="form-control" 
+                      placeholder="₹ Valuation amount" 
+                      value={bookForm.oldAmount} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBookForm({ ...bookForm, oldAmount: val, exchangeValue: val });
+                      }} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Pay By *</label>
+                    <select className="form-control" value={bookForm.oldPayBy} onChange={(e) => setBookForm({ ...bookForm, oldPayBy: e.target.value })}>
+                      <option value="Staff">Staff</option>
+                      <option value="Jeet">Jeet</option>
+                      <option value="Sonal">Sonal</option>
+                      <option value="Rohit">Rohit</option>
+                      <option value="Neha">Neha</option>
+                      <option value="Aman">Aman</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: '16px' }}>
-                <label className="form-label">Exchange By (Old Phone) 🔄 *</label>
-                <div style={{ padding: '12px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd', fontSize: '13px', color: '#0369a1' }}>
-                  <Search size={15} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                  Select a mobile from in-hand inventory to auto-fill details (brand, model, storage, color, etc.)
+              {/* SECTION 2: Booking New Phone */}
+              <div style={{ background: '#f0f9ff', padding: '16px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '20px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0369a1', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📱 Booking New Phone
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label className="form-label">Exchange Value (₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">New Phone Brand *</label>
+                    <select className="form-control" value={bookForm.newBrand} onChange={(e) => setBookForm({ ...bookForm, newBrand: e.target.value })}>
+                      <option value="Apple">Apple</option>
+                      <option value="Samsung">Samsung</option>
+                      <option value="Google Pixel">Google Pixel</option>
+                      <option value="OnePlus">OnePlus</option>
+                      <option value="Vivo">Vivo</option>
+                      <option value="Oppo">Oppo</option>
+                      <option value="Xiaomi">Xiaomi</option>
+                      <option value="Nothing">Nothing</option>
+                      <option value="Motorola">Motorola</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">New Phone Model *</label>
+                    <input type="text" className="form-control" placeholder="e.g. Pixel 8 Pro / iPhone 15 Pro" value={bookForm.newModel} onChange={(e) => setBookForm({ ...bookForm, newModel: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Storage (GB) *</label>
+                    <select className="form-control" value={bookForm.newStorage} onChange={(e) => setBookForm({ ...bookForm, newStorage: e.target.value })}>
+                      <option value="128">128 GB</option>
+                      <option value="256">256 GB</option>
+                      <option value="512">512 GB</option>
+                      <option value="1024">1 TB</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">RAM (GB) *</label>
+                    <select className="form-control" value={bookForm.newRam} onChange={(e) => setBookForm({ ...bookForm, newRam: e.target.value })}>
+                      <option value="6">6 GB</option>
+                      <option value="8">8 GB</option>
+                      <option value="12">12 GB</option>
+                      <option value="16">16 GB</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Color *</label>
+                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
+                  </div>
+                  <div>
+                    <label className="form-label">Pay By (Customer Name) *</label>
+                    <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Platform *</label>
+                    <select className="form-control" value={bookForm.platform} onChange={(e) => setBookForm({ ...bookForm, platform: e.target.value })}>
+                      <option value="Offline / Store">Offline / Store</option>
+                      <option value="Website">Website</option>
+                      <option value="Amazon">Amazon</option>
+                      <option value="Flipkart">Flipkart</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Purchased Amount (Paid ₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Amount paid" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Via (Cash/Card/UPI) *</label>
+                    <select className="form-control" value={bookForm.via} onChange={(e) => setBookForm({ ...bookForm, via: e.target.value })}>
+                      <option value="Cash">Cash</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Card">Card</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Account ID / UTR</label>
+                    <input type="text" className="form-control" placeholder="Enter account ID / Transaction ref" value={bookForm.accountId} onChange={(e) => setBookForm({ ...bookForm, accountId: e.target.value })} />
+                  </div>
+                </div>
+
+                {/* Dynamic Auto Calculated Costs */}
+                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #bae6fd', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #93c5fd' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', display: 'block' }}>Total Exchange Cost (Exchange Val + Purchased Amt)</label>
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
+                      ₹ {((Number(bookForm.exchangeValue) || 0) + (Number(bookForm.purchasedAmount) || 0)).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>* Automatically calculated</div>
+                  </div>
+
+                  <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #93c5fd' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', display: 'block' }}>Actual Cost (Paid Amt + Purchased Amt)</label>
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#0369a1', marginTop: '4px' }}>
+                      ₹ {((Number(bookForm.oldAmount) || 0) + (Number(bookForm.purchasedAmount) || 0)).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>* Automatically calculated</div>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Book</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Submit Booking</button>
               </div>
             </form>
           </div>
