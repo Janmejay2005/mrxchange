@@ -54,6 +54,9 @@ export default function OldInventory() {
   // Brand filter
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
 
+  // Checkbox selection state
+  const [selectedIds, setSelectedIds] = useState([]);
+
   const fetchInventory = async () => {
     try {
       setLoading(true);
@@ -130,9 +133,30 @@ export default function OldInventory() {
     return true;
   });
 
+  const isAllSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedIds.includes(String(d.id)));
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredDevices.map(d => String(d.id)));
+    }
+  };
+
+  const toggleSelectOne = (id) => {
+    const strId = String(id);
+    setSelectedIds(prev =>
+      prev.includes(strId) ? prev.filter(i => i !== strId) : [...prev, strId]
+    );
+  };
+
   const handleExportPdf = () => {
+    const targetDevices = selectedIds.length > 0
+      ? filteredDevices.filter(d => selectedIds.includes(String(d.id)))
+      : filteredDevices;
+
     const headers = ['Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount', 'Status'];
-    const rows = filteredDevices.map(d => [
+    const rows = targetDevices.map(d => [
       d.device_code || d.id,
       d.brand,
       d.model,
@@ -142,10 +166,12 @@ export default function OldInventory() {
       `Rs. ${d.purchase_amount}`,
       d.status || 'OLD_INVENTORY'
     ]);
-    const totalVal = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    const totalVal = targetDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
     setExportModalConfig({
       isOpen: true,
-      title: 'Master Inventory PDF Report',
+      title: selectedIds.length > 0 
+        ? `Master Inventory Report (${selectedIds.length} Selected)`
+        : 'Master Inventory PDF Report',
       headers,
       rows,
       filename: `Master_Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
@@ -216,7 +242,7 @@ export default function OldInventory() {
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={handleExportPdf} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }} title="Generate PDF report">
-            <FileText size={15} /> Export PDF
+            <FileText size={15} /> Export PDF {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
           </button>
         </div>
       </div>
@@ -226,7 +252,15 @@ export default function OldInventory() {
         <table className="custom-table">
           <thead>
             <tr>
-              <th style={{ width: '40px' }}><input type="checkbox" /></th>
+              <th style={{ width: '40px' }}>
+                <input 
+                  type="checkbox" 
+                  checked={isAllSelected} 
+                  onChange={toggleSelectAll} 
+                  style={{ cursor: 'pointer', width: '16px', height: '16px' }} 
+                  title="Select / Deselect All"
+                />
+              </th>
               <th>Code</th>
               <th>Image</th>
               <th>Brand / Model</th>
@@ -256,7 +290,14 @@ export default function OldInventory() {
             ) : (
               filteredDevices.map((device, idx) => (
                 <tr key={device.id || idx}>
-                  <td><input type="checkbox" /></td>
+                  <td>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(String(device.id))} 
+                      onChange={() => toggleSelectOne(device.id)} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                  </td>
                   <td style={{ fontWeight: 600, color: '#64748b' }}>{device.device_code || `MRX-${idx + 1}`}</td>
                   <td>
                     {device.images && device.images.length > 1 ? (
