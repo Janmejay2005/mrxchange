@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Plus, Home, Search, FileText, X } from 'lucide-react';
+import { Package, Plus, Home, Search, FileText, X, Edit, Trash2 } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
@@ -31,6 +31,19 @@ export default function NewInHandStock() {
     actualAmount: '',
     paidAmount: '',
     date: new Date().toISOString().split('T')[0]
+  });
+
+  // Edit Device Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    sno: null,
+    brand: '',
+    model: '',
+    storage: '',
+    ram: '',
+    color: '',
+    purchasedBy: '',
+    amount: ''
   });
 
   const [stock, setStock] = useState(() => {
@@ -105,6 +118,45 @@ export default function NewInHandStock() {
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
+  };
+
+  const openEditModal = (item) => {
+    setEditForm({
+      sno: item.sno,
+      brand: item.brand,
+      model: item.model,
+      storage: item.storage,
+      ram: item.ram,
+      color: item.color,
+      purchasedBy: item.purchasedBy,
+      amount: item.amount
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    setStock(prev => prev.map(item => item.sno === editForm.sno ? {
+      ...item,
+      brand: editForm.brand,
+      model: editForm.model,
+      storage: Number(editForm.storage),
+      ram: Number(editForm.ram),
+      color: editForm.color,
+      purchasedBy: editForm.purchasedBy,
+      amount: Number(editForm.amount)
+    } : item));
+    setIsEditModalOpen(false);
+    alert('Device details updated successfully!');
+  };
+
+  const handleDeleteDevice = (sno) => {
+    if (window.confirm('Are you sure you want to delete this device from New In-hand stock?')) {
+      setStock(prev => prev.filter(item => item.sno !== sno));
+      const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const updatedDelivered = deliveredItems.filter(item => item.sno !== sno);
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify(updatedDelivered));
+    }
   };
 
   const handleSellSubmit = (e) => {
@@ -247,9 +299,18 @@ export default function NewInHandStock() {
                     <CurrencyAmount amount={item.amount} />
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <button onClick={() => openSellModal(item)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                        Book / Sell
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => openEditModal(item)} 
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        <Edit size={14} /> Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteDevice(item.sno)} 
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
                   </td>
@@ -409,6 +470,60 @@ export default function NewInHandStock() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Confirm Sale / Booking</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Device Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Edit In-hand Device</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Update stock specifications and purchasing details.</p>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleEditSubmit}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label className="form-label">Brand Name *</label>
+                  <input type="text" className="form-control" value={editForm.brand} onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Model *</label>
+                  <input type="text" className="form-control" value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Storage (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.storage} onChange={(e) => setEditForm({ ...editForm, storage: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">RAM (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.ram} onChange={(e) => setEditForm({ ...editForm, ram: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Color *</label>
+                  <input type="text" className="form-control" value={editForm.color} onChange={(e) => setEditForm({ ...editForm, color: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Purchased By *</label>
+                  <input type="text" className="form-control" value={editForm.purchasedBy} onChange={(e) => setEditForm({ ...editForm, purchasedBy: e.target.value })} required />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label className="form-label">Purchased Amount (₹) *</label>
+                <input type="number" className="form-control" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} required />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Changes</button>
               </div>
             </form>
           </div>

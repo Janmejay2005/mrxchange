@@ -49,6 +49,48 @@ export default function BookedAndExchange() {
     accountId: ''
   });
 
+  // Old In-hand devices list for trade-in selector
+  const [oldInHandDevices, setOldInHandDevices] = useState([]);
+
+  React.useEffect(() => {
+    const sampleOldInHand = [
+      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit' },
+      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh' },
+      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha' },
+      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit' }
+    ];
+    try {
+      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const formattedStored = stored.map(item => ({
+        id: item.id || item.device_code,
+        brand: item.brand,
+        model: item.model,
+        storage: item.storage,
+        ram: item.ram,
+        amount: item.purchase_amount || item.amount || 0,
+        paid_by: item.paid_by || item.purchasedBy || 'Staff'
+      }));
+      setOldInHandDevices([...formattedStored, ...sampleOldInHand]);
+    } catch (e) {
+      setOldInHandDevices(sampleOldInHand);
+    }
+  }, [isModalOpen]);
+
+  const handleSelectOldInHandDevice = (devId) => {
+    const dev = oldInHandDevices.find((d, idx) => String(d.id || idx) === String(devId));
+    if (dev) {
+      setBookForm(prev => ({
+        ...prev,
+        oldBrand: dev.brand || prev.oldBrand,
+        oldModel: dev.model || prev.oldModel,
+        oldStorage: String(dev.storage || prev.oldStorage),
+        oldRam: String(dev.ram || prev.oldRam),
+        oldAmount: String(dev.amount || prev.oldAmount),
+        oldPayBy: dev.paid_by || prev.oldPayBy
+      }));
+    }
+  };
+
   const [exchanges, setExchanges] = useState([
     { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15 Pro Max', newStorage: 256, newRam: 8, newColor: 'Natural Titanium', newPurchasedBy: 'Jeet', newAmount: 125000, oldBrand: 'Samsung', oldModel: 'S23 Ultra', oldStorage: 256, oldRam: 12, oldColor: 'Phantom Black', oldPurchasedBy: 'Jeet', oldAmount: 58000, status: 'Booked' },
     { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'Galaxy S24 Ultra', newStorage: 512, newRam: 12, newColor: 'Titanium Gray', newPurchasedBy: 'Sonal', newAmount: 118000, oldBrand: 'OnePlus', oldModel: '11', oldStorage: 256, oldRam: 16, oldColor: 'Eternal Green', oldPurchasedBy: 'Sonal', oldAmount: 32000, status: 'Booked' },
@@ -105,22 +147,6 @@ export default function BookedAndExchange() {
   const totalBookingValue = filteredExchanges.reduce((sum, item) => sum + item.newAmount, 0);
   const totalExchangeValue = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
   const netPayableBalance = totalBookingValue - totalExchangeValue;
-
-  const getOldInHandDevices = () => {
-    const sampleStock = [
-      { id: 'old_hand_1', device_code: 'MRX-00101', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit' },
-      { id: 'old_hand_2', device_code: 'MRX-00102', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh' },
-      { id: 'old_hand_3', device_code: 'MRX-00103', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha' },
-      { id: 'old_hand_4', device_code: 'MRX-00104', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit' }
-    ];
-    const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-    const storedIds = new Set(stored.map(s => String(s.id)));
-    const combined = [...stored];
-    sampleStock.forEach(s => {
-      if (!storedIds.has(String(s.id))) combined.push(s);
-    });
-    return combined;
-  };
 
   const handleBookSubmit = (e) => {
     e.preventDefault();
@@ -748,6 +774,25 @@ export default function BookedAndExchange() {
                   🔄 Exchange Old Phone
                 </div>
 
+                {/* Data of Old inhand picker */}
+                <div style={{ marginBottom: '16px', background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px dashed #0284c7' }}>
+                  <label className="form-label" style={{ color: '#0284c7', fontWeight: 700, marginBottom: '6px', display: 'block' }}>
+                    📦 Pick Mobile from Old In-hand Stock (Auto-fill)
+                  </label>
+                  <select 
+                    className="form-control" 
+                    onChange={(e) => handleSelectOldInHandDevice(e.target.value)}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>-- Select a device from Old In-hand Inventory --</option>
+                    {oldInHandDevices.map((dev, idx) => (
+                      <option key={dev.id || idx} value={dev.id || idx}>
+                        {dev.brand} {dev.model} ({dev.storage}GB / {dev.ram}GB) - ₹{Number(dev.amount).toLocaleString()} (By: {dev.paid_by})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label className="form-label">Old Phone Brand *</label>
@@ -797,23 +842,20 @@ export default function BookedAndExchange() {
                       className="form-control" 
                       placeholder="₹ Valuation amount" 
                       value={bookForm.oldAmount} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setBookForm({ ...bookForm, oldAmount: val, exchangeValue: val });
-                      }} 
+                      onChange={(e) => setBookForm({ ...bookForm, oldAmount: e.target.value })} 
                       required 
                     />
                   </div>
                   <div>
                     <label className="form-label">Pay By *</label>
-                    <select className="form-control" value={bookForm.oldPayBy} onChange={(e) => setBookForm({ ...bookForm, oldPayBy: e.target.value })}>
-                      <option value="Staff">Staff</option>
-                      <option value="Jeet">Jeet</option>
-                      <option value="Sonal">Sonal</option>
-                      <option value="Rohit">Rohit</option>
-                      <option value="Neha">Neha</option>
-                      <option value="Aman">Aman</option>
-                    </select>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter evaluator / staff name" 
+                      value={bookForm.oldPayBy} 
+                      onChange={(e) => setBookForm({ ...bookForm, oldPayBy: e.target.value })} 
+                      required 
+                    />
                   </div>
                 </div>
               </div>
