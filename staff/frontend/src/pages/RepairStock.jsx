@@ -38,18 +38,21 @@ export default function RepairStock() {
       const sampleRepairStock = [
         { id: 'rep_1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', status: 'IN_REPAIR' },
         { id: 'rep_2', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Sonal', intake_date: '14 Sep 2026', status: 'IN_REPAIR' },
-        { id: 'rep_3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'IN_REPAIR' },
-        { id: 'rep_4', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Flowy Emerald', purchase_amount: 49000, paid_by: 'Neha', intake_date: '12 Sep 2026', status: 'IN_REPAIR' },
-        { id: 'rep_5', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', purchase_amount: 68000, paid_by: 'Aman', intake_date: '11 Sep 2026', status: 'IN_REPAIR' },
-        { id: 'rep_6', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', purchase_amount: 19000, paid_by: 'Karan', intake_date: '10 Sep 2026', status: 'IN_REPAIR' }
+        { id: 'rep_3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'IN_REPAIR' }
       ];
-      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'IN_REPAIR');
-      setDevices([...customLocal, ...(dataList.length > 0 ? dataList : sampleRepairStock)]);
+
+      const dataIds = new Set(dataList.map(d => String(d.id)));
+      const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
+
+      const filteredSamples = sampleRepairStock.filter(s => 
+        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
+      );
+
+      const allRepair = [...dataList, ...filteredSamples].filter(d => d.status === 'IN_REPAIR');
+      setDevices(allRepair);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'IN_REPAIR');
-      setDevices([...customLocal]);
       setLoading(false);
     }
   };

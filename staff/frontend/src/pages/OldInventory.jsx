@@ -56,17 +56,24 @@ export default function OldInventory() {
         to: selectedDate || ''
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
-      const inventoryDevices = dataList.filter(d => !d.status || d.status === 'OLD_INVENTORY');
+      const sampleList = getSampleDevices();
+
+      // Deduplicate: dataList overrides sampleList for the same id or device_code
+      const dataIds = new Set(dataList.map(d => String(d.id)));
+      const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
+
+      const filteredSamples = sampleList.filter(s => 
+        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
+      );
+
+      const allDevices = [...dataList, ...filteredSamples];
+      const inventoryDevices = allDevices.filter(d => (!d.status || d.status === 'OLD_INVENTORY'));
       
-      if (inventoryDevices.length > 0) {
-        setDevices(inventoryDevices);
-      } else {
-        setDevices(getSampleDevices());
-      }
+      setDevices(inventoryDevices);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setDevices(getSampleDevices());
+      setDevices(getSampleDevices().filter(s => !s.status || s.status === 'OLD_INVENTORY'));
       setLoading(false);
     }
   };
@@ -75,9 +82,12 @@ export default function OldInventory() {
     fetchInventory();
   }, [globalSearch, selectedDate, selectedBrand]);
 
-  const handleStatusChange = async (deviceId, newStatus) => {
+  const handleStatusChange = async (device, newStatus) => {
     try {
-      await deviceService.updateStatus(deviceId, { status: newStatus });
+      const deviceId = typeof device === 'object' ? device.id : device;
+      await deviceService.updateStatus(deviceId, { status: newStatus }, typeof device === 'object' ? device : null);
+      
+      // Immediately remove device from Old Inventory view
       setDevices(prev => prev.filter(d => d.id !== deviceId));
       
       // Automatic navigation based on new status option selected
@@ -273,7 +283,7 @@ export default function OldInventory() {
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
                     <select
                       value={device.status || 'OLD_INVENTORY'}
-                      onChange={(e) => handleStatusChange(device.id, e.target.value)}
+                      onChange={(e) => handleStatusChange(device, e.target.value)}
                       className="form-control"
                       style={{
                         padding: '4px 8px',

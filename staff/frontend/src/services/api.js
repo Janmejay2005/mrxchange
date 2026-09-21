@@ -62,7 +62,16 @@ export const deviceService = {
       console.warn("Backend API unavailable for getDevices, using local fallback:", err.message);
     }
     const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
-    let combined = [...localDevices, ...remoteDevices];
+    
+    // Deduplicate: localDevices override remoteDevices for the same id or device_code
+    const localIds = new Set(localDevices.map(d => String(d.id)));
+    const localCodes = new Set(localDevices.map(d => d.device_code).filter(Boolean));
+
+    const uniqueRemote = remoteDevices.filter(d => 
+      !localIds.has(String(d.id)) && (!d.device_code || !localCodes.has(d.device_code))
+    );
+
+    let combined = [...localDevices, ...uniqueRemote];
 
     if (params.status) {
       combined = combined.filter(d => d.status === params.status);
@@ -96,10 +105,33 @@ export const deviceService = {
     }
     return newDevice;
   },
-  updateStatus: async (id, payload) => {
+  updateStatus: async (id, payload, deviceObj = null) => {
     const statusVal = typeof payload === 'object' ? payload.status : payload;
     const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
-    const updated = existing.map(d => String(d.id) === String(id) ? { ...d, status: statusVal, ...(typeof payload === 'object' ? payload : {}) } : d);
+    let found = false;
+
+    let updated = existing.map(d => {
+      if (String(d.id) === String(id) || (d.device_code && String(d.device_code) === String(id))) {
+        found = true;
+        return { ...d, status: statusVal, ...(typeof payload === 'object' ? payload : {}) };
+      }
+      return d;
+    });
+
+    if (!found && deviceObj) {
+      updated.unshift({
+        ...deviceObj,
+        status: statusVal,
+        ...(typeof payload === 'object' ? payload : {})
+      });
+    } else if (!found && !deviceObj) {
+      updated.unshift({
+        id: String(id),
+        status: statusVal,
+        ...(typeof payload === 'object' ? payload : {})
+      });
+    }
+
     localStorage.setItem('mrx_devices', JSON.stringify(updated));
 
     try {
