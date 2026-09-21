@@ -15,6 +15,7 @@ import Reports from './pages/Reports';
 import BookedAndExchange from './pages/BookedAndExchange';
 import PendingAndReceivingPayments from './pages/PendingAndReceivingPayments';
 import ProfitExpenseAndStatistic from './pages/ProfitExpenseAndStatistic';
+import MembersSuperAdmin from './pages/MembersSuperAdmin';
 import Login from './pages/Login';
 import SplashScreen from './components/common/SplashScreen';
 
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="pending-payments" element={<PendingAndReceivingPayments />} />
               <Route path="profit-expense-statistic" element={<ProfitExpenseAndStatistic />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="members-super-admin" element={<MembersSuperAdmin />} />
 
               <Route path="in-hand-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="resell-stock" element={<Navigate to="/old-in-hand" replace />} />

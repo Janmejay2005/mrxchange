@@ -7,12 +7,14 @@ import {
   Filter,
   Edit,
   Trash2,
-  X
+  X,
+  Camera
 } from 'lucide-react';
 import { deviceService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import AddMobileModal from '../components/modals/AddMobileModal';
 import PdfExportModal from '../components/common/PdfExportModal';
+import CameraCaptureModal from '../components/common/CameraCaptureModal';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 
 const BRANDS = ['All Brands', 'Google Pixel', 'Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing', 'Motorola'];
@@ -62,8 +64,9 @@ export default function OldInventory() {
   // Checkbox selection state
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Edit Modal State
+  // Edit Modal & Camera State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     id: '',
     brand: '',
@@ -625,9 +628,18 @@ export default function OldInventory() {
             <form onSubmit={handleSaveEdit}>
               {/* Device Photo / Image Edit Section */}
               <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '8px' }}>
-                  📸 Device Photo / Image
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#0284c7', margin: 0 }}>
+                    📸 Device Photo / Image
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Camera size={13} /> Take Photo via Camera
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                   {editForm.image_url ? (
                     <img 
@@ -720,6 +732,13 @@ export default function OldInventory() {
         rows={exportModalConfig.rows}
         filename={exportModalConfig.filename}
         summaryInfo={exportModalConfig.summaryInfo}
+      />
+
+      {/* Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(dataUrl) => setEditForm(prev => ({ ...prev, image_url: dataUrl }))}
       />
     </div>
   );

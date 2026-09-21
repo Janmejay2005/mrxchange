@@ -12,7 +12,8 @@ import {
   CircleDollarSign,
   BarChart2,
   LogOut,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,7 +26,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     navigate('/login');
   };
 
-  // Nav items with strict Role separation - Removed Central Ledger, Expenses, and Investments per request
+  // Nav items with strict Role separation
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
     { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
@@ -37,6 +38,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'ALL' },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'ALL' },
     { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
+    { label: 'Members in Super Admin', path: '/members-super-admin', icon: Users, role: 'ALL' },
   ];
 
   // Filter items based on logged-in user role
