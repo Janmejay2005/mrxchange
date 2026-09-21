@@ -100,6 +100,27 @@ export default function OldInHandStock() {
     fetchOldInHandStock();
   }, [localSearch, globalSearch, selectedBrand, selectedDate]);
 
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const filteredDevices = devices.filter(d => {
+    if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
+    if (selectedDate) {
+      const devYMD = toYMD(d.intake_date || d.created_at || d.date);
+      const selYMD = toYMD(selectedDate);
+      if (devYMD && selYMD && devYMD !== selYMD) return false;
+    }
+    return true;
+  });
+
   const handleSellSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -127,7 +148,7 @@ export default function OldInHandStock() {
 
   const handleExportPdf = () => {
     const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Status'];
-    const rows = devices.map((d, idx) => [
+    const rows = filteredDevices.map((d, idx) => [
       idx + 1,
       d.brand,
       d.model,
@@ -137,7 +158,7 @@ export default function OldInHandStock() {
       `Rs. ${d.purchase_amount}`,
       d.status || 'OLD_IN_HAND'
     ]);
-    const totalVal = devices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    const totalVal = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
     setExportModalConfig({
       isOpen: true,
       title: 'Old In-hand Stock PDF Report',
@@ -253,14 +274,14 @@ export default function OldInHandStock() {
                   Loading stock...
                 </td>
               </tr>
-            ) : devices.length === 0 ? (
+            ) : filteredDevices.length === 0 ? (
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   No Old In-hand devices available.
                 </td>
               </tr>
             ) : (
-              devices.map((d) => (
+              filteredDevices.map((d) => (
                 <tr key={d.id}>
                   <td>
                     {d.images && d.images.length > 1 ? (

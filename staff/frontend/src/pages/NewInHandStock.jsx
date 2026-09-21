@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Package, Plus, Home, Search, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function NewInHandStock() {
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
@@ -39,16 +41,40 @@ export default function NewInHandStock() {
     }
   });
 
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const filteredStock = stock.filter((item) => {
     if (brand !== 'All' && item.brand !== brand) return false;
-    if (fromDate && item.date < fromDate) return false;
-    if (toDate && item.date > toDate) return false;
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+    if (selectedDate) {
+      const itemYMD = toYMD(item.date);
+      const selYMD = toYMD(selectedDate);
+      if (itemYMD && selYMD && itemYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const itemYMD = toYMD(item.date);
+      const fYMD = toYMD(fromDate);
+      if (itemYMD && fYMD && itemYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const itemYMD = toYMD(item.date);
+      const tYMD = toYMD(toDate);
+      if (itemYMD && tYMD && itemYMD > tYMD) return false;
+    }
+    const q = (searchQuery || globalSearch || '').trim().toLowerCase();
+    if (q) {
       const matchModel = item.model.toLowerCase().includes(q);
       const matchBrand = item.brand.toLowerCase().includes(q);
-      const matchPerson = item.purchasedBy.toLowerCase().includes(q);
-      const matchColor = item.color.toLowerCase().includes(q);
+      const matchPerson = (item.purchasedBy || '').toLowerCase().includes(q);
+      const matchColor = (item.color || '').toLowerCase().includes(q);
       if (!matchModel && !matchBrand && !matchPerson && !matchColor) return false;
     }
     return true;

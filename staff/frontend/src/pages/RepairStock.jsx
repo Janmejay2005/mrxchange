@@ -13,7 +13,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function RepairStock() {
-  const { globalSearch } = useOutletContext() || {};
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,27 @@ export default function RepairStock() {
 
   useEffect(() => {
     fetchRepairStock();
-  }, [globalSearch]);
+  }, [globalSearch, selectedDate]);
+
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const filteredDevices = devices.filter(d => {
+    if (selectedDate) {
+      const devYMD = toYMD(d.intake_date || d.created_at || d.date);
+      const selYMD = toYMD(selectedDate);
+      if (devYMD && selYMD && devYMD !== selYMD) return false;
+    }
+    return true;
+  });
 
   const handleCompleteRepair = async () => {
     try {
@@ -165,7 +185,7 @@ export default function RepairStock() {
             </tr>
           </thead>
           <tbody>
-            {devices.map((device, idx) => (
+            {filteredDevices.map((device, idx) => (
               <tr key={device.id || idx}>
                 <td>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{device.brand}</td>

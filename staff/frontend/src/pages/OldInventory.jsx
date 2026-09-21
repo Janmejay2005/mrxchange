@@ -42,6 +42,8 @@ export default function OldInventory() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [popupDevice, setPopupDevice] = useState(null); // Image click popup device state
+
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
     title: '',
@@ -127,9 +129,26 @@ export default function OldInventory() {
     }
   };
 
-  // Filtered devices list based on selected Brand
+  // Date helper
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Filtered devices list based on selected Brand & selectedDate
   const filteredDevices = devices.filter(d => {
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
+    if (selectedDate) {
+      const devYMD = toYMD(d.intake_date || d.created_at || d.date);
+      const selYMD = toYMD(selectedDate);
+      if (devYMD && selYMD && devYMD !== selYMD) return false;
+    }
     return true;
   });
 
@@ -155,14 +174,12 @@ export default function OldInventory() {
       ? filteredDevices.filter(d => selectedIds.includes(String(d.id)))
       : filteredDevices;
 
-    const headers = ['Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount', 'Status'];
+    const headers = ['Brand', 'Model', 'Storage', 'RAM', 'Amount', 'Status'];
     const rows = targetDevices.map(d => [
-      d.device_code || d.id,
       d.brand,
       d.model,
       `${d.storage} GB`,
       `${d.ram} GB`,
-      d.colour || '-',
       `Rs. ${d.purchase_amount}`,
       d.status || 'OLD_INVENTORY'
     ]);
@@ -183,7 +200,7 @@ export default function OldInventory() {
 
   return (
     <div>
-      {/* Header section with Stats Cards */}
+      {/* Header section with Listed Devices Card */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Old Inventory</h1>
@@ -205,17 +222,6 @@ export default function OldInventory() {
             <div className="kpi-info">
               <span className="kpi-title">Listed Devices</span>
               <span className="kpi-value" style={{ fontSize: '22px' }}>{filteredDevices.length}</span>
-            </div>
-          </div>
-
-          <div className="kpi-card" style={{ minWidth: '220px', margin: 0 }}>
-            <div className="kpi-icon-wrap" style={{ backgroundColor: '#ecfdf5' }}>
-              <Database size={24} color="#059669" />
-            </div>
-            <div className="kpi-info">
-              <span className="kpi-title">System Capacity</span>
-              <span className="kpi-value" style={{ fontSize: '18px', color: '#059669' }}>5000+ Devices</span>
-              <span style={{ fontSize: '10px', color: '#64748b' }}>Enterprise Scalability</span>
             </div>
           </div>
         </div>
@@ -261,12 +267,10 @@ export default function OldInventory() {
                   title="Select / Deselect All"
                 />
               </th>
-              <th>Code</th>
               <th>Image</th>
               <th>Brand / Model</th>
               <th>Storage</th>
               <th>RAM</th>
-              <th>Color Name</th>
               <th>Condition</th>
               <th>Paid Amount</th>
               <th>Paid By</th>
@@ -277,13 +281,13 @@ export default function OldInventory() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="12" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   Loading inventory...
                 </td>
               </tr>
             ) : filteredDevices.length === 0 ? (
               <tr>
-                <td colSpan="12" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   No devices found matching current filters.
                 </td>
               </tr>
@@ -298,30 +302,35 @@ export default function OldInventory() {
                       style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                     />
                   </td>
-                  <td style={{ fontWeight: 600, color: '#64748b' }}>{device.device_code || `MRX-${idx + 1}`}</td>
                   <td>
-                    {device.images && device.images.length > 1 ? (
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <div 
+                      onClick={() => setPopupDevice(device)} 
+                      style={{ cursor: 'pointer', display: 'inline-block' }}
+                      title="Click to view details & status"
+                    >
+                      {device.images && device.images.length > 1 ? (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <img 
+                            src={device.images[0]} 
+                            alt="Front" 
+                            className="device-thumb" 
+                            title="Front View - Click for popup"
+                          />
+                          <img 
+                            src={device.images[1]} 
+                            alt="Back" 
+                            className="device-thumb" 
+                            title="Back View - Click for popup"
+                          />
+                        </div>
+                      ) : (
                         <img 
-                          src={device.images[0]} 
-                          alt="Front" 
+                          src={device.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
+                          alt={device.model} 
                           className="device-thumb" 
-                          title="Front View"
                         />
-                        <img 
-                          src={device.images[1]} 
-                          alt="Back" 
-                          className="device-thumb" 
-                          title="Back View"
-                        />
-                      </div>
-                    ) : (
-                      <img 
-                        src={device.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
-                        alt={device.model} 
-                        className="device-thumb" 
-                      />
-                    )}
+                      )}
+                    </div>
                   </td>
 
                   <td>
@@ -329,11 +338,6 @@ export default function OldInventory() {
                   </td>
                   <td>{device.storage} GB</td>
                   <td>{device.ram} GB</td>
-                  <td>
-                    <span style={{ fontWeight: 600, color: '#334155' }}>
-                      {device.colour || 'Default'}
-                    </span>
-                  </td>
                   <td>
                     <span style={{ 
                       padding: '2px 8px', 
@@ -385,6 +389,88 @@ export default function OldInventory() {
           </tbody>
         </table>
       </div>
+
+      {/* Image Click Popup Modal (Brand, Storage, RAM & Status Dropdown) */}
+      {popupDevice && (
+        <div className="modal-overlay" onClick={() => setPopupDevice(null)}>
+          <div 
+            className="modal-card" 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ maxWidth: '420px', borderRadius: '16px', padding: '24px', textAlign: 'center' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Device Details</h3>
+              <button onClick={() => setPopupDevice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#64748b' }}>✕</button>
+            </div>
+
+            {/* Device Image Preview */}
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+              <img 
+                src={popupDevice.image_url || (popupDevice.images && popupDevice.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'} 
+                alt={popupDevice.model} 
+                style={{ maxHeight: '160px', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+            </div>
+
+            {/* Info Grid */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left', background: '#f1f5f9', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Brand:</span>
+                <span style={{ color: '#0f172a', fontWeight: 800 }}>{popupDevice.brand}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Model:</span>
+                <span style={{ color: '#0f172a', fontWeight: 800 }}>{popupDevice.model}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Storage:</span>
+                <span style={{ color: '#0284c7', fontWeight: 800 }}>{popupDevice.storage} GB</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>RAM:</span>
+                <span style={{ color: '#0284c7', fontWeight: 800 }}>{popupDevice.ram} GB</span>
+              </div>
+            </div>
+
+            {/* Status Dropdown */}
+            <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '6px' }}>Update Status</label>
+              <select
+                value={popupDevice.status || 'OLD_INVENTORY'}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  handleStatusChange(popupDevice, newStatus);
+                  setPopupDevice(null);
+                }}
+                className="form-control"
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  backgroundColor: '#ffffff',
+                  border: '2px solid #0284c7',
+                  color: '#0f172a'
+                }}
+              >
+                <option value="OLD_INVENTORY">Old Inventory</option>
+                <option value="OLD_IN_HAND">Old In-Hand</option>
+                <option value="IN_REPAIR">Repair</option>
+                <option value="REJECTED">Rejected Stock</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={() => setPopupDevice(null)} 
+              className="btn-secondary" 
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', fontWeight: 700 }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Mobile Modal */}
       <AddMobileModal

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function BookedAndExchange() {
+  const { globalSearch, selectedDate } = useOutletContext() || {};
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'bookings' | 'exchanges'
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +54,17 @@ export default function BookedAndExchange() {
     { id: 8, date: '08 Sep 2026', newBrand: 'Xiaomi', newModel: '14 Ultra', newStorage: 512, newRam: 16, newColor: 'Black', newPurchasedBy: 'Ananya', newAmount: 99999, oldBrand: 'Oppo', oldModel: 'Reno 10 Pro+', oldStorage: 256, oldRam: 12, oldColor: 'Silver', oldPurchasedBy: 'Ananya', oldAmount: 29000, status: 'Booked' }
   ]);
 
+  const toYMD = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const filteredExchanges = exchanges.filter(item => {
     if (purchasedBy !== 'All' && item.newPurchasedBy !== purchasedBy && item.oldPurchasedBy !== purchasedBy) {
       return false;
@@ -60,18 +72,23 @@ export default function BookedAndExchange() {
     if (mobileBrand !== 'All' && item.newBrand !== mobileBrand && item.oldBrand !== mobileBrand) {
       return false;
     }
+    if (selectedDate) {
+      const itemYMD = toYMD(item.date);
+      const selYMD = toYMD(selectedDate);
+      if (itemYMD && selYMD && itemYMD !== selYMD) return false;
+    }
     if (fromDate) {
-      const itemDate = new Date(item.date);
-      const fDate = new Date(fromDate);
-      if (!isNaN(itemDate) && !isNaN(fDate) && itemDate < fDate) return false;
+      const itemYMD = toYMD(item.date);
+      const fYMD = toYMD(fromDate);
+      if (itemYMD && fYMD && itemYMD < fYMD) return false;
     }
     if (toDate) {
-      const itemDate = new Date(item.date);
-      const tDate = new Date(toDate);
-      if (!isNaN(itemDate) && !isNaN(tDate) && itemDate > tDate) return false;
+      const itemYMD = toYMD(item.date);
+      const tYMD = toYMD(toDate);
+      if (itemYMD && tYMD && itemYMD > tYMD) return false;
     }
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
+    const q = (searchTerm || globalSearch || '').trim().toLowerCase();
+    if (q) {
       const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.newColor}`.toLowerCase().includes(q);
       const matchOld = `${item.oldBrand} ${item.oldModel} ${item.oldPurchasedBy} ${item.oldColor}`.toLowerCase().includes(q);
       if (!matchNew && !matchOld) return false;
