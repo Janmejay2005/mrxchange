@@ -5,11 +5,13 @@ import {
   MoreHorizontal, 
   CheckCircle, 
   Trash2,
-  Home
+  Home,
+  FileText
 } from 'lucide-react';
 import { deviceService, repairService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import { exportToPdf } from '../utils/pdfGenerator';
 
 export default function RepairStock() {
   const { globalSearch } = useOutletContext() || {};
@@ -61,21 +63,37 @@ export default function RepairStock() {
     fetchRepairStock();
   }, [globalSearch]);
 
+  const handleExportPdf = () => {
+    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount', 'Paid By', 'Date'];
+    const rows = devices.map((d, idx) => [
+      idx + 1,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      `Rs. ${d.purchase_amount}`,
+      d.paid_by || 'Staff',
+      d.intake_date || 'Today'
+    ]);
+    exportToPdf('Repair Stock Report', headers, rows, `Repair_Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   const handleCompleteRepair = async () => {
     try {
       const { device, actualCost, paidBy, notes } = completeModal;
       await deviceService.updateStatus(device.id, {
-        status: 'OLD_IN_HAND',
+        status: 'OLD_INVENTORY',
         reason: `Repair completed: ${notes || 'Ready for stock'}`,
         repair_cost: actualCost,
         repair_paid_by: paidBy
-      });
+      }, device);
       setCompleteModal({ ...completeModal, isOpen: false });
-      navigate('/old-in-hand');
+      navigate('/old-inventory');
     } catch (err) {
       console.error(err);
       setCompleteModal({ ...completeModal, isOpen: false });
-      navigate('/old-in-hand');
+      navigate('/old-inventory');
     }
   };
 
@@ -85,7 +103,7 @@ export default function RepairStock() {
       await deviceService.updateStatus(device.id, {
         status: 'REJECTED',
         reason: 'Unrepairable damage'
-      });
+      }, device);
       navigate('/rejected-stocks');
     } catch (err) {
       console.error(err);
@@ -101,12 +119,15 @@ export default function RepairStock() {
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Repair Stock</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Mobiles currently under repair process.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Repair Stock</span>
           </div>
-          <button onClick={() => window.print()} className="btn-primary">
-            <Printer size={16} /> Print Report
+          <button onClick={handleExportPdf} className="btn-primary" style={{ borderRadius: '8px' }}>
+            <FileText size={15} /> Export PDF
+          </button>
+          <button onClick={() => window.print()} className="btn-secondary" style={{ borderRadius: '8px' }}>
+            <Printer size={15} /> Print Report
           </button>
         </div>
       </div>
