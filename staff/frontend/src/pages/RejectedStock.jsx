@@ -32,24 +32,20 @@ export default function RejectedStock() {
         status: 'REJECTED',
         q: globalSearch || ''
       });
-      const getSampleRejectedStock = () => [
-        { id: '1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', last_rejection_reason: 'Display IC fault' },
-        { id: '2', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '14 Sep 2026', last_rejection_reason: 'Motherboard short circuit' },
-        { id: '3', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '13 Sep 2026', last_rejection_reason: 'Liquid damage' },
-        { id: '4', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Flowy Emerald', purchase_amount: 49000, paid_by: 'Neha', intake_date: '12 Sep 2026', last_rejection_reason: 'Swollen battery' },
-        { id: '5', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', purchase_amount: 68000, paid_by: 'Aman', intake_date: '11 Sep 2026', last_rejection_reason: 'Camera sensor error' },
-        { id: '6', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', purchase_amount: 19000, paid_by: 'Karan', intake_date: '10 Sep 2026', last_rejection_reason: 'Board corrosion' },
-        { id: '7', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, colour: 'Peach Fuzz', purchase_amount: 43000, paid_by: 'Vikram', intake_date: '09 Sep 2026', last_rejection_reason: 'Charging port burnt' }
+      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      const sampleRejected = [
+        { id: 'rej_1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', last_rejection_reason: 'Display IC fault', status: 'REJECTED' },
+        { id: 'rej_2', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '14 Sep 2026', last_rejection_reason: 'Motherboard short circuit', status: 'REJECTED' },
+        { id: 'rej_3', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '13 Sep 2026', last_rejection_reason: 'Liquid damage', status: 'REJECTED' }
       ];
-      setDevices(dataList.length > 0 ? dataList : getSampleRejectedStock());
+      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'REJECTED');
+      const rejectedList = [...customLocal, ...dataList.filter(d => d.status === 'REJECTED')];
+      setDevices(rejectedList.length > 0 ? rejectedList : sampleRejected);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setDevices([
-        { id: '1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', last_rejection_reason: 'Display IC fault' },
-        { id: '2', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '14 Sep 2026', last_rejection_reason: 'Motherboard short circuit' },
-        { id: '3', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '13 Sep 2026', last_rejection_reason: 'Liquid damage' }
-      ]);
+      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'REJECTED');
+      setDevices(customLocal);
       setLoading(false);
     }
   };

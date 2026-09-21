@@ -85,8 +85,10 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     e.preventDefault();
     setError('');
 
-    if (!formData.brand || !formData.model || !formData.purchase_amount) {
-      setError('Please select Mobile Brand, Model Name, and Purchased Amount');
+    const effectiveBrand = formData.brand === 'Other' ? (formData.customBrand || 'Other') : formData.brand;
+
+    if (!effectiveBrand || !formData.model || !formData.purchase_amount) {
+      setError('Please select/enter Mobile Brand, Model Name, and Purchased Amount');
       return;
     }
 
@@ -96,6 +98,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       setLoading(true);
       await deviceService.createDevice({
         ...formData,
+        brand: effectiveBrand,
         purchase_amount: parseFloat(formData.purchase_amount) || 0,
         image_data: images.image1 || images.image2 || null,
         images: allImagesList
@@ -104,6 +107,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       // Reset form
       setFormData({
         brand: '',
+        customBrand: '',
         model: '',
         storage: '128',
         ram: '6',
@@ -188,6 +192,16 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   <option value="Motorola">Motorola</option>
                   <option value="Other">Other</option>
                 </select>
+                {formData.brand === 'Other' && (
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="Enter Custom Brand Name *" 
+                    style={{ marginTop: '8px' }}
+                    value={formData.customBrand || ''}
+                    onChange={(e) => setFormData({ ...formData, customBrand: e.target.value })}
+                  />
+                )}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Mobile Model *</label>
@@ -201,37 +215,27 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Row 2: Storage & RAM */}
+            {/* Row 2: Storage & RAM (Normal Editable Inputs) */}
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Storage in GB *</label>
-                <select 
-                  className="form-control"
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="e.g. 128, 256, 512" 
                   value={formData.storage}
                   onChange={(e) => setFormData({ ...formData, storage: e.target.value })}
-                >
-                  <option value="32">32 GB</option>
-                  <option value="64">64 GB</option>
-                  <option value="128">128 GB</option>
-                  <option value="256">256 GB</option>
-                  <option value="512">512 GB</option>
-                  <option value="1024">1 TB</option>
-                </select>
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">RAM *</label>
-                <select 
-                  className="form-control"
+                <label className="form-label">RAM in GB *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="e.g. 6, 8, 12, 16" 
                   value={formData.ram}
                   onChange={(e) => setFormData({ ...formData, ram: e.target.value })}
-                >
-                  <option value="3">3 GB</option>
-                  <option value="4">4 GB</option>
-                  <option value="6">6 GB</option>
-                  <option value="8">8 GB</option>
-                  <option value="12">12 GB</option>
-                  <option value="16">16 GB</option>
-                </select>
+                />
               </div>
             </div>
 

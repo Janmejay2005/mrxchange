@@ -43,9 +43,8 @@ export default function OldInventory() {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Synced Brand and Phone filters
+  // Brand filter
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
-  const [selectedModel, setSelectedModel] = useState('All Models');
 
   const fetchInventory = async () => {
     try {
@@ -57,11 +56,13 @@ export default function OldInventory() {
         to: selectedDate || ''
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
-      const sampleList = getSampleDevices();
-      // Combine custom added devices with sample list, ensuring no duplicate IDs
-      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => !d.status || d.status === 'OLD_INVENTORY');
-      const finalDevices = [...customLocal, ...(dataList.length > 0 ? dataList : sampleList.filter(s => s.status === 'OLD_INVENTORY' || !s.status))];
-      setDevices(finalDevices);
+      const inventoryDevices = dataList.filter(d => !d.status || d.status === 'OLD_INVENTORY');
+      
+      if (inventoryDevices.length > 0) {
+        setDevices(inventoryDevices);
+      } else {
+        setDevices(getSampleDevices());
+      }
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -77,7 +78,7 @@ export default function OldInventory() {
   const handleStatusChange = async (deviceId, newStatus) => {
     try {
       await deviceService.updateStatus(deviceId, { status: newStatus });
-      setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, status: newStatus } : d));
+      setDevices(prev => prev.filter(d => d.id !== deviceId));
       
       // Automatic navigation based on new status option selected
       if (newStatus === 'IN_REPAIR') {
@@ -92,15 +93,9 @@ export default function OldInventory() {
     }
   };
 
-  // Synced Phone/Model Options based on Selected Brand
-  const availableModels = selectedBrand === 'All Brands' 
-    ? Object.values(MODELS_BY_BRAND).flat() 
-    : (MODELS_BY_BRAND[selectedBrand] || []);
-
-  // Filtered devices list based on synchronized Brand and Phone dropdowns
+  // Filtered devices list based on selected Brand
   const filteredDevices = devices.filter(d => {
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
-    if (selectedModel !== 'All Models' && d.model !== selectedModel) return false;
     return true;
   });
 
@@ -114,7 +109,7 @@ export default function OldInventory() {
       `${d.ram} GB`,
       d.colour || '-',
       `Rs. ${d.purchase_amount}`,
-      d.status
+      d.status || 'OLD_INVENTORY'
     ]);
     exportToPdf('Master Inventory Report', headers, rows, `Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
@@ -159,7 +154,7 @@ export default function OldInventory() {
         </div>
       </div>
 
-      {/* Action Toolbar with Synchronized Brand & Phone Filters - Removed CSV, Print Out, and Reset buttons */}
+      {/* Action Toolbar with Brand Filter */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Brand Filter */}
@@ -167,31 +162,12 @@ export default function OldInventory() {
             <Filter size={15} color="#64748b" />
             <select 
               className="form-control" 
-              style={{ width: '160px', padding: '7px 12px', fontSize: '13px' }}
+              style={{ width: '180px', padding: '7px 12px', fontSize: '13px' }}
               value={selectedBrand}
-              onChange={(e) => {
-                setSelectedBrand(e.target.value);
-                setSelectedModel('All Models');
-              }}
+              onChange={(e) => setSelectedBrand(e.target.value)}
             >
               {BRANDS.map(b => (
                 <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Phone / Model Filter (Synced to Brand) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Smartphone size={15} color="#64748b" />
-            <select 
-              className="form-control" 
-              style={{ width: '180px', padding: '7px 12px', fontSize: '13px' }}
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-            >
-              <option value="All Models">All Phone Models</option>
-              {availableModels.map(m => (
-                <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>

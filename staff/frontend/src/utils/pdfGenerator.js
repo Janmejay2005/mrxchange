@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Export Dataset to PDF
 export function exportToPdf(title, headers, rows, filename = 'report.pdf') {
@@ -31,7 +31,7 @@ export function exportToPdf(title, headers, rows, filename = 'report.pdf') {
   doc.text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 40, 98);
 
   // AutoTable
-  doc.autoTable({
+  autoTable(doc, {
     startY: 115,
     head: [headers],
     body: rows,
@@ -70,7 +70,7 @@ export function printPdf(title, headers, rows) {
   doc.setFontSize(12);
   doc.text(`Report: ${title}`, 40, 85);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 105,
     head: [headers],
     body: rows,
