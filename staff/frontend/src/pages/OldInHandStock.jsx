@@ -45,7 +45,8 @@ export default function OldInHandStock() {
     ram: '',
     colour: '',
     purchase_amount: '',
-    paid_by: ''
+    paid_by: '',
+    image_url: ''
   });
 
   const openEditModal = (device) => {
@@ -57,9 +58,21 @@ export default function OldInHandStock() {
       ram: device.ram || '',
       colour: device.colour || '',
       purchase_amount: device.purchase_amount || '',
-      paid_by: device.paid_by || 'Staff'
+      paid_by: device.paid_by || 'Staff',
+      image_url: device.image_url || (device.images && device.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm(prev => ({ ...prev, image_url: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveEdit = (e) => {
@@ -72,7 +85,9 @@ export default function OldInHandStock() {
       ram: Number(editForm.ram),
       colour: editForm.colour,
       purchase_amount: Number(editForm.purchase_amount),
-      paid_by: editForm.paid_by
+      paid_by: editForm.paid_by,
+      image_url: editForm.image_url,
+      images: [editForm.image_url]
     } : d));
 
     // Update localStorage if saved in mrx_old_in_hand_stock
@@ -85,12 +100,14 @@ export default function OldInHandStock() {
       ram: Number(editForm.ram),
       colour: editForm.colour,
       purchase_amount: Number(editForm.purchase_amount),
-      paid_by: editForm.paid_by
+      paid_by: editForm.paid_by,
+      image_url: editForm.image_url,
+      images: [editForm.image_url]
     } : item);
     localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
 
     setIsEditModalOpen(false);
-    alert('Device updated successfully!');
+    alert('Device details and photo updated successfully!');
   };
 
   const handleDeleteDevice = (id) => {
@@ -520,6 +537,43 @@ export default function OldInHandStock() {
             </div>
 
             <form onSubmit={handleSaveEdit}>
+              {/* Device Photo / Image Edit Section */}
+              <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '8px' }}>
+                  📸 Device Photo / Image
+                </label>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  {editForm.image_url ? (
+                    <img 
+                      src={editForm.image_url} 
+                      alt="Preview" 
+                      style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1' }} 
+                    />
+                  ) : (
+                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#64748b' }}>
+                      No Image
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Upload New Photo</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageFileChange} 
+                      style={{ fontSize: '12px', marginBottom: '6px', width: '100%' }}
+                    />
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Or paste Image URL (e.g. https://...)" 
+                      value={editForm.image_url} 
+                      onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} 
+                      style={{ padding: '6px 10px', fontSize: '12px' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Brand Name *</label>

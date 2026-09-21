@@ -43,82 +43,9 @@ export default function NewInHandStock() {
     ram: '',
     color: '',
     purchasedBy: '',
-    amount: ''
+    amount: '',
+    image_url: ''
   });
-
-  const [stock, setStock] = useState(() => {
-    const initial = [
-      { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
-      { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
-      { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
-      { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
-      { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
-      { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
-      { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
-      { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
-      { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
-      { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
-    ];
-    try {
-      const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      return [...deliveredItems, ...initial];
-    } catch (e) {
-      return initial;
-    }
-  });
-
-  const toYMD = (val) => {
-    if (!val) return '';
-    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-    const d = new Date(val);
-    if (isNaN(d.getTime())) return '';
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-
-  const filteredStock = stock.filter((item) => {
-    if (brand !== 'All' && item.brand !== brand) return false;
-    if (selectedDate) {
-      const itemYMD = toYMD(item.date);
-      const selYMD = toYMD(selectedDate);
-      if (itemYMD && selYMD && itemYMD !== selYMD) return false;
-    }
-    if (fromDate) {
-      const itemYMD = toYMD(item.date);
-      const fYMD = toYMD(fromDate);
-      if (itemYMD && fYMD && itemYMD < fYMD) return false;
-    }
-    if (toDate) {
-      const itemYMD = toYMD(item.date);
-      const tYMD = toYMD(toDate);
-      if (itemYMD && tYMD && itemYMD > tYMD) return false;
-    }
-    const q = (searchQuery || globalSearch || '').trim().toLowerCase();
-    if (q) {
-      const matchModel = item.model.toLowerCase().includes(q);
-      const matchBrand = item.brand.toLowerCase().includes(q);
-      const matchPerson = (item.purchasedBy || '').toLowerCase().includes(q);
-      const matchColor = (item.color || '').toLowerCase().includes(q);
-      if (!matchModel && !matchBrand && !matchPerson && !matchColor) return false;
-    }
-    return true;
-  });
-
-  const openSellModal = (item = null) => {
-    setSelectedStockItem(item);
-    setSellForm({
-      quantity: 1,
-      soldBy: 'Staff',
-      soldTo: item ? item.purchasedBy || '' : '',
-      paymentType: 'installment',
-      actualAmount: item ? item.amount || '' : '',
-      paidAmount: item ? item.amount || '' : '',
-      date: new Date().toISOString().split('T')[0]
-    });
-    setIsSellModalOpen(true);
-  };
 
   const openEditModal = (item) => {
     setEditForm({
@@ -129,9 +56,21 @@ export default function NewInHandStock() {
       ram: item.ram,
       color: item.color,
       purchasedBy: item.purchasedBy,
-      amount: item.amount
+      amount: item.amount,
+      image_url: item.image_url || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm(prev => ({ ...prev, image_url: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleEditSubmit = (e) => {
@@ -144,10 +83,12 @@ export default function NewInHandStock() {
       ram: Number(editForm.ram),
       color: editForm.color,
       purchasedBy: editForm.purchasedBy,
-      amount: Number(editForm.amount)
+      amount: Number(editForm.amount),
+      image_url: editForm.image_url,
+      images: [editForm.image_url]
     } : item));
     setIsEditModalOpen(false);
-    alert('Device details updated successfully!');
+    alert('Device details and photo updated successfully!');
   };
 
   const handleDeleteDevice = (sno) => {
@@ -489,6 +430,43 @@ export default function NewInHandStock() {
             </div>
 
             <form onSubmit={handleEditSubmit}>
+              {/* Device Photo / Image Edit Section */}
+              <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '8px' }}>
+                  📸 Device Photo / Image
+                </label>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  {editForm.image_url ? (
+                    <img 
+                      src={editForm.image_url} 
+                      alt="Preview" 
+                      style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1' }} 
+                    />
+                  ) : (
+                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#64748b' }}>
+                      No Image
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Upload New Photo</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageFileChange} 
+                      style={{ fontSize: '12px', marginBottom: '6px', width: '100%' }}
+                    />
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Or paste Image URL (e.g. https://...)" 
+                      value={editForm.image_url} 
+                      onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} 
+                      style={{ padding: '6px 10px', fontSize: '12px' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Brand Name *</label>
