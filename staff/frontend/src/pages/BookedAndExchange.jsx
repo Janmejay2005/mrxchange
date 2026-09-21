@@ -6,6 +6,8 @@ import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function BookedAndExchange() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'bookings' | 'exchanges'
+  const [searchTerm, setSearchTerm] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [purchasedBy, setPurchasedBy] = useState('All');
@@ -68,8 +70,18 @@ export default function BookedAndExchange() {
       const tDate = new Date(toDate);
       if (!isNaN(itemDate) && !isNaN(tDate) && itemDate > tDate) return false;
     }
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.newColor}`.toLowerCase().includes(q);
+      const matchOld = `${item.oldBrand} ${item.oldModel} ${item.oldPurchasedBy} ${item.oldColor}`.toLowerCase().includes(q);
+      if (!matchNew && !matchOld) return false;
+    }
     return true;
   });
+
+  const totalBookingValue = filteredExchanges.reduce((sum, item) => sum + item.newAmount, 0);
+  const totalExchangeValue = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
+  const netPayableBalance = totalBookingValue - totalExchangeValue;
 
   const handleBookSubmit = (e) => {
     e.preventDefault();
@@ -123,7 +135,7 @@ export default function BookedAndExchange() {
   };
 
   const handleCancelAction = (id) => {
-    const itemToCancel = exchanges.find(item => item.id !== id);
+    const itemToCancel = exchanges.find(item => item.id === id);
     if (itemToCancel) {
       const oldStockItem = {
         id: `MRX-${Date.now().toString().slice(-5)}`,
@@ -151,28 +163,60 @@ export default function BookedAndExchange() {
   };
 
   const handleExportPdf = () => {
-    const headers = ['#', 'Date', 'New Phone Model', 'New Price (Rs)', 'Exchanged Old Model', 'Exchange Val (Rs)', 'Customer / Purchased By', 'Status'];
-    const rows = filteredExchanges.map((item, idx) => [
-      idx + 1,
-      item.date,
-      `${item.newBrand} ${item.newModel}`,
-      `Rs. ${item.newAmount.toLocaleString()}`,
-      `${item.oldBrand} ${item.oldModel}`,
-      `Rs. ${item.oldAmount.toLocaleString()}`,
-      item.newPurchasedBy || '-',
-      item.status || 'Booked'
-    ]);
-    const totalNew = filteredExchanges.reduce((sum, item) => sum + item.newAmount, 0);
-    const totalOld = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
+    let headers = [];
+    let rows = [];
+    let title = 'Booked & Exchange Report';
+
+    if (activeTab === 'bookings') {
+      title = 'New Phone Bookings Report';
+      headers = ['#', 'Date', 'Customer Name', 'New Phone Model', 'Specs', 'Color', 'Booking Amount (Rs)', 'Status'];
+      rows = filteredExchanges.map((item, idx) => [
+        idx + 1,
+        item.date,
+        item.newPurchasedBy || 'Customer',
+        `${item.newBrand} ${item.newModel}`,
+        `${item.newStorage}GB / ${item.newRam}GB`,
+        item.newColor,
+        `Rs. ${item.newAmount.toLocaleString()}`,
+        item.status || 'Booked'
+      ]);
+    } else if (activeTab === 'exchanges') {
+      title = 'Old Phone Exchanges Report';
+      headers = ['#', 'Date', 'Staff / Evaluator', 'Exchanged Old Device', 'Specs', 'Color', 'Trade-in Valuation (Rs)', 'Trade Status'];
+      rows = filteredExchanges.map((item, idx) => [
+        idx + 1,
+        item.date,
+        item.oldPurchasedBy || 'Staff',
+        `${item.oldBrand} ${item.oldModel}`,
+        `${item.oldStorage}GB / ${item.oldRam}GB`,
+        item.oldColor,
+        `Rs. ${item.oldAmount.toLocaleString()}`,
+        'Received for Trade-in'
+      ]);
+    } else {
+      headers = ['#', 'Date', 'New Phone Model', 'New Price (Rs)', 'Exchanged Old Model', 'Exchange Val (Rs)', 'Customer / Purchased By', 'Status'];
+      rows = filteredExchanges.map((item, idx) => [
+        idx + 1,
+        item.date,
+        `${item.newBrand} ${item.newModel}`,
+        `Rs. ${item.newAmount.toLocaleString()}`,
+        `${item.oldBrand} ${item.oldModel}`,
+        `Rs. ${item.oldAmount.toLocaleString()}`,
+        item.newPurchasedBy || '-',
+        item.status || 'Booked'
+      ]);
+    }
+
     setExportModalConfig({
       isOpen: true,
-      title: 'Booked & Exchange Report',
+      title,
       headers,
       rows,
       filename: `Booked_Exchange_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Booking Value', value: `Rs. ${totalNew.toLocaleString()}`, color: '#0284c7' },
-        { label: 'Total Exchange Value', value: `Rs. ${totalOld.toLocaleString()}`, color: '#16a34a' }
+        { label: 'Total Booking Value', value: `Rs. ${totalBookingValue.toLocaleString()}`, color: '#0284c7' },
+        { label: 'Total Exchange Value', value: `Rs. ${totalExchangeValue.toLocaleString()}`, color: '#16a34a' },
+        { label: 'Net Trade Balance', value: `Rs. ${netPayableBalance.toLocaleString()}`, color: '#7c3aed' }
       ]
     });
   };
@@ -183,7 +227,7 @@ export default function BookedAndExchange() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Booked and Exchange</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>List of booked mobiles and exchanged devices.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Manage new phone pre-orders, old phone trade-in valuations, and exchange reconciliations.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
@@ -193,8 +237,113 @@ export default function BookedAndExchange() {
             <FileText size={16} /> Export PDF
           </button>
           <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
-            <Plus size={16} /> Book
+            <Plus size={16} /> Book New Device
           </button>
+        </div>
+      </div>
+
+      {/* KPI Cards Summary Section */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Total Booking Value</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
+            <CurrencyAmount amount={totalBookingValue} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{filteredExchanges.length} New Phone Bookings</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #16a34a' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Total Exchange Valuation</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#16a34a', marginTop: '6px' }}>
+            <CurrencyAmount amount={totalExchangeValue} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{filteredExchanges.length} Trade-in Old Devices</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Net Cash Collectible Balance</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#7c3aed', marginTop: '6px' }}>
+            <CurrencyAmount amount={netPayableBalance} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Difference payable by customers</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #ea580c' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Active Status</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ea580c', marginTop: '6px' }}>
+            {filteredExchanges.length} Active
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Pending Customer Delivery</div>
+        </div>
+      </div>
+
+      {/* Tabulation Bar & Search */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          <button
+            onClick={() => setActiveTab('all')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: activeTab === 'all' ? '#ffffff' : 'transparent',
+              color: activeTab === 'all' ? '#0284c7' : '#64748b',
+              boxShadow: activeTab === 'all' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            All Overview ({filteredExchanges.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('bookings')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: activeTab === 'bookings' ? '#ffffff' : 'transparent',
+              color: activeTab === 'bookings' ? '#0284c7' : '#64748b',
+              boxShadow: activeTab === 'bookings' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            📱 New Phone Bookings ({filteredExchanges.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('exchanges')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: activeTab === 'exchanges' ? '#ffffff' : 'transparent',
+              color: activeTab === 'exchanges' ? '#0284c7' : '#64748b',
+              boxShadow: activeTab === 'exchanges' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            🔄 Old Phone Exchanges ({filteredExchanges.length})
+          </button>
+        </div>
+
+        {/* Quick Search */}
+        <div style={{ position: 'relative', minWidth: '260px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search brand, model, customer..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ paddingLeft: '36px', height: '38px', borderRadius: '8px', fontSize: '13px' }}
+          />
         </div>
       </div>
 
@@ -209,7 +358,7 @@ export default function BookedAndExchange() {
           <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Purchased By</label>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Purchased By / Customer</label>
           <select className="form-control" value={purchasedBy} onChange={(e) => setPurchasedBy(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
             <option>Jeet</option>
@@ -238,123 +387,304 @@ export default function BookedAndExchange() {
           </select>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
-          <button onClick={() => { setFromDate(''); setToDate(''); setPurchasedBy('All'); setMobileBrand('All'); }} className="btn-secondary">Clear</button>
-          <button className="btn-primary">Apply</button>
+          <button onClick={() => { setFromDate(''); setToDate(''); setPurchasedBy('All'); setMobileBrand('All'); setSearchTerm(''); }} className="btn-secondary">Clear Filters</button>
         </div>
       </div>
 
-      {/* Dual Grouped Header Table */}
-      <div className="table-responsive">
-        <table className="custom-table" style={{ borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th rowSpan="2" style={{ width: '40px' }}>#</th>
-              <th rowSpan="2">Date</th>
-              <th colSpan="7" style={{ textAlign: 'center', backgroundColor: '#e0f2fe', color: '#0369a1', fontWeight: 800 }}>New Mobile</th>
-              <th colSpan="7" style={{ textAlign: 'center', backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 800 }}>Old Mobile</th>
-              <th rowSpan="2">Action</th>
-            </tr>
-            <tr>
-              {/* New Mobile Subheaders */}
-              <th style={{ backgroundColor: '#e0f2fe' }}>Brand Name</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Model</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Storage (GB)</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
-              <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount 🔄 Exchange</th>
-
-              {/* Old Mobile Subheaders */}
-              <th style={{ backgroundColor: '#f1f5f9' }}>Brand Name</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Model</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Storage (GB)</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>RAM (GB)</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Color</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Purchased By</th>
-              <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount 🔄 Exchange</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredExchanges.length === 0 ? (
+      {/* TAB CONTENT: 1. ALL OVERVIEW TAB (Dual Grouped Header Table) */}
+      {activeTab === 'all' && (
+        <div className="table-responsive">
+          <table className="custom-table" style={{ borderCollapse: 'collapse' }}>
+            <thead>
               <tr>
-                <td colSpan="17" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                  No booked or exchange items match the selected filters.
-                </td>
+                <th rowSpan="2" style={{ width: '40px' }}>#</th>
+                <th rowSpan="2">Date</th>
+                <th colSpan="7" style={{ textAlign: 'center', backgroundColor: '#e0f2fe', color: '#0369a1', fontWeight: 800 }}>New Mobile</th>
+                <th colSpan="7" style={{ textAlign: 'center', backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 800 }}>Old Mobile</th>
+                <th rowSpan="2">Action</th>
               </tr>
-            ) : (
-              filteredExchanges.map((row, idx) => (
-                <tr key={row.id}>
-                  <td>{idx + 1}</td>
-                  <td>{row.date}</td>
+              <tr>
+                {/* New Mobile Subheaders */}
+                <th style={{ backgroundColor: '#e0f2fe' }}>Brand Name</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Model</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Storage (GB)</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount 🔄 Exchange</th>
 
-                  {/* New Mobile Cells */}
-                  <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
-                  <td style={{ fontWeight: 700 }}>{row.newModel}</td>
-                  <td>{row.newStorage}</td>
-                  <td>{row.newRam}</td>
-                  <td>{row.newColor}</td>
-                  <td>{row.newPurchasedBy}</td>
-                  <td style={{ fontWeight: 700 }}>
-                    <CurrencyAmount amount={row.newAmount} />
-                    <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
-                  </td>
-
-                  {/* Old Mobile Cells */}
-                  <td style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
-                  <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
-                  <td>{row.oldStorage}</td>
-                  <td>{row.oldRam}</td>
-                  <td>{row.oldColor}</td>
-                  <td>{row.oldPurchasedBy}</td>
-                  <td style={{ fontWeight: 700 }}>
-                    <CurrencyAmount amount={row.oldAmount} />
-                    <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
-                  </td>
-
-                  <td style={{ position: 'relative' }}>
-                    <button
-                      onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                      className="btn-secondary"
-                      style={{ padding: '6px' }}
-                    >
-                      <MoreHorizontal size={16} />
-                    </button>
-
-                    {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
-                    {activeMenuId === row.id && (
-                      <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '100%',
-                        zIndex: 50,
-                        background: '#ffffff',
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                        borderRadius: '8px',
-                        padding: '6px',
-                        minWidth: '180px',
-                        border: '1px solid #e2e8f0'
-                      }}>
-                        <button
-                          onClick={() => handleDeliverAction(row.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                        >
-                          <CheckCircle size={14} /> Delivered (New In-hand)
-                        </button>
-                        <button
-                          onClick={() => handleCancelAction(row.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                        >
-                          <XCircle size={14} /> Cancel (Old In-hand)
-                        </button>
-                      </div>
-                    )}
+                {/* Old Mobile Subheaders */}
+                <th style={{ backgroundColor: '#f1f5f9' }}>Brand Name</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Model</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Storage (GB)</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>RAM (GB)</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Color</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Purchased By</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount 🔄 Exchange</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredExchanges.length === 0 ? (
+                <tr>
+                  <td colSpan="17" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                    No booked or exchange items match the selected filters.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                filteredExchanges.map((row, idx) => (
+                  <tr key={row.id}>
+                    <td>{idx + 1}</td>
+                    <td>{row.date}</td>
+
+                    {/* New Mobile Cells */}
+                    <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
+                    <td style={{ fontWeight: 700 }}>{row.newModel}</td>
+                    <td>{row.newStorage}</td>
+                    <td>{row.newRam}</td>
+                    <td>{row.newColor}</td>
+                    <td>{row.newPurchasedBy}</td>
+                    <td style={{ fontWeight: 700 }}>
+                      <CurrencyAmount amount={row.newAmount} />
+                      <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
+                    </td>
+
+                    {/* Old Mobile Cells */}
+                    <td style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
+                    <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
+                    <td>{row.oldStorage}</td>
+                    <td>{row.oldRam}</td>
+                    <td>{row.oldColor}</td>
+                    <td>{row.oldPurchasedBy}</td>
+                    <td style={{ fontWeight: 700 }}>
+                      <CurrencyAmount amount={row.oldAmount} />
+                      <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
+                    </td>
+
+                    <td style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                        className="btn-secondary"
+                        style={{ padding: '6px' }}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+
+                      {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
+                      {activeMenuId === row.id && (
+                        <div style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: '100%',
+                          zIndex: 50,
+                          background: '#ffffff',
+                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                          borderRadius: '8px',
+                          padding: '6px',
+                          minWidth: '180px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <button
+                            onClick={() => handleDeliverAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <CheckCircle size={14} /> Delivered (New In-hand)
+                          </button>
+                          <button
+                            onClick={() => handleCancelAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <XCircle size={14} /> Cancel (Old In-hand)
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* TAB CONTENT: 2. NEW PHONE BOOKINGS TAB */}
+      {activeTab === 'bookings' && (
+        <div className="table-responsive">
+          <table className="custom-table">
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ width: '40px' }}>#</th>
+                <th>Booking Date</th>
+                <th>Purchased By / Customer</th>
+                <th>New Phone Brand</th>
+                <th>Model</th>
+                <th>Storage</th>
+                <th>RAM</th>
+                <th>Color</th>
+                <th>Booking Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredExchanges.length === 0 ? (
+                <tr>
+                  <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                    No new phone bookings match your search.
+                  </td>
+                </tr>
+              ) : (
+                filteredExchanges.map((row, idx) => (
+                  <tr key={row.id}>
+                    <td>{idx + 1}</td>
+                    <td>{row.date}</td>
+                    <td style={{ fontWeight: 700, color: '#0369a1' }}>{row.newPurchasedBy}</td>
+                    <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
+                    <td style={{ fontWeight: 700 }}>{row.newModel}</td>
+                    <td>{row.newStorage} GB</td>
+                    <td>{row.newRam} GB</td>
+                    <td>{row.newColor}</td>
+                    <td style={{ fontWeight: 800, color: '#0284c7' }}>
+                      <CurrencyAmount amount={row.newAmount} />
+                    </td>
+                    <td>
+                      <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                        {row.status || 'Booked'}
+                      </span>
+                    </td>
+                    <td style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                        className="btn-secondary"
+                        style={{ padding: '6px' }}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+
+                      {activeMenuId === row.id && (
+                        <div style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: '100%',
+                          zIndex: 50,
+                          background: '#ffffff',
+                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                          borderRadius: '8px',
+                          padding: '6px',
+                          minWidth: '180px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <button
+                            onClick={() => handleDeliverAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <CheckCircle size={14} /> Delivered (New In-hand)
+                          </button>
+                          <button
+                            onClick={() => handleCancelAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <XCircle size={14} /> Cancel (Old In-hand)
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* TAB CONTENT: 3. OLD PHONE EXCHANGES TAB */}
+      {activeTab === 'exchanges' && (
+        <div className="table-responsive">
+          <table className="custom-table">
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ width: '40px' }}>#</th>
+                <th>Intake Date</th>
+                <th>Staff / Evaluator</th>
+                <th>Old Phone Brand</th>
+                <th>Model</th>
+                <th>Storage</th>
+                <th>RAM</th>
+                <th>Color</th>
+                <th>Trade Valuation (Rs)</th>
+                <th>Trade Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredExchanges.length === 0 ? (
+                <tr>
+                  <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                    No old phone exchanges match your search.
+                  </td>
+                </tr>
+              ) : (
+                filteredExchanges.map((row, idx) => (
+                  <tr key={row.id}>
+                    <td>{idx + 1}</td>
+                    <td>{row.date}</td>
+                    <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldPurchasedBy}</td>
+                    <td style={{ fontWeight: 600 }}>{row.oldBrand}</td>
+                    <td style={{ fontWeight: 700 }}>{row.oldModel}</td>
+                    <td>{row.oldStorage} GB</td>
+                    <td>{row.oldRam} GB</td>
+                    <td>{row.oldColor}</td>
+                    <td style={{ fontWeight: 800, color: '#16a34a' }}>
+                      <CurrencyAmount amount={row.oldAmount} />
+                    </td>
+                    <td>
+                      <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                        Trade-in Received
+                      </span>
+                    </td>
+                    <td style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                        className="btn-secondary"
+                        style={{ padding: '6px' }}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+
+                      {activeMenuId === row.id && (
+                        <div style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: '100%',
+                          zIndex: 50,
+                          background: '#ffffff',
+                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                          borderRadius: '8px',
+                          padding: '6px',
+                          minWidth: '180px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <button
+                            onClick={() => handleDeliverAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <CheckCircle size={14} /> Delivered (New In-hand)
+                          </button>
+                          <button
+                            onClick={() => handleCancelAction(row.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                          >
+                            <XCircle size={14} /> Cancel (Old In-hand)
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Book a Mobile Modal with Scroll feature and Exchange Icon */}
       {isModalOpen && (

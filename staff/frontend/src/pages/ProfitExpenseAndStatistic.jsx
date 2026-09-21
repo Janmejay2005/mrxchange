@@ -20,6 +20,7 @@ import PdfExportModal from '../components/common/PdfExportModal';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export default function ProfitExpenseAndStatistic() {
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'profit' | 'expenses' | 'statistics'
   const [selectedAdmin, setSelectedAdmin] = useState('All Super Admins');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -214,9 +215,96 @@ export default function ProfitExpenseAndStatistic() {
           <button onClick={() => { setSelectedAdmin('All Super Admins'); setFromDate(''); setToDate(''); }} className="btn-secondary">Clear</button>
           <button className="btn-primary">Apply</button>
         </div>
+      </div>      {/* Tabulation Bar */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setActiveTab('overview')}
+          style={{
+            padding: '10px 18px',
+            fontWeight: 700,
+            fontSize: '13px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: activeTab === 'overview' ? '#0284c7' : '#64748b',
+            borderBottom: activeTab === 'overview' ? '3px solid #0284c7' : '3px solid transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <BarChart2 size={16} /> All Overview
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profit')}
+          style={{
+            padding: '10px 18px',
+            fontWeight: 700,
+            fontSize: '13px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: activeTab === 'profit' ? '#0284c7' : '#64748b',
+            borderBottom: activeTab === 'profit' ? '3px solid #0284c7' : '3px solid transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <TrendingUp size={16} /> Phone-wise Profit
+          <span style={{ background: activeTab === 'profit' ? '#0284c7' : '#e2e8f0', color: activeTab === 'profit' ? '#ffffff' : '#64748b', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>
+            {filteredProfits.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('expenses')}
+          style={{
+            padding: '10px 18px',
+            fontWeight: 700,
+            fontSize: '13px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: activeTab === 'expenses' ? '#ea580c' : '#64748b',
+            borderBottom: activeTab === 'expenses' ? '3px solid #ea580c' : '3px solid transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Wallet size={16} /> Expenses Register
+          <span style={{ background: activeTab === 'expenses' ? '#ea580c' : '#e2e8f0', color: activeTab === 'expenses' ? '#ffffff' : '#64748b', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>
+            {filteredExpenses.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('statistics')}
+          style={{
+            padding: '10px 18px',
+            fontWeight: 700,
+            fontSize: '13px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: activeTab === 'statistics' ? '#8b5cf6' : '#64748b',
+            borderBottom: activeTab === 'statistics' ? '3px solid #8b5cf6' : '3px solid transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Target size={16} /> Statistics & Analytics
+        </button>
       </div>
 
-      {/* 5 KPI Cards matching reference screenshot */}
+      {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div className="kpi-card" style={{ padding: '16px' }}>
           <div className="kpi-icon-wrap" style={{ backgroundColor: '#e0f2fe' }}><TrendingUp size={24} color="#0284c7" /></div>
@@ -259,32 +347,112 @@ export default function ProfitExpenseAndStatistic() {
         </div>
       </div>
 
-      {/* Middle Grid - Phone-wise Profit & Expenses */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        {/* Left Table: Phone-wise Profit */}
-        <div className="card-container" style={{ margin: 0 }}>
+      {/* Tab Content: All Overview */}
+      {activeTab === 'overview' && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+            {/* Phone-wise Profit */}
+            <div className="card-container" style={{ margin: 0 }}>
+              <div className="card-header-flex">
+                <h2 className="card-title">Phone-wise Profit</h2>
+                <button onClick={openProfitExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+              </div>
+              <div className="table-responsive">
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Date</th>
+                      <th>Model</th>
+                      <th>Brand</th>
+                      <th>Purchase (₹)</th>
+                      <th>Selling (₹)</th>
+                      <th>Profit (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProfits.map((item, idx) => (
+                      <tr key={item.id}>
+                        <td>{idx + 1}</td>
+                        <td>{item.date}</td>
+                        <td style={{ fontWeight: 700 }}>{item.model}</td>
+                        <td>{item.brand}</td>
+                        <td>{item.purchase.toLocaleString()}</td>
+                        <td>{item.selling.toLocaleString()}</td>
+                        <td style={{ fontWeight: 800, color: '#16a34a' }}>{item.profit.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Expenses */}
+            <div className="card-container" style={{ margin: 0 }}>
+              <div className="card-header-flex">
+                <h2 className="card-title">Expenses</h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}><Plus size={14} /> Add Expense</button>
+                  <button onClick={openExpensesExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+                </div>
+              </div>
+              <div className="table-responsive">
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Amount (₹)</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredExpenses.map((exp, idx) => (
+                      <tr key={exp.id}>
+                        <td>{idx + 1}</td>
+                        <td>{exp.date}</td>
+                        <td style={{ fontWeight: 600, color: '#0284c7' }}>{exp.type}</td>
+                        <td style={{ fontWeight: 700 }}><CurrencyAmount amount={exp.amount} /></td>
+                        <td style={{ fontSize: '12px', color: '#64748b' }}>{exp.remarks}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Tab Content: Phone-wise Profit */}
+      {activeTab === 'profit' && (
+        <div className="card-container" style={{ margin: 0, marginBottom: '24px' }}>
           <div className="card-header-flex">
-            <h2 className="card-title">Phone-wise Profit</h2>
-            <button onClick={openProfitExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+            <h2 className="card-title">Phone-wise Profit Breakdown ({filteredProfits.length} Records)</h2>
+            <button onClick={openProfitExport} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }}>
+              <Download size={15} /> Export PDF Report
+            </button>
           </div>
           <div className="table-responsive">
             <table className="custom-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Date</th>
-                  <th>Model</th>
-                  <th>Brand</th>
+                  <th>Intake / Sale Date</th>
+                  <th>Super Admin</th>
+                  <th>Mobile Brand</th>
+                  <th>Mobile Model</th>
                   <th>Purchase Price (₹)</th>
                   <th>Selling Price (₹)</th>
-                  <th>Profit (₹)</th>
+                  <th>Profit Margin (₹)</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProfits.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                      No phone profit entries match the selected filters.
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                      No phone profit entries match current date and admin filters.
                     </td>
                   </tr>
                 ) : (
@@ -292,11 +460,14 @@ export default function ProfitExpenseAndStatistic() {
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
                       <td>{item.date}</td>
-                      <td style={{ fontWeight: 700 }}>{item.model}</td>
+                      <td style={{ color: '#0284c7', fontWeight: 600 }}>{item.admin}</td>
                       <td>{item.brand}</td>
+                      <td style={{ fontWeight: 700 }}>{item.model}</td>
                       <td>{item.purchase.toLocaleString()}</td>
                       <td>{item.selling.toLocaleString()}</td>
-                      <td style={{ fontWeight: 800, color: '#16a34a' }}>{item.profit.toLocaleString()}</td>
+                      <td style={{ fontWeight: 800, color: '#16a34a', fontSize: '14px' }}>
+                        ₹ {item.profit.toLocaleString()}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -304,14 +475,20 @@ export default function ProfitExpenseAndStatistic() {
             </table>
           </div>
         </div>
+      )}
 
-        {/* Right Table: Expenses */}
-        <div className="card-container" style={{ margin: 0 }}>
+      {/* Tab Content: Expenses Register */}
+      {activeTab === 'expenses' && (
+        <div className="card-container" style={{ margin: 0, marginBottom: '24px' }}>
           <div className="card-header-flex">
-            <h2 className="card-title">Expenses</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}><Plus size={14} /> Add Expense</button>
-              <button onClick={openExpensesExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+            <h2 className="card-title">Business Expenses Register ({filteredExpenses.length} Entries)</h2>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }}>
+                <Plus size={16} /> Add New Expense
+              </button>
+              <button onClick={openExpensesExport} className="btn-secondary" style={{ padding: '8px 16px', borderRadius: '8px' }}>
+                <Download size={15} /> Export PDF
+              </button>
             </div>
           </div>
           <div className="table-responsive">
@@ -319,17 +496,18 @@ export default function ProfitExpenseAndStatistic() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Date</th>
-                  <th>Expense Type</th>
+                  <th>Expense Date</th>
+                  <th>Recorded By</th>
+                  <th>Expense Category</th>
                   <th>Amount (₹)</th>
-                  <th>Remarks</th>
+                  <th>Notes & Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredExpenses.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                      No expenses match the selected filters.
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                      No expenses match current date and admin filters.
                     </td>
                   </tr>
                 ) : (
@@ -337,9 +515,10 @@ export default function ProfitExpenseAndStatistic() {
                     <tr key={exp.id}>
                       <td>{idx + 1}</td>
                       <td>{exp.date}</td>
-                      <td style={{ fontWeight: 600, color: '#0284c7' }}>{exp.type}</td>
-                      <td style={{ fontWeight: 700 }}><CurrencyAmount amount={exp.amount} /></td>
-                      <td style={{ fontSize: '12px', color: '#64748b' }}>{exp.remarks}</td>
+                      <td style={{ color: '#0284c7', fontWeight: 600 }}>{exp.admin}</td>
+                      <td style={{ fontWeight: 700, color: '#ea580c' }}>{exp.type}</td>
+                      <td style={{ fontWeight: 800, fontSize: '14px' }}><CurrencyAmount amount={exp.amount} /></td>
+                      <td style={{ color: '#64748b', fontSize: '13px' }}>{exp.remarks}</td>
                     </tr>
                   ))
                 )}
@@ -347,60 +526,62 @@ export default function ProfitExpenseAndStatistic() {
             </table>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Bottom Grid - Statistics & Comparison & Return Performance */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
-        <div className="card-container" style={{ margin: 0 }}>
-          <div className="card-header-flex">
-            <h2 className="card-title">Statistics & Comparison</h2>
-          </div>
-          <div style={{ height: '260px' }}>
-            <Bar data={barChartData} options={{ maintainAspectRatio: false }} />
-          </div>
-        </div>
-
-        <div className="card-container" style={{ margin: 0 }}>
-          <div className="card-header-flex">
-            <h2 className="card-title">Return & Performance</h2>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ width: '180px', height: '180px', position: 'relative' }}>
-              <Doughnut data={doughnutData} options={{ maintainAspectRatio: true, plugins: { legend: { display: false } } }} />
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>22.54%</span>
-                <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>ROI</span>
-              </div>
+      {/* Tab Content: Statistics & Analytics (Shown in Overview and Statistics tab) */}
+      {(activeTab === 'overview' || activeTab === 'statistics') && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+          <div className="card-container" style={{ margin: 0 }}>
+            <div className="card-header-flex">
+              <h2 className="card-title">Statistics & Comparison Bar Chart</h2>
             </div>
+            <div style={{ height: '260px' }}>
+              <Bar data={barChartData} options={{ maintainAspectRatio: false }} />
+            </div>
+          </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                <span>• Investment</span> <strong>₹ 5,48,000</strong>
-              </div>
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                <span>• Selling Amount</span> <strong>₹ 7,14,000</strong>
-              </div>
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                <span>• Total Profit</span> <strong>₹ 1,66,000</strong>
-              </div>
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                <span>• Total Expenses</span> <strong>₹ 42,500</strong>
-              </div>
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                <span>• Final Profit</span> <strong>₹ 1,23,500</strong>
-              </div>
-
-              {/* Business Insight Card */}
-              <div style={{ marginTop: '12px', padding: '12px', background: '#e0f2fe', borderRadius: '10px', border: '1px solid #bae6fd' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: '#0284c7', fontWeight: 700, fontSize: '12px', marginBottom: '4px' }}>
-                  <Target size={16} /> Business Insight
+          <div className="card-container" style={{ margin: 0 }}>
+            <div className="card-header-flex">
+              <h2 className="card-title">Return & Performance Analysis</h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ width: '180px', height: '180px', position: 'relative' }}>
+                <Doughnut data={doughnutData} options={{ maintainAspectRatio: true, plugins: { legend: { display: false } } }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{roi}%</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>ROI</span>
                 </div>
-                <p style={{ fontSize: '11px', color: '#0369a1', margin: 0 }}>You are getting 22.54% return on your investment. +18% better than last period.</p>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>• Total Investment</span> <strong>₹ {totalInvestment.toLocaleString()}</strong>
+                </div>
+                <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>• Total Selling Amount</span> <strong>₹ {totalSelling.toLocaleString()}</strong>
+                </div>
+                <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>• Gross Profit</span> <strong>₹ {totalProfit.toLocaleString()}</strong>
+                </div>
+                <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>• Total Expenses</span> <strong>₹ {totalExpensesAmount.toLocaleString()}</strong>
+                </div>
+                <div style={{ fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>• Final Net Profit</span> <strong style={{ color: '#ec4899' }}>₹ {finalProfit.toLocaleString()}</strong>
+                </div>
+
+                {/* Business Insight Card */}
+                <div style={{ marginTop: '12px', padding: '12px', background: '#e0f2fe', borderRadius: '10px', border: '1px solid #bae6fd' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: '#0284c7', fontWeight: 700, fontSize: '12px', marginBottom: '4px' }}>
+                    <Target size={16} /> Business Insight
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#0369a1', margin: 0 }}>You are getting {roi}% return on your investment. Healthy profit margin across registered inventory sales.</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Add Expense Modal */}
       {isExpenseModalOpen && (
