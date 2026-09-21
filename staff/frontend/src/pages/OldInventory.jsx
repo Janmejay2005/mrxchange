@@ -4,7 +4,10 @@ import {
   FileText,
   Database,
   Smartphone,
-  Filter
+  Filter,
+  Edit,
+  Trash2,
+  X
 } from 'lucide-react';
 import { deviceService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
@@ -58,6 +61,75 @@ export default function OldInventory() {
 
   // Checkbox selection state
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: '',
+    brand: '',
+    model: '',
+    storage: '',
+    ram: '',
+    colour: '',
+    condition: 'Good',
+    purchase_amount: '',
+    paid_by: '',
+    status: 'OLD_INVENTORY'
+  });
+
+  const handleOpenEditModal = () => {
+    if (selectedIds.length !== 1) {
+      alert('Please select exactly 1 device to edit.');
+      return;
+    }
+    const target = devices.find(d => String(d.id) === String(selectedIds[0]));
+    if (target) {
+      setEditForm({
+        id: target.id,
+        brand: target.brand || '',
+        model: target.model || '',
+        storage: target.storage || '',
+        ram: target.ram || '',
+        colour: target.colour || '',
+        condition: target.condition || 'Good',
+        purchase_amount: target.purchase_amount || '',
+        paid_by: target.paid_by || '',
+        status: target.status || 'OLD_INVENTORY'
+      });
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    setDevices(prev => prev.map(d => String(d.id) === String(editForm.id) ? {
+      ...d,
+      brand: editForm.brand,
+      model: editForm.model,
+      storage: Number(editForm.storage),
+      ram: Number(editForm.ram),
+      colour: editForm.colour,
+      condition: editForm.condition,
+      purchase_amount: Number(editForm.purchase_amount),
+      paid_by: editForm.paid_by,
+      status: editForm.status
+    } : d));
+    setIsEditModalOpen(false);
+    setSelectedIds([]);
+    alert('Device updated successfully!');
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) {
+      alert('Please select at least 1 device to delete.');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected device(s) from inventory?`)) {
+      setDevices(prev => prev.filter(d => !selectedIds.includes(String(d.id))));
+      setSelectedIds([]);
+      alert(`${selectedIds.length} device(s) deleted successfully!`);
+    }
+  };
 
   const fetchInventory = async () => {
     try {
@@ -246,7 +318,51 @@ export default function OldInventory() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button 
+            onClick={handleOpenEditModal} 
+            disabled={selectedIds.length !== 1}
+            style={{ 
+              padding: '8px 16px', 
+              borderRadius: '8px', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              opacity: selectedIds.length === 1 ? 1 : 0.45,
+              cursor: selectedIds.length === 1 ? 'pointer' : 'not-allowed',
+              backgroundColor: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 600,
+              fontSize: '13px'
+            }} 
+            title={selectedIds.length === 1 ? "Edit selected device" : "Select exactly 1 device to edit"}
+          >
+            <Edit size={15} /> Edit {selectedIds.length === 1 ? '(1)' : ''}
+          </button>
+
+          <button 
+            onClick={handleDeleteSelected} 
+            disabled={selectedIds.length === 0}
+            style={{ 
+              padding: '8px 16px', 
+              borderRadius: '8px', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              opacity: selectedIds.length > 0 ? 1 : 0.45,
+              cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed',
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 600,
+              fontSize: '13px'
+            }} 
+            title={selectedIds.length > 0 ? `Delete ${selectedIds.length} selected device(s)` : "Select device(s) to delete"}
+          >
+            <Trash2 size={15} /> Delete {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+          </button>
+
           <button onClick={handleExportPdf} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }} title="Generate PDF report">
             <FileText size={15} /> Export PDF {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
           </button>
@@ -478,6 +594,70 @@ export default function OldInventory() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchInventory}
       />
+
+      {/* Edit Device Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Edit Inventory Device</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Update details for selected device.</p>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleSaveEdit}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label className="form-label">Brand Name *</label>
+                  <input type="text" className="form-control" value={editForm.brand} onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Model *</label>
+                  <input type="text" className="form-control" value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Storage (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.storage} onChange={(e) => setEditForm({ ...editForm, storage: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">RAM (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.ram} onChange={(e) => setEditForm({ ...editForm, ram: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Color *</label>
+                  <input type="text" className="form-control" value={editForm.colour} onChange={(e) => setEditForm({ ...editForm, colour: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">Paid By *</label>
+                  <input type="text" className="form-control" value={editForm.paid_by} onChange={(e) => setEditForm({ ...editForm, paid_by: e.target.value })} required />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label">Paid Amount (₹) *</label>
+                <input type="number" className="form-control" value={editForm.purchase_amount} onChange={(e) => setEditForm({ ...editForm, purchase_amount: e.target.value })} required />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label className="form-label">Status *</label>
+                <select className="form-control" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                  <option value="OLD_INVENTORY">Old Inventory</option>
+                  <option value="OLD_IN_HAND">Old In-Hand</option>
+                  <option value="IN_REPAIR">Repair</option>
+                  <option value="REJECTED">Rejected Stock</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* PDF Export Preview Dialogue Modal */}
       <PdfExportModal

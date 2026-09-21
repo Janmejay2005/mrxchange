@@ -8,7 +8,10 @@ import {
   Download,
   FileText,
   ShoppingCart,
-  Tag
+  Tag,
+  Edit,
+  Trash2,
+  X
 } from 'lucide-react';
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
@@ -31,6 +34,74 @@ export default function OldInHandStock() {
     filename: '',
     summaryInfo: []
   });
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: '',
+    brand: '',
+    model: '',
+    storage: '',
+    ram: '',
+    colour: '',
+    purchase_amount: '',
+    paid_by: ''
+  });
+
+  const openEditModal = (device) => {
+    setEditForm({
+      id: device.id,
+      brand: device.brand || '',
+      model: device.model || '',
+      storage: device.storage || '',
+      ram: device.ram || '',
+      colour: device.colour || '',
+      purchase_amount: device.purchase_amount || '',
+      paid_by: device.paid_by || 'Staff'
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    setDevices(prev => prev.map(d => String(d.id) === String(editForm.id) ? {
+      ...d,
+      brand: editForm.brand,
+      model: editForm.model,
+      storage: Number(editForm.storage),
+      ram: Number(editForm.ram),
+      colour: editForm.colour,
+      purchase_amount: Number(editForm.purchase_amount),
+      paid_by: editForm.paid_by
+    } : d));
+
+    // Update localStorage if saved in mrx_old_in_hand_stock
+    const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+    const updated = stored.map(item => String(item.id) === String(editForm.id) ? {
+      ...item,
+      brand: editForm.brand,
+      model: editForm.model,
+      storage: Number(editForm.storage),
+      ram: Number(editForm.ram),
+      colour: editForm.colour,
+      purchase_amount: Number(editForm.purchase_amount),
+      paid_by: editForm.paid_by
+    } : item);
+    localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
+
+    setIsEditModalOpen(false);
+    alert('Device updated successfully!');
+  };
+
+  const handleDeleteDevice = (id) => {
+    if (window.confirm('Are you sure you want to delete this device from Old In-hand stock?')) {
+      setDevices(prev => prev.filter(d => String(d.id) !== String(id)));
+      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const updated = stored.filter(item => String(item.id) !== String(id));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
+      alert('Device deleted successfully!');
+    }
+  };
 
   // Sell Modal State
   const [sellModal, setSellModal] = useState({
@@ -317,23 +388,22 @@ export default function OldInHandStock() {
                   <td><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
                   <td>{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSellModal({
-                        isOpen: true,
-                        device: d,
-                        sellingPrice: '',
-                        customerName: '',
-                        customerPhone: '',
-                        paymentMethod: 'UPI',
-                        paymentType: 'COMPLETE',
-                        soldBy: 'Rohit'
-                      })}
-                      className="btn-primary"
-                      style={{ padding: '6px 14px', fontSize: '12px', background: '#059669' }}
-                    >
-                      <ShoppingCart size={13} /> Sell
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(d)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        <Edit size={14} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDevice(d.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -431,6 +501,60 @@ export default function OldInHandStock() {
                 <button type="submit" className="btn-primary" style={{ background: '#059669' }}>
                   Complete Sale & Record in Ledger
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Device Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Edit Old In-hand Device</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Update stock specifications and purchasing details.</p>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleSaveEdit}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label className="form-label">Brand Name *</label>
+                  <input type="text" className="form-control" value={editForm.brand} onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Model *</label>
+                  <input type="text" className="form-control" value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Storage (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.storage} onChange={(e) => setEditForm({ ...editForm, storage: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">RAM (GB) *</label>
+                  <input type="number" className="form-control" value={editForm.ram} onChange={(e) => setEditForm({ ...editForm, ram: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Color *</label>
+                  <input type="text" className="form-control" value={editForm.colour} onChange={(e) => setEditForm({ ...editForm, colour: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">Purchased By *</label>
+                  <input type="text" className="form-control" value={editForm.paid_by} onChange={(e) => setEditForm({ ...editForm, paid_by: e.target.value })} required />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label className="form-label">Purchase Price (₹) *</label>
+                <input type="number" className="form-control" value={editForm.purchase_amount} onChange={(e) => setEditForm({ ...editForm, purchase_amount: e.target.value })} required />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Changes</button>
               </div>
             </form>
           </div>
