@@ -18,6 +18,7 @@ import { statsService, deviceService } from '../services/api';
 import { KPICard } from '../components/common/UIComponents';
 import { useAuth } from '../context/AuthContext';
 import { exportToCsv, exportToPdf } from '../utils/pdfGenerator';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -25,6 +26,16 @@ export default function Reports() {
   const { isSuperAdmin } = useAuth();
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Export PDF Dialogue Modal state
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Filter selections
   const [dateRange, setDateRange] = useState('All Time');
@@ -145,9 +156,19 @@ export default function Reports() {
           `${d.storage}GB`,
           d.colour || '-',
           `Rs. ${d.purchase_amount}`,
-          d.status
+          d.status || 'OLD_INVENTORY'
         ]);
-        exportToPdf(`Report: ${exportTarget.toUpperCase()}`, headers, rows, `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.pdf`);
+        const totalAmount = rawDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+        setExportModalConfig({
+          isOpen: true,
+          title: `Report: ${exportTarget.toUpperCase().replace('_', ' ')}`,
+          headers,
+          rows,
+          filename: `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.pdf`,
+          summaryInfo: [
+            { label: 'Total Value', value: `Rs. ${totalAmount.toLocaleString()}`, color: '#0284c7' }
+          ]
+        });
       }
     } catch (err) {
       alert('Failed to generate export download file.');
@@ -469,6 +490,17 @@ export default function Reports() {
           </div>
         </div>
       </div>
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

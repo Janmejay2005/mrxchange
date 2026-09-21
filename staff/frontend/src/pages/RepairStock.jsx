@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Wrench, 
-  Printer, 
-  MoreHorizontal, 
-  CheckCircle, 
+import {
+  Wrench,
+  FileText,
+  MoreHorizontal,
+  CheckCircle,
   Trash2,
-  Home,
-  FileText
+  Home
 } from 'lucide-react';
 import { deviceService, repairService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { exportToPdf } from '../utils/pdfGenerator';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function RepairStock() {
   const { globalSearch } = useOutletContext() || {};
@@ -19,6 +18,15 @@ export default function RepairStock() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Complete Repair Modal
   const [completeModal, setCompleteModal] = useState({
@@ -46,7 +54,7 @@ export default function RepairStock() {
       const dataIds = new Set(dataList.map(d => String(d.id)));
       const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
 
-      const filteredSamples = sampleRepairStock.filter(s => 
+      const filteredSamples = sampleRepairStock.filter(s =>
         !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
       );
 
@@ -63,37 +71,21 @@ export default function RepairStock() {
     fetchRepairStock();
   }, [globalSearch]);
 
-  const handleExportPdf = () => {
-    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount', 'Paid By', 'Date'];
-    const rows = devices.map((d, idx) => [
-      idx + 1,
-      d.brand,
-      d.model,
-      `${d.storage} GB`,
-      `${d.ram} GB`,
-      d.colour || '-',
-      `Rs. ${d.purchase_amount}`,
-      d.paid_by || 'Staff',
-      d.intake_date || 'Today'
-    ]);
-    exportToPdf('Repair Stock Report', headers, rows, `Repair_Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
-
   const handleCompleteRepair = async () => {
     try {
       const { device, actualCost, paidBy, notes } = completeModal;
       await deviceService.updateStatus(device.id, {
-        status: 'OLD_INVENTORY',
+        status: 'OLD_IN_HAND',
         reason: `Repair completed: ${notes || 'Ready for stock'}`,
         repair_cost: actualCost,
         repair_paid_by: paidBy
-      }, device);
+      });
       setCompleteModal({ ...completeModal, isOpen: false });
-      navigate('/old-inventory');
+      navigate('/old-in-hand');
     } catch (err) {
       console.error(err);
       setCompleteModal({ ...completeModal, isOpen: false });
-      navigate('/old-inventory');
+      navigate('/old-in-hand');
     }
   };
 
@@ -103,12 +95,38 @@ export default function RepairStock() {
       await deviceService.updateStatus(device.id, {
         status: 'REJECTED',
         reason: 'Unrepairable damage'
-      }, device);
+      });
       navigate('/rejected-stocks');
     } catch (err) {
       console.error(err);
       navigate('/rejected-stocks');
     }
+  };
+
+  const handleExportPdf = () => {
+    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Paid By', 'Date'];
+    const rows = devices.map((d, idx) => [
+      idx + 1,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      `Rs. ${d.purchase_amount}`,
+      d.paid_by || 'Rohit',
+      d.intake_date || '-'
+    ]);
+    const totalCost = devices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Repair Inventory Stock Report',
+      headers,
+      rows,
+      filename: `Repair_Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Repair Value', value: `Rs. ${totalCost.toLocaleString()}`, color: '#ea580c' }
+      ]
+    });
   };
 
   return (
@@ -119,15 +137,12 @@ export default function RepairStock() {
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Repair Stock</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Mobiles currently under repair process.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Repair Stock</span>
           </div>
-          <button onClick={handleExportPdf} className="btn-primary" style={{ borderRadius: '8px' }}>
-            <FileText size={15} /> Export PDF
-          </button>
-          <button onClick={() => window.print()} className="btn-secondary" style={{ borderRadius: '8px' }}>
-            <Printer size={15} /> Print Report
+          <button onClick={handleExportPdf} className="btn-primary">
+            <FileText size={16} /> Export PDF
           </button>
         </div>
       </div>
@@ -165,7 +180,7 @@ export default function RepairStock() {
                 <td style={{ color: '#64748b' }}>{device.intake_date}</td>
                 <td>
                   <div className="action-menu">
-                    <button 
+                    <button
                       onClick={() => setActiveMenuId(activeMenuId === device.id ? null : device.id)}
                       style={{ padding: '6px', background: '#f1f5f9', borderRadius: '6px' }}
                     >
@@ -174,8 +189,8 @@ export default function RepairStock() {
 
                     {activeMenuId === device.id && (
                       <div className="menu-dropdown">
-                        <button 
-                          className="menu-item" 
+                        <button
+                          className="menu-item"
                           onClick={() => {
                             setActiveMenuId(null);
                             setCompleteModal({
@@ -191,8 +206,8 @@ export default function RepairStock() {
                           <CheckCircle size={16} />
                           <div>Complete Repair</div>
                         </button>
-                        <button 
-                          className="menu-item" 
+                        <button
+                          className="menu-item"
                           onClick={() => handleRejectDevice(device)}
                           style={{ color: '#dc2626' }}
                         >
@@ -227,9 +242,9 @@ export default function RepairStock() {
 
               <div className="form-group">
                 <label className="form-label">Actual Repair Cost Incurred (₹ INR)</label>
-                <input 
-                  type="number" 
-                  className="form-control" 
+                <input
+                  type="number"
+                  className="form-control"
                   placeholder="e.g. 1200"
                   value={completeModal.actualCost}
                   onChange={(e) => setCompleteModal({ ...completeModal, actualCost: e.target.value })}
@@ -238,7 +253,7 @@ export default function RepairStock() {
 
               <div className="form-group">
                 <label className="form-label">Paid By *</label>
-                <select 
+                <select
                   className="form-control"
                   value={completeModal.paidBy}
                   onChange={(e) => setCompleteModal({ ...completeModal, paidBy: e.target.value })}
@@ -254,8 +269,8 @@ export default function RepairStock() {
 
               <div className="form-group">
                 <label className="form-label">Technician Notes</label>
-                <textarea 
-                  className="form-control" 
+                <textarea
+                  className="form-control"
                   rows="2"
                   placeholder="Notes about repair work..."
                   value={completeModal.notes}
@@ -274,6 +289,17 @@ export default function RepairStock() {
           </div>
         </div>
       )}
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

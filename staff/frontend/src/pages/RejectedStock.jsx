@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Trash2, 
-  Printer, 
+  FileText, 
   Home, 
   RotateCcw,
   Wrench,
@@ -10,11 +10,21 @@ import {
 import { deviceService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function RejectedStock() {
   const { globalSearch } = useOutletContext() || {};
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Resolution modal
   const [resolveModal, setResolveModal] = useState({
@@ -38,14 +48,18 @@ export default function RejectedStock() {
         { id: 'rej_2', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '14 Sep 2026', last_rejection_reason: 'Motherboard short circuit', status: 'REJECTED' },
         { id: 'rej_3', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '13 Sep 2026', last_rejection_reason: 'Liquid damage', status: 'REJECTED' }
       ];
-      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'REJECTED');
-      const rejectedList = [...customLocal, ...dataList.filter(d => d.status === 'REJECTED')];
-      setDevices(rejectedList.length > 0 ? rejectedList : sampleRejected);
+      const dataIds = new Set(dataList.map(d => String(d.id)));
+      const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
+
+      const filteredSamples = sampleRejected.filter(s =>
+        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
+      );
+
+      const allRejected = [...dataList, ...filteredSamples].filter(d => d.status === 'REJECTED');
+      setDevices(allRejected);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      const customLocal = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'REJECTED');
-      setDevices(customLocal);
       setLoading(false);
     }
   };
@@ -69,6 +83,33 @@ export default function RejectedStock() {
     }
   };
 
+  const handleExportPdf = () => {
+    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Paid By', 'Date', 'Rejection Reason'];
+    const rows = devices.map((d, idx) => [
+      idx + 1,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      `Rs. ${d.purchase_amount}`,
+      d.paid_by || 'Rohit',
+      d.intake_date || '-',
+      d.last_rejection_reason || 'Defective piece'
+    ]);
+    const totalVal = devices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Rejected Stock PDF Report',
+      headers,
+      rows,
+      filename: `Rejected_Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Rejected Value', value: `Rs. ${totalVal.toLocaleString()}`, color: '#dc2626' }
+      ]
+    });
+  };
+
   return (
     <div>
       {/* Header & Breadcrumb */}
@@ -81,8 +122,8 @@ export default function RejectedStock() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#ef4444', fontWeight: 600 }}>Rejected Stock</span>
           </div>
-          <button onClick={() => window.print()} className="btn-primary">
-            <Printer size={16} /> Print Report
+          <button onClick={handleExportPdf} className="btn-primary">
+            <FileText size={16} /> Export PDF
           </button>
         </div>
       </div>
@@ -130,6 +171,17 @@ export default function RejectedStock() {
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#64748b' }}>
         <span>Showing all {devices.length} rejected stock items</span>
       </div>
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

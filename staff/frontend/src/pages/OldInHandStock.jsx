@@ -13,6 +13,7 @@ import {
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function OldInHandStock() {
   const { globalSearch, selectedDate } = useOutletContext() || {};
@@ -21,6 +22,15 @@ export default function OldInHandStock() {
   const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Sell Modal State
   const [sellModal, setSellModal] = useState({
@@ -46,7 +56,24 @@ export default function OldInHandStock() {
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
       const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      setDevices([...cancelledItems, ...dataList]);
+      
+      const sampleStock = [
+        { id: 'old_hand_1', device_code: 'MRX-00101', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+        { id: 'old_hand_2', device_code: 'MRX-00102', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+        { id: 'old_hand_3', device_code: 'MRX-00103', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
+        { id: 'old_hand_4', device_code: 'MRX-00104', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' }
+      ];
+
+      const combinedData = [...cancelledItems, ...dataList];
+      const dataIds = new Set(combinedData.map(d => String(d.id)));
+      const dataCodes = new Set(combinedData.map(d => d.device_code).filter(Boolean));
+
+      const filteredSamples = sampleStock.filter(s =>
+        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
+      );
+
+      const allInHand = [...combinedData, ...filteredSamples].filter(d => d.status === 'OLD_IN_HAND' || !d.status);
+      setDevices(allInHand);
 
       const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
       setStats(statsRes.data);
@@ -54,13 +81,7 @@ export default function OldInHandStock() {
     } catch (err) {
       console.error(err);
       const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const fallback = [
-        { id: '1', device_code: 'MRX-00001', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '2', device_code: 'MRX-00002', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '3', device_code: 'MRX-00003', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-        { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-      ];
-      setDevices([...cancelledItems, ...fallback]);
+      setDevices(cancelledItems);
       setLoading(false);
     }
   };
@@ -95,8 +116,28 @@ export default function OldInHandStock() {
   };
 
   const handleExportPdf = () => {
-    const url = statsService.getPdfExportUrl('inventory', { status: 'OLD_IN_HAND' });
-    window.open(url, '_blank');
+    const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Status'];
+    const rows = devices.map((d, idx) => [
+      idx + 1,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      `Rs. ${d.purchase_amount}`,
+      d.status || 'OLD_IN_HAND'
+    ]);
+    const totalVal = devices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Old In-hand Stock PDF Report',
+      headers,
+      rows,
+      filename: `Old_In_Hand_Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Stock Value', value: `Rs. ${totalVal.toLocaleString()}`, color: '#0284c7' }
+      ]
+    });
   };
 
   return (
@@ -364,6 +405,17 @@ export default function OldInHandStock() {
           </div>
         </div>
       )}
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

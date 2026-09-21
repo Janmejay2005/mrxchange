@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal } from 'lucide-react';
+import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useNavigate } from 'react-router-dom';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function BookedAndExchange() {
   const navigate = useNavigate();
@@ -10,6 +11,15 @@ export default function BookedAndExchange() {
   const [purchasedBy, setPurchasedBy] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Book Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -140,6 +150,33 @@ export default function BookedAndExchange() {
     navigate('/old-in-hand');
   };
 
+  const handleExportPdf = () => {
+    const headers = ['#', 'Date', 'New Phone Model', 'New Price (Rs)', 'Exchanged Old Model', 'Exchange Val (Rs)', 'Customer / Purchased By', 'Status'];
+    const rows = filteredExchanges.map((item, idx) => [
+      idx + 1,
+      item.date,
+      `${item.newBrand} ${item.newModel}`,
+      `Rs. ${item.newAmount.toLocaleString()}`,
+      `${item.oldBrand} ${item.oldModel}`,
+      `Rs. ${item.oldAmount.toLocaleString()}`,
+      item.newPurchasedBy || '-',
+      item.status || 'Booked'
+    ]);
+    const totalNew = filteredExchanges.reduce((sum, item) => sum + item.newAmount, 0);
+    const totalOld = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Booked & Exchange Report',
+      headers,
+      rows,
+      filename: `Booked_Exchange_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Booking Value', value: `Rs. ${totalNew.toLocaleString()}`, color: '#0284c7' },
+        { label: 'Total Exchange Value', value: `Rs. ${totalOld.toLocaleString()}`, color: '#16a34a' }
+      ]
+    });
+  };
+
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -152,6 +189,9 @@ export default function BookedAndExchange() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Booked and Exchange</span>
           </div>
+          <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
+            <FileText size={16} /> Export PDF
+          </button>
           <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
             <Plus size={16} /> Book
           </button>
@@ -243,73 +283,73 @@ export default function BookedAndExchange() {
               </tr>
             ) : (
               filteredExchanges.map((row, idx) => (
-              <tr key={row.id}>
-                <td>{idx + 1}</td>
-                <td>{row.date}</td>
+                <tr key={row.id}>
+                  <td>{idx + 1}</td>
+                  <td>{row.date}</td>
 
-                {/* New Mobile Cells */}
-                <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
-                <td style={{ fontWeight: 700 }}>{row.newModel}</td>
-                <td>{row.newStorage}</td>
-                <td>{row.newRam}</td>
-                <td>{row.newColor}</td>
-                <td>{row.newPurchasedBy}</td>
-                <td style={{ fontWeight: 700 }}>
-                  <CurrencyAmount amount={row.newAmount} />
-                  <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
-                </td>
+                  {/* New Mobile Cells */}
+                  <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
+                  <td style={{ fontWeight: 700 }}>{row.newModel}</td>
+                  <td>{row.newStorage}</td>
+                  <td>{row.newRam}</td>
+                  <td>{row.newColor}</td>
+                  <td>{row.newPurchasedBy}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    <CurrencyAmount amount={row.newAmount} />
+                    <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
+                  </td>
 
-                {/* Old Mobile Cells */}
-                <td style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
-                <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
-                <td>{row.oldStorage}</td>
-                <td>{row.oldRam}</td>
-                <td>{row.oldColor}</td>
-                <td>{row.oldPurchasedBy}</td>
-                <td style={{ fontWeight: 700 }}>
-                  <CurrencyAmount amount={row.oldAmount} />
-                  <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
-                </td>
+                  {/* Old Mobile Cells */}
+                  <td style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
+                  <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
+                  <td>{row.oldStorage}</td>
+                  <td>{row.oldRam}</td>
+                  <td>{row.oldColor}</td>
+                  <td>{row.oldPurchasedBy}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    <CurrencyAmount amount={row.oldAmount} />
+                    <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
+                  </td>
 
-                <td style={{ position: 'relative' }}>
-                  <button 
-                    onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                    className="btn-secondary" 
-                    style={{ padding: '6px' }}
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
+                  <td style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                      className="btn-secondary"
+                      style={{ padding: '6px' }}
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
 
-                  {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
-                  {activeMenuId === row.id && (
-                    <div style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: '100%',
-                      zIndex: 50,
-                      background: '#ffffff',
-                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                      borderRadius: '8px',
-                      padding: '6px',
-                      minWidth: '180px',
-                      border: '1px solid #e2e8f0'
-                    }}>
-                      <button 
-                        onClick={() => handleDeliverAction(row.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                      >
-                        <CheckCircle size={14} /> Delivered (New In-hand)
-                      </button>
-                      <button 
-                        onClick={() => handleCancelAction(row.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                      >
-                        <XCircle size={14} /> Cancel (Old In-hand)
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
+                    {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
+                    {activeMenuId === row.id && (
+                      <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '100%',
+                        zIndex: 50,
+                        background: '#ffffff',
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                        borderRadius: '8px',
+                        padding: '6px',
+                        minWidth: '180px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <button
+                          onClick={() => handleDeliverAction(row.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                        >
+                          <CheckCircle size={14} /> Delivered (New In-hand)
+                        </button>
+                        <button
+                          onClick={() => handleCancelAction(row.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                        >
+                          <XCircle size={14} /> Cancel (Old In-hand)
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
               ))
             )}
           </tbody>
@@ -404,6 +444,17 @@ export default function BookedAndExchange() {
           </div>
         </div>
       )}
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

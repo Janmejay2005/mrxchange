@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle } from 'lucide-react';
+import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function PendingAndReceivingPayments() {
   const [fromDate, setFromDate] = useState('');
@@ -8,6 +9,15 @@ export default function PendingAndReceivingPayments() {
   const [paymentStatus, setPaymentStatus] = useState('All');
   const [personCustomer, setPersonCustomer] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Sell Modal State
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
@@ -56,6 +66,32 @@ export default function PendingAndReceivingPayments() {
     setIsSellModalOpen(false);
   };
 
+  const handleExportPdf = () => {
+    const headers = ['#', 'Date', 'Customer', 'Device Model', 'Total (Rs)', 'Paid (Rs)', 'Pending (Rs)', 'Status', 'Mode'];
+    const rows = filteredPayments.map((item, idx) => [
+      idx + 1,
+      item.date,
+      item.customerName,
+      `${item.brand} ${item.model}`,
+      `Rs. ${item.totalAmount.toLocaleString()}`,
+      `Rs. ${item.paidAmount.toLocaleString()}`,
+      `Rs. ${item.pendingAmount.toLocaleString()}`,
+      item.status,
+      item.mode
+    ]);
+    const totalPending = filteredPayments.reduce((sum, item) => sum + item.pendingAmount, 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Payments & Receivables Report',
+      headers,
+      rows,
+      filename: `Payments_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Pending', value: `Rs. ${totalPending.toLocaleString()}`, color: '#dc2626' }
+      ]
+    });
+  };
+
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -68,6 +104,9 @@ export default function PendingAndReceivingPayments() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Pending and Receiving Payments</span>
           </div>
+          <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
+            <FileText size={16} /> Export PDF
+          </button>
           <button onClick={() => setIsSellModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
             <Plus size={16} /> Add Payment
           </button>
@@ -309,6 +348,17 @@ export default function PendingAndReceivingPayments() {
           </div>
         </div>
       )}
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

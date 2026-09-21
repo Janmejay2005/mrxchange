@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Package, Plus, Home, Search } from 'lucide-react';
+import { Package, Plus, Home, Search, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function NewInHandStock() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   const [stock, setStock] = useState(() => {
     const initial = [
@@ -44,6 +54,33 @@ export default function NewInHandStock() {
     return true;
   });
 
+  const handleExportPdf = () => {
+    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchased By', 'Amount (Rs)', 'Status'];
+    const rows = filteredStock.map((item, idx) => [
+      idx + 1,
+      item.date,
+      item.brand,
+      item.model,
+      `${item.storage} GB`,
+      `${item.ram} GB`,
+      item.color || '-',
+      item.purchasedBy || '-',
+      `Rs. ${item.amount.toLocaleString()}`,
+      item.procedure || 'Sell'
+    ]);
+    const totalVal = filteredStock.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'New In-hand Stock PDF Report',
+      headers,
+      rows,
+      filename: `New_In_Hand_Stock_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Valuation', value: `Rs. ${totalVal.toLocaleString()}`, color: '#0284c7' }
+      ]
+    });
+  };
+
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -56,6 +93,9 @@ export default function NewInHandStock() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>New In-hand Stock</span>
           </div>
+          <button onClick={handleExportPdf} className="btn-primary">
+            <FileText size={16} /> Export PDF
+          </button>
         </div>
       </div>
 
@@ -167,6 +207,17 @@ export default function NewInHandStock() {
           </tbody>
         </table>
       </div>
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

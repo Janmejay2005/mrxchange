@@ -15,6 +15,7 @@ import {
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { CurrencyAmount } from '../components/common/UIComponents';
+import PdfExportModal from '../components/common/PdfExportModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -22,6 +23,16 @@ export default function ProfitExpenseAndStatistic() {
   const [selectedAdmin, setSelectedAdmin] = useState('All Super Admins');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+
+  // Export PDF Dialogue Modal State
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Add Expense Modal
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -87,6 +98,53 @@ export default function ProfitExpenseAndStatistic() {
   const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
   const finalProfit = totalProfit - totalExpensesAmount;
   const roi = totalInvestment > 0 ? ((finalProfit / totalInvestment) * 100).toFixed(2) : '0.00';
+
+  const openProfitExport = () => {
+    const headers = ['#', 'Date', 'Admin', 'Model', 'Brand', 'Purchase Price (Rs)', 'Selling Price (Rs)', 'Profit (Rs)'];
+    const rows = filteredProfits.map((item, idx) => [
+      idx + 1,
+      item.date,
+      item.admin,
+      item.model,
+      item.brand,
+      `Rs. ${item.purchase.toLocaleString()}`,
+      `Rs. ${item.selling.toLocaleString()}`,
+      `Rs. ${item.profit.toLocaleString()}`
+    ]);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Phone-wise Profit Report',
+      headers,
+      rows,
+      filename: `Phone_Profit_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Sales', value: `Rs. ${totalSelling.toLocaleString()}`, color: '#0284c7' },
+        { label: 'Total Profit', value: `Rs. ${totalProfit.toLocaleString()}`, color: '#16a34a' }
+      ]
+    });
+  };
+
+  const openExpensesExport = () => {
+    const headers = ['#', 'Date', 'Admin', 'Expense Type', 'Amount (Rs)', 'Remarks'];
+    const rows = filteredExpenses.map((exp, idx) => [
+      idx + 1,
+      exp.date,
+      exp.admin,
+      exp.type,
+      `Rs. ${exp.amount.toLocaleString()}`,
+      exp.remarks || '-'
+    ]);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Expenses Register Report',
+      headers,
+      rows,
+      filename: `Expenses_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Expenses', value: `Rs. ${totalExpensesAmount.toLocaleString()}`, color: '#ea580c' }
+      ]
+    });
+  };
 
   const barChartData = {
     labels: ['Investment', 'Selling Amount', 'Profit', 'Expenses', 'Final Profit'],
@@ -207,7 +265,7 @@ export default function ProfitExpenseAndStatistic() {
         <div className="card-container" style={{ margin: 0 }}>
           <div className="card-header-flex">
             <h2 className="card-title">Phone-wise Profit</h2>
-            <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+            <button onClick={openProfitExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
           </div>
           <div className="table-responsive">
             <table className="custom-table">
@@ -253,7 +311,7 @@ export default function ProfitExpenseAndStatistic() {
             <h2 className="card-title">Expenses</h2>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}><Plus size={14} /> Add Expense</button>
-              <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
+              <button onClick={openExpensesExport} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}><Download size={14} /> Export</button>
             </div>
           </div>
           <div className="table-responsive">
@@ -395,6 +453,17 @@ export default function ProfitExpenseAndStatistic() {
           </div>
         </div>
       )}
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
+      />
     </div>
   );
 }

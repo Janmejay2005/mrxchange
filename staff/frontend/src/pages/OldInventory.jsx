@@ -9,8 +9,8 @@ import {
 import { deviceService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import AddMobileModal from '../components/modals/AddMobileModal';
+import PdfExportModal from '../components/common/PdfExportModal';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { exportToPdf } from '../utils/pdfGenerator';
 
 const BRANDS = ['All Brands', 'Google Pixel', 'Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing', 'Motorola'];
 const MODELS_BY_BRAND = {
@@ -42,6 +42,14 @@ export default function OldInventory() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    headers: [],
+    rows: [],
+    filename: '',
+    summaryInfo: []
+  });
 
   // Brand filter
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
@@ -84,11 +92,17 @@ export default function OldInventory() {
 
   const handleStatusChange = async (device, newStatus) => {
     try {
-      const deviceId = typeof device === 'object' ? device.id : device;
-      await deviceService.updateStatus(deviceId, { status: newStatus }, typeof device === 'object' ? device : null);
+      const deviceObj = typeof device === 'object' ? device : { id: device };
+      const deviceId = deviceObj.id;
+      const updatedDevice = {
+        ...deviceObj,
+        status: newStatus
+      };
+
+      await deviceService.updateStatus(deviceId, updatedDevice, updatedDevice);
       
       // Immediately remove device from Old Inventory view
-      setDevices(prev => prev.filter(d => d.id !== deviceId));
+      setDevices(prev => prev.filter(d => String(d.id) !== String(deviceId)));
       
       // Automatic navigation based on new status option selected
       if (newStatus === 'IN_REPAIR') {
@@ -121,7 +135,17 @@ export default function OldInventory() {
       `Rs. ${d.purchase_amount}`,
       d.status || 'OLD_INVENTORY'
     ]);
-    exportToPdf('Master Inventory Report', headers, rows, `Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const totalVal = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+    setExportModalConfig({
+      isOpen: true,
+      title: 'Master Inventory PDF Report',
+      headers,
+      rows,
+      filename: `Master_Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      summaryInfo: [
+        { label: 'Total Valuation', value: `Rs. ${totalVal.toLocaleString()}`, color: '#0284c7' }
+      ]
+    });
   };
 
   return (
@@ -319,6 +343,17 @@ export default function OldInventory() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchInventory}
+      />
+
+      {/* PDF Export Preview Dialogue Modal */}
+      <PdfExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        title={exportModalConfig.title}
+        headers={exportModalConfig.headers}
+        rows={exportModalConfig.rows}
+        filename={exportModalConfig.filename}
+        summaryInfo={exportModalConfig.summaryInfo}
       />
     </div>
   );
