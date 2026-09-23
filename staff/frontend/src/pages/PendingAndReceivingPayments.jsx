@@ -29,7 +29,7 @@ export default function PendingAndReceivingPayments() {
     equatedBy: 'Jeet',
     customerName: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
-    paidAmount: '',
+    newPay: '',
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -58,12 +58,13 @@ export default function PendingAndReceivingPayments() {
 
   const handleOpenEquateModal = (row = null) => {
     setSelectedPayment(row);
+    const pending = row ? row.pendingAmount : '';
     setEquateForm({
-      pendingPayment: String(row ? row.pendingAmount : ''),
+      pendingPayment: String(pending),
       equatedBy: 'Jeet',
       customerName: row ? row.customerName : '',
       paymentType: row && row.pendingAmount === 0 ? 'COMPLETE' : 'INSTALLMENT',
-      paidAmount: String(row ? row.paidAmount : ''),
+      newPay: '',
       date: row ? (toYMD(row.date) || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
     });
     setIsEquateModalOpen(true);
@@ -100,22 +101,23 @@ export default function PendingAndReceivingPayments() {
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
+    const newPayAmt = Number(equateForm.newPay) || 0;
     if (selectedPayment) {
-      const newPaidAmt = Number(equateForm.paidAmount) || selectedPayment.paidAmount;
       setPayments(prev => prev.map(p => {
         if (p.id === selectedPayment.id) {
-          const newPending = Math.max(0, p.totalAmount - newPaidAmt);
+          const newPaidAmount = p.paidAmount + newPayAmt;
+          const newPendingAmount = Math.max(0, p.pendingAmount - newPayAmt);
           return {
             ...p,
             customerName: equateForm.customerName || p.customerName,
-            paidAmount: newPaidAmt,
-            pendingAmount: newPending,
-            status: newPending === 0 ? 'Received' : 'Pending'
+            paidAmount: newPaidAmount,
+            pendingAmount: newPendingAmount,
+            status: newPendingAmount === 0 ? 'Received' : 'Pending'
           };
         }
         return p;
       }));
-      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Equated by: ${equateForm.equatedBy}`);
+      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! New pay of ₹${newPayAmt.toLocaleString()} recorded. Equated by: ${equateForm.equatedBy}`);
     } else {
       alert(`Equated successfully for ${equateForm.customerName || 'Customer'}! Equated by: ${equateForm.equatedBy}`);
     }
@@ -336,7 +338,7 @@ export default function PendingAndReceivingPayments() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
                     type="button"
-                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'INSTALLMENT' })}
+                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'INSTALLMENT', newPay: '' })}
                     style={{
                       padding: '10px',
                       borderRadius: '8px',
@@ -355,7 +357,7 @@ export default function PendingAndReceivingPayments() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'COMPLETE' })}
+                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'COMPLETE', newPay: equateForm.pendingPayment })}
                     style={{
                       padding: '10px',
                       borderRadius: '8px',
@@ -375,11 +377,11 @@ export default function PendingAndReceivingPayments() {
                 </div>
               </div>
 
-              {/* Paid amount & Date */}
+              {/* New Pay & Date */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                  <label className="form-label">Paid amount</label>
-                  <input type="number" className="form-control" placeholder="₹ 0" value={equateForm.paidAmount} onChange={(e) => setEquateForm({ ...equateForm, paidAmount: e.target.value })} />
+                  <label className="form-label">New Pay</label>
+                  <input type="number" className="form-control" placeholder="₹ Enter new pay" value={equateForm.newPay} onChange={(e) => setEquateForm({ ...equateForm, newPay: e.target.value })} required />
                 </div>
                 <div>
                   <label className="form-label">Date</label>
