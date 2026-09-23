@@ -228,9 +228,6 @@ export default function NewInHandStock() {
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
           </button>
-          <button onClick={() => openSellModal(null)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
-            <Plus size={16} /> Book / Sell Device
-          </button>
         </div>
       </div>
 
@@ -319,15 +316,17 @@ export default function NewInHandStock() {
                   <td data-label="Purchased Amount" style={{ fontWeight: 700 }}>
                     <CurrencyAmount amount={item.amount} />
                   </td>
-                  <td data-label="Action">
-                    <button 
-                      type="button"
-                      onClick={() => openSellModal(item)} 
-                      className="btn-primary"
-                      style={{ padding: '6px 16px', fontSize: '12px', borderRadius: '6px', fontWeight: 800 }}
-                    >
-                      Sell
-                    </button>
+                  <td data-label="Further Procedure">
+                    <span style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      background: '#f1f5f9',
+                      color: '#475569'
+                    }}>
+                      {item.procedure || 'In Hand'}
+                    </span>
                   </td>
                 </tr>
               ))
