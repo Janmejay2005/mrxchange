@@ -387,7 +387,7 @@ export default function OldInHandStock() {
             ) : (
               filteredDevices.map((d) => (
                 <tr key={d.id}>
-                  <td>
+                  <td data-label="Image">
                     {d.images && d.images.length > 1 ? (
                       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         <img 
@@ -412,15 +412,15 @@ export default function OldInHandStock() {
                     )}
                   </td>
 
-                  <td style={{ fontWeight: 700 }}>{d.brand}</td>
-                  <td>{d.model}</td>
-                  <td>{d.storage} GB</td>
-                  <td>{d.ram} GB</td>
-                  <td><span style={{ fontWeight: 600 }}>{d.colour}</span></td>
-                  <td><CurrencyAmount amount={d.purchase_amount} /></td>
-                  <td><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
-                  <td>{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td data-label="Brand" style={{ fontWeight: 700 }}>{d.brand}</td>
+                  <td data-label="Model">{d.model}</td>
+                  <td data-label="Storage">{d.storage} GB</td>
+                  <td data-label="RAM">{d.ram} GB</td>
+                  <td data-label="Color Name"><span style={{ fontWeight: 600 }}>{d.colour}</span></td>
+                  <td data-label="Purchase Price"><CurrencyAmount amount={d.purchase_amount} /></td>
+                  <td data-label="Purchased By"><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
+                  <td data-label="Date Added">{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
+                  <td data-label="Action" style={{ textAlign: 'center' }}>
                     <button
                       type="button"
                       onClick={() => handleDeleteDevice(d.id)}

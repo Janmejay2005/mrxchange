@@ -302,8 +302,8 @@ export default function MembersSuperAdmin() {
             ) : (
               filteredMembers.map((m, idx) => (
                 <tr key={m.id}>
-                  <td>{idx + 1}</td>
-                  <td>
+                  <td data-label="#">{idx + 1}</td>
+                  <td data-label="Member">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: m.role === 'SUPERADMIN' ? '#8b5cf6' : '#0284c7', color: '#fff', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {m.avatar}
@@ -314,9 +314,9 @@ export default function MembersSuperAdmin() {
                       </div>
                     </div>
                   </td>
-                  <td style={{ fontWeight: 700, color: '#0284c7' }}>{m.username || m.email}</td>
-                  <td>{m.phone}</td>
-                  <td>
+                  <td data-label="Username" style={{ fontWeight: 700, color: '#0284c7' }}>{m.username || m.email}</td>
+                  <td data-label="Phone">{m.phone}</td>
+                  <td data-label="Role">
                     {m.role === 'SUPERADMIN' ? (
                       <span style={{ background: '#f3e8ff', color: '#7c3aed', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <ShieldCheck size={14} /> Super Admin
@@ -327,7 +327,7 @@ export default function MembersSuperAdmin() {
                       </span>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Tab Access">
                     {m.role === 'SUPERADMIN' || (m.allowedTabs && m.allowedTabs.includes('*')) ? (
                       <span style={{ fontSize: '12px', color: '#7c3aed', fontWeight: 700 }}>
                         ⭐ Full System Access (All Tabs)
@@ -338,7 +338,7 @@ export default function MembersSuperAdmin() {
                       </span>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <button 
                       onClick={() => toggleStatus(m.id)}
                       style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
@@ -355,7 +355,7 @@ export default function MembersSuperAdmin() {
                       )}
                     </button>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td data-label="Action" style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                       <button 
                         onClick={() => openEditModal(m)} 

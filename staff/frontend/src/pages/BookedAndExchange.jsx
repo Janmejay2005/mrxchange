@@ -533,34 +533,34 @@ export default function BookedAndExchange() {
               ) : (
                 filteredExchanges.map((row, idx) => (
                   <tr key={row.id}>
-                    <td>{idx + 1}</td>
-                    <td>{row.date}</td>
+                    <td data-label="#">{idx + 1}</td>
+                    <td data-label="Date">{row.date}</td>
 
                     {/* New Mobile Cells */}
-                    <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
-                    <td style={{ fontWeight: 700 }}>{row.newModel}</td>
-                    <td>{row.newStorage}</td>
-                    <td>{row.newRam}</td>
-                    <td>{row.newColor}</td>
-                    <td>{row.newPurchasedBy}</td>
-                    <td style={{ fontWeight: 700 }}>
+                    <td data-label="New Brand" style={{ fontWeight: 600 }}>{row.newBrand}</td>
+                    <td data-label="New Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
+                    <td data-label="New Storage">{row.newStorage} GB</td>
+                    <td data-label="New RAM">{row.newRam} GB</td>
+                    <td data-label="New Color">{row.newColor}</td>
+                    <td data-label="New Purchased By">{row.newPurchasedBy}</td>
+                    <td data-label="New Amount" style={{ fontWeight: 700 }}>
                       <CurrencyAmount amount={row.newAmount} />
                       <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                     </td>
 
                     {/* Old Mobile Cells */}
-                    <td style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
-                    <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
-                    <td>{row.oldStorage}</td>
-                    <td>{row.oldRam}</td>
-                    <td>{row.oldColor}</td>
-                    <td>{row.oldPurchasedBy}</td>
-                    <td style={{ fontWeight: 700 }}>
+                    <td data-label="Old Brand" style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
+                    <td data-label="Old Model" style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
+                    <td data-label="Old Storage">{row.oldStorage} GB</td>
+                    <td data-label="Old RAM">{row.oldRam} GB</td>
+                    <td data-label="Old Color">{row.oldColor}</td>
+                    <td data-label="Old Purchased By">{row.oldPurchasedBy}</td>
+                    <td data-label="Old Amount" style={{ fontWeight: 700 }}>
                       <CurrencyAmount amount={row.oldAmount} />
                       <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                     </td>
 
-                    <td>
+                    <td data-label="Action">
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <button 
                           onClick={() => handleDeliverAction(row.id)}
@@ -615,23 +615,23 @@ export default function BookedAndExchange() {
               ) : (
                 filteredExchanges.map((row, idx) => (
                   <tr key={row.id}>
-                    <td>{idx + 1}</td>
-                    <td>{row.date}</td>
-                    <td style={{ fontWeight: 700, color: '#0369a1' }}>{row.newPurchasedBy}</td>
-                    <td style={{ fontWeight: 600 }}>{row.newBrand}</td>
-                    <td style={{ fontWeight: 700 }}>{row.newModel}</td>
-                    <td>{row.newStorage} GB</td>
-                    <td>{row.newRam} GB</td>
-                    <td>{row.newColor}</td>
-                    <td style={{ fontWeight: 800, color: '#0284c7' }}>
+                    <td data-label="#">{idx + 1}</td>
+                    <td data-label="Date">{row.date}</td>
+                    <td data-label="Customer" style={{ fontWeight: 700, color: '#0369a1' }}>{row.newPurchasedBy}</td>
+                    <td data-label="Brand" style={{ fontWeight: 600 }}>{row.newBrand}</td>
+                    <td data-label="Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
+                    <td data-label="Storage">{row.newStorage} GB</td>
+                    <td data-label="RAM">{row.newRam} GB</td>
+                    <td data-label="Color">{row.newColor}</td>
+                    <td data-label="Booking Amount" style={{ fontWeight: 800, color: '#0284c7' }}>
                       <CurrencyAmount amount={row.newAmount} />
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
                         {row.status || 'Booked'}
                       </span>
                     </td>
-                    <td style={{ position: 'relative' }}>
+                    <td data-label="Action" style={{ position: 'relative' }}>
                       <button
                         onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
                         className="btn-secondary"
@@ -705,23 +705,23 @@ export default function BookedAndExchange() {
               ) : (
                 filteredExchanges.map((row, idx) => (
                   <tr key={row.id}>
-                    <td>{idx + 1}</td>
-                    <td>{row.date}</td>
-                    <td style={{ fontWeight: 700, color: '#475569' }}>{row.oldPurchasedBy}</td>
-                    <td style={{ fontWeight: 600 }}>{row.oldBrand}</td>
-                    <td style={{ fontWeight: 700 }}>{row.oldModel}</td>
-                    <td>{row.oldStorage} GB</td>
-                    <td>{row.oldRam} GB</td>
-                    <td>{row.oldColor}</td>
-                    <td style={{ fontWeight: 800, color: '#16a34a' }}>
+                    <td data-label="#">{idx + 1}</td>
+                    <td data-label="Intake Date">{row.date}</td>
+                    <td data-label="Staff" style={{ fontWeight: 700, color: '#475569' }}>{row.oldPurchasedBy}</td>
+                    <td data-label="Brand" style={{ fontWeight: 600 }}>{row.oldBrand}</td>
+                    <td data-label="Model" style={{ fontWeight: 700 }}>{row.oldModel}</td>
+                    <td data-label="Storage">{row.oldStorage} GB</td>
+                    <td data-label="RAM">{row.oldRam} GB</td>
+                    <td data-label="Color">{row.oldColor}</td>
+                    <td data-label="Trade Valuation" style={{ fontWeight: 800, color: '#16a34a' }}>
                       <CurrencyAmount amount={row.oldAmount} />
                     </td>
-                    <td>
+                    <td data-label="Trade Status">
                       <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
                         Trade-in Received
                       </span>
                     </td>
-                    <td style={{ position: 'relative' }}>
+                    <td data-label="Action" style={{ position: 'relative' }}>
                       <button
                         onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
                         className="btn-secondary"

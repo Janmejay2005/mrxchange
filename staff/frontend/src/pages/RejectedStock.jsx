@@ -194,21 +194,21 @@ export default function RejectedStock() {
           <tbody>
             {filteredDevices.map((device, idx) => (
               <tr key={device.id || idx}>
-                <td>{idx + 1}</td>
-                <td style={{ fontWeight: 600 }}>{device.brand}</td>
-                <td style={{ fontWeight: 700 }}>{device.model}</td>
-                <td>{device.storage} GB</td>
-                <td>{device.ram} GB</td>
-                <td>{device.colour || '-'}</td>
-                <td style={{ fontWeight: 700 }}>
+                <td data-label="#">{idx + 1}</td>
+                <td data-label="Brand" style={{ fontWeight: 600 }}>{device.brand}</td>
+                <td data-label="Model" style={{ fontWeight: 700 }}>{device.model}</td>
+                <td data-label="Storage">{device.storage} GB</td>
+                <td data-label="RAM">{device.ram} GB</td>
+                <td data-label="Color">{device.colour || '-'}</td>
+                <td data-label="Paid Amount" style={{ fontWeight: 700 }}>
                   <CurrencyAmount amount={device.purchase_amount} />
                 </td>
-                <td style={{ color: '#64748b' }}>{device.paid_by || 'Rohit'}</td>
-                <td style={{ color: '#64748b' }}>{device.intake_date}</td>
-                <td style={{ color: '#dc2626', fontWeight: 600 }}>
+                <td data-label="Paid By" style={{ color: '#64748b' }}>{device.paid_by || 'Rohit'}</td>
+                <td data-label="Date" style={{ color: '#64748b' }}>{device.intake_date}</td>
+                <td data-label="Rejection Reason" style={{ color: '#dc2626', fontWeight: 600 }}>
                   {device.last_rejection_reason || 'Defective piece'}
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td data-label="Action" style={{ textAlign: 'center' }}>
                   <button
                     onClick={() => {
                       if (window.confirm(`Delete ${device.brand} ${device.model} from Rejected Stock?`)) {

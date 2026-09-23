@@ -308,18 +308,18 @@ export default function NewInHandStock() {
             ) : (
               filteredStock.map((item, idx) => (
                 <tr key={item.sno}>
-                  <td>{idx + 1}</td>
-                  <td>{item.date}</td>
-                  <td style={{ fontWeight: 600 }}>{item.brand}</td>
-                  <td style={{ fontWeight: 700 }}>{item.model}</td>
-                  <td>{item.storage}</td>
-                  <td>{item.ram}</td>
-                  <td>{item.color}</td>
-                  <td>{item.purchasedBy}</td>
-                  <td style={{ fontWeight: 700 }}>
+                  <td data-label="Sno">{idx + 1}</td>
+                  <td data-label="Date">{item.date}</td>
+                  <td data-label="Brand" style={{ fontWeight: 600 }}>{item.brand}</td>
+                  <td data-label="Model" style={{ fontWeight: 700 }}>{item.model}</td>
+                  <td data-label="Storage">{item.storage} GB</td>
+                  <td data-label="RAM">{item.ram} GB</td>
+                  <td data-label="Color">{item.color}</td>
+                  <td data-label="Purchased By">{item.purchasedBy}</td>
+                  <td data-label="Purchased Amount" style={{ fontWeight: 700 }}>
                     <CurrencyAmount amount={item.amount} />
                   </td>
-                  <td>
+                  <td data-label="Action">
                     <button 
                       type="button"
                       onClick={() => openSellModal(item)} 

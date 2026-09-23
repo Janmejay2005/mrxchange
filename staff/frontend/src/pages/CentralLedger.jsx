@@ -238,9 +238,9 @@ export default function CentralLedger() {
             ) : (
               transactions.map((tx) => (
                 <tr key={tx.id || tx.transaction_code}>
-                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{tx.transaction_code}</td>
-                  <td>{tx.transaction_date ? String(tx.transaction_date).slice(0, 10) : 'Today'}</td>
-                  <td>
+                  <td data-label="Tx Code" style={{ fontWeight: 700, color: '#0f172a' }}>{tx.transaction_code}</td>
+                  <td data-label="Date">{tx.transaction_date ? String(tx.transaction_date).slice(0, 10) : 'Today'}</td>
+                  <td data-label="Type">
                     <span style={{
                       padding: '2px 8px',
                       borderRadius: '12px',
@@ -252,7 +252,7 @@ export default function CentralLedger() {
                       {tx.transaction_type}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Flow">
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -265,16 +265,16 @@ export default function CentralLedger() {
                       {tx.flow_type}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Admin Attribution">
                     <span style={{ fontWeight: 600, color: '#0284c7' }}>
                       {tx.admin_name || 'Admin'}
                     </span>
                   </td>
-                  <td>{tx.payment_method || 'Cash'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '14px', color: tx.flow_type === 'CREDIT' ? '#059669' : '#0f172a' }}>
+                  <td data-label="Payment Method">{tx.payment_method || 'Cash'}</td>
+                  <td data-label="Amount" style={{ textAlign: 'right', fontWeight: 800, fontSize: '14px', color: tx.flow_type === 'CREDIT' ? '#059669' : '#0f172a' }}>
                     {tx.flow_type === 'CREDIT' ? '+' : '-'}₹{parseFloat(tx.amount || 0).toLocaleString('en-IN')}
                   </td>
-                  <td style={{ color: '#475569', fontSize: '12px' }}>{tx.description}</td>
+                  <td data-label="Description" style={{ color: '#475569', fontSize: '12px' }}>{tx.description}</td>
                 </tr>
               ))
             )}

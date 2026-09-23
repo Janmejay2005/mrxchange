@@ -268,9 +268,9 @@ export default function Expenses() {
             ) : (
               expenses.map((exp) => (
                 <tr key={exp.id || exp.expense_code}>
-                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{exp.expense_code}</td>
-                  <td>{exp.expense_date ? String(exp.expense_date).slice(0, 10) : 'Today'}</td>
-                  <td>
+                  <td data-label="Code" style={{ fontWeight: 700, color: '#0f172a' }}>{exp.expense_code}</td>
+                  <td data-label="Date">{exp.expense_date ? String(exp.expense_date).slice(0, 10) : 'Today'}</td>
+                  <td data-label="Category">
                     <span style={{
                       padding: '2px 8px',
                       borderRadius: '12px',
@@ -282,14 +282,14 @@ export default function Expenses() {
                       {exp.category}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 600 }}>{exp.recipient || '—'}</td>
-                  <td>
+                  <td data-label="Recipient" style={{ fontWeight: 600 }}>{exp.recipient || '—'}</td>
+                  <td data-label="Admin Attribution">
                     <span style={{ color: '#0284c7', fontWeight: 600 }}>{exp.admin_name || 'Admin'}</span>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>
+                  <td data-label="Amount" style={{ textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>
                     ₹{parseFloat(exp.amount || 0).toLocaleString('en-IN')}
                   </td>
-                  <td style={{ color: '#64748b', fontSize: '12px' }}>{exp.remarks || '—'}</td>
+                  <td data-label="Remarks" style={{ color: '#64748b', fontSize: '12px' }}>{exp.remarks || '—'}</td>
                 </tr>
               ))
             )}

@@ -427,7 +427,7 @@ export default function OldInventory() {
             ) : (
               filteredDevices.map((device, idx) => (
                 <tr key={device.id || idx}>
-                  <td>
+                  <td data-label="Select">
                     <input 
                       type="checkbox" 
                       checked={selectedIds.includes(String(device.id))} 
@@ -435,7 +435,7 @@ export default function OldInventory() {
                       style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                     />
                   </td>
-                  <td>
+                  <td data-label="Image">
                     <div 
                       onClick={() => setPopupDevice(device)} 
                       style={{ cursor: 'pointer', display: 'inline-block' }}
@@ -466,17 +466,17 @@ export default function OldInventory() {
                     </div>
                   </td>
 
-                  <td>
+                  <td data-label="Device">
                     <div style={{ fontWeight: 700, color: '#0f172a' }}>{device.brand} {device.model}</div>
                   </td>
-                  <td>{device.storage} GB</td>
-                  <td>{device.ram} GB</td>
-                  <td>
+                  <td data-label="Storage">{device.storage} GB</td>
+                  <td data-label="RAM">{device.ram} GB</td>
+                  <td data-label="Paid Amount">
                     <CurrencyAmount amount={device.purchase_amount} />
                   </td>
-                  <td>{device.paid_by || 'Staff'}</td>
-                  <td>{device.intake_date ? String(device.intake_date).slice(0, 10) : 'Today'}</td>
-                  <td>
+                  <td data-label="Paid By">{device.paid_by || 'Staff'}</td>
+                  <td data-label="Date Added">{device.intake_date ? String(device.intake_date).slice(0, 10) : 'Today'}</td>
+                  <td data-label="Status">
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
                     <select
                       value={device.status || 'OLD_INVENTORY'}

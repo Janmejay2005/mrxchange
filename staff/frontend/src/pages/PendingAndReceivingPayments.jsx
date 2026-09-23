@@ -225,36 +225,36 @@ export default function PendingAndReceivingPayments() {
             ) : (
               filteredPayments.map((row, idx) => (
                 <tr key={row.id}>
-                  <td>{idx + 1}</td>
-                  <td>{row.date}</td>
-                <td style={{ fontWeight: 600 }}>{row.customerName}</td>
-                <td style={{ fontWeight: 600 }}>{row.brand}</td>
-                <td style={{ fontWeight: 700 }}>{row.model}</td>
-                <td style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                <td style={{ fontWeight: 700 }}><CurrencyAmount amount={row.paidAmount} /></td>
-                <td style={{ fontWeight: 700, color: row.pendingAmount > 0 ? '#ea580c' : '#059669' }}>
-                  <CurrencyAmount amount={row.pendingAmount} />
-                </td>
-                <td>
-                  <span style={{
-                    padding: '4px 10px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    background: row.status === 'Pending' ? '#fff7ed' : '#ecfdf5',
-                    color: row.status === 'Pending' ? '#ea580c' : '#047857'
-                  }}>
-                    {row.status}
-                  </span>
-                </td>
-                <td>{row.mode}</td>
-                <td style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
-                <td>
-                  <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                    Equate
-                  </button>
-                </td>
-              </tr>
+                  <td data-label="#">{idx + 1}</td>
+                  <td data-label="Date">{row.date}</td>
+                  <td data-label="Customer" style={{ fontWeight: 600 }}>{row.customerName}</td>
+                  <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
+                  <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
+                  <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                  <td data-label="Paid Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.paidAmount} /></td>
+                  <td data-label="Pending Amount" style={{ fontWeight: 700, color: row.pendingAmount > 0 ? '#ea580c' : '#059669' }}>
+                    <CurrencyAmount amount={row.pendingAmount} />
+                  </td>
+                  <td data-label="Status">
+                    <span style={{
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      background: row.status === 'Pending' ? '#fff7ed' : '#ecfdf5',
+                      color: row.status === 'Pending' ? '#ea580c' : '#047857'
+                    }}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td data-label="Payment Mode">{row.mode}</td>
+                  <td data-label="Remarks" style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
+                  <td data-label="Action">
+                    <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                      Equate
+                    </button>
+                  </td>
+                </tr>
               ))
             )}
           </tbody>

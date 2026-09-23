@@ -256,9 +256,9 @@ export default function Investments() {
             ) : (
               investments.map((inv) => (
                 <tr key={inv.id || inv.investment_code}>
-                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{inv.investment_code}</td>
-                  <td>{inv.investment_date ? String(inv.investment_date).slice(0, 10) : 'Today'}</td>
-                  <td>
+                  <td data-label="Code" style={{ fontWeight: 700, color: '#0f172a' }}>{inv.investment_code}</td>
+                  <td data-label="Date">{inv.investment_date ? String(inv.investment_date).slice(0, 10) : 'Today'}</td>
+                  <td data-label="Type">
                     <span style={{
                       padding: '2px 8px',
                       borderRadius: '12px',
@@ -270,13 +270,13 @@ export default function Investments() {
                       {inv.investment_type}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Investor">
                     <span style={{ color: '#0284c7', fontWeight: 700 }}>{inv.investor_name}</span>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                  <td data-label="Capital Amount" style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
                     ₹{parseFloat(inv.amount || 0).toLocaleString('en-IN')}
                   </td>
-                  <td style={{ color: '#64748b', fontSize: '12px' }}>{inv.remarks || '—'}</td>
+                  <td data-label="Remarks" style={{ color: '#64748b', fontSize: '12px' }}>{inv.remarks || '—'}</td>
                 </tr>
               ))
             )}

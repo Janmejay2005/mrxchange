@@ -401,8 +401,8 @@ export default function Booked() {
             ) : (
               filteredBookings.map((b, idx) => (
                 <tr key={b.id}>
-                  <td>{idx + 1}</td>
-                  <td>
+                  <td data-label="Sno">{idx + 1}</td>
+                  <td data-label="Booked By">
                     <span style={{ 
                       padding: '3px 8px', 
                       borderRadius: '10px', 
@@ -414,24 +414,24 @@ export default function Booked() {
                       {b.bookedBy}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 800, color: '#0284c7' }}>{b.bookingId}</td>
-                  <td style={{ fontWeight: 700 }}>{b.brand}</td>
-                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{b.model}</td>
-                  <td>{b.storage} GB</td>
-                  <td>{b.ram} GB</td>
-                  <td style={{ fontWeight: 800, color: '#16a34a' }}><CurrencyAmount amount={b.bookedAmount} /></td>
-                  <td>
+                  <td data-label="Booking ID" style={{ fontWeight: 800, color: '#0284c7' }}>{b.bookingId}</td>
+                  <td data-label="Brand" style={{ fontWeight: 700 }}>{b.brand}</td>
+                  <td data-label="Model" style={{ fontWeight: 700, color: '#0f172a' }}>{b.model}</td>
+                  <td data-label="Storage">{b.storage} GB</td>
+                  <td data-label="RAM">{b.ram} GB</td>
+                  <td data-label="Booked Amount" style={{ fontWeight: 800, color: '#16a34a' }}><CurrencyAmount amount={b.bookedAmount} /></td>
+                  <td data-label="VIA">
                     <div style={{ fontWeight: 700, fontSize: '12px', color: '#334155' }}>{b.viaMode}</div>
                     {b.viaId && b.viaId !== '-' && (
                       <div style={{ fontSize: '10px', color: '#64748b' }}>({b.viaId})</div>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Platform">
                     <span style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, color: '#475569' }}>
                       {b.platform}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Action">
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                       {b.isBooked ? (
                         <span style={{ 
