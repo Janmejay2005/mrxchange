@@ -37,40 +37,68 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return true;
     } catch (err) {
-      // Fallback role authentication for testing
-      const idLower = (identifier || '').toLowerCase();
-      const isAdmin = idLower.includes('admin') || identifier === 'Admin23';
+      // Offline / Local Authentication
+      const idTrim = (identifier || '').trim();
+      const passTrim = (password || '').trim();
 
-      const mockUser = {
-        id: isAdmin ? 'admin-user-1' : 'staff-user-1',
-        name: isAdmin ? 'System Superadmin' : 'Staff User',
-        email: isAdmin ? 'admin23@mrx.com' : 'staff23@mrx.com',
-        auth_identifier: isAdmin ? 'Admin23' : 'Staff23',
-        role: isAdmin ? 'SUPERADMIN' : 'STAFF'
-      };
-      setUser(mockUser);
+      // Default Super Admins: Jeet & Sonal
+      if (idTrim === 'Jeet@1' && passTrim === 'jeetxchange') {
+        const superAdminUser = {
+          id: 'jeet-superadmin-1',
+          name: 'Jeet Patel',
+          username: 'Jeet@1',
+          email: 'jeet@mrxchange.com',
+          role: 'SUPERADMIN',
+          isSuperAdmin: true,
+          allowedTabs: ['*']
+        };
+        setUser(superAdminUser);
+        setLoading(false);
+        return true;
+      }
+
+      if (idTrim === 'Sonal@1' && passTrim === 'sonalxchange') {
+        const superAdminUser = {
+          id: 'sonal-superadmin-2',
+          name: 'Sonal Sharma',
+          username: 'Sonal@1',
+          email: 'sonal@mrxchange.com',
+          role: 'SUPERADMIN',
+          isSuperAdmin: true,
+          allowedTabs: ['*']
+        };
+        setUser(superAdminUser);
+        setLoading(false);
+        return true;
+      }
+
+      // Check custom added users in localStorage
+      try {
+        const customMembers = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
+        const match = customMembers.find(m => 
+          (m.username === idTrim || m.email === idTrim) && (m.password === passTrim || !m.password)
+        );
+        if (match && match.status === 'ACTIVE') {
+          const isSuper = match.role === 'SUPERADMIN';
+          const customUser = {
+            id: match.id,
+            name: match.name,
+            username: match.username || match.email,
+            email: match.email,
+            role: match.role,
+            isSuperAdmin: isSuper,
+            allowedTabs: isSuper ? ['*'] : (match.allowedTabs || ['/dashboard'])
+          };
+          setUser(customUser);
+          setLoading(false);
+          return true;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
       setLoading(false);
-      return true;
-    }
-  };
-
-  const switchRole = (newRole) => {
-    if (newRole === 'SUPERADMIN') {
-      setUser({
-        id: 'admin-user-1',
-        name: 'System Superadmin',
-        email: 'admin23@mrx.com',
-        auth_identifier: 'Admin23',
-        role: 'SUPERADMIN'
-      });
-    } else {
-      setUser({
-        id: 'staff-user-1',
-        name: 'Staff User',
-        email: 'staff23@mrx.com',
-        auth_identifier: 'Staff23',
-        role: 'STAFF'
-      });
+      throw new Error('Invalid Username or Password');
     }
   };
 
@@ -80,10 +108,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const isSuperAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+  const isSuperAdmin = Boolean(user?.isSuperAdmin || user?.role === 'SUPERADMIN');
+
+  const canAccessTab = (path) => {
+    if (!user) return false;
+    if (isSuperAdmin || (user.allowedTabs && user.allowedTabs.includes('*'))) return true;
+    if (!user.allowedTabs) return false;
+    return user.allowedTabs.includes(path);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchRole, isSuperAdmin, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, isSuperAdmin, canAccessTab, loading }}>
       {children}
     </AuthContext.Provider>
   );

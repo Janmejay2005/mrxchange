@@ -146,6 +146,33 @@ export default function RejectedStock() {
         </div>
       </div>
 
+      {/* KPI Cards Summary Section for Rejected Valuation */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #ef4444' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rejected Devices</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ef4444', marginTop: '6px' }}>
+            {filteredDevices.length} Items
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Unrepairable / Returned stock</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #dc2626' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Rejection Value / Loss</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#dc2626', marginTop: '6px' }}>
+            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0)} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Capital locked in rejected units</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg Loss Per Unit</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
+            <CurrencyAmount amount={filteredDevices.length > 0 ? Math.round(filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0) / filteredDevices.length) : 0} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Average cost per rejected item</div>
+        </div>
+      </div>
+
       {/* Rejected Stock Table */}
       <div className="table-responsive">
         <table className="custom-table">

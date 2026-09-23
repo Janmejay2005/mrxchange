@@ -148,6 +148,15 @@ export default function BookedAndExchange() {
   const totalExchangeValue = filteredExchanges.reduce((sum, item) => sum + item.oldAmount, 0);
   const netPayableBalance = totalBookingValue - totalExchangeValue;
 
+  const bookedByJeet = filteredExchanges.filter(item => (item.newPurchasedBy || '').toLowerCase().includes('jeet') || (item.oldPurchasedBy || '').toLowerCase().includes('jeet'));
+  const bookedBySonal = filteredExchanges.filter(item => (item.newPurchasedBy || '').toLowerCase().includes('sonal') || (item.oldPurchasedBy || '').toLowerCase().includes('sonal'));
+  const bookedByOthers = filteredExchanges.filter(item => !bookedByJeet.includes(item) && !bookedBySonal.includes(item));
+
+  const handleExchangeClick = (id) => {
+    setExchanges(prev => prev.map(row => row.id === id ? { ...row, isExchanged: true, status: 'Exchanged' } : row));
+    alert('Exchange confirmed! Item marked as Exchange ✔️.');
+  };
+
   const handleBookSubmit = (e) => {
     e.preventDefault();
     const oldAmt = Number(bookForm.oldAmount) || 0;
@@ -234,7 +243,7 @@ export default function BookedAndExchange() {
   const handleExportPdf = () => {
     let headers = [];
     let rows = [];
-    let title = 'Booked & Exchange Report';
+    let title = 'Exchange Report';
 
     if (activeTab === 'bookings') {
       title = 'New Phone Bookings Report';
@@ -295,12 +304,12 @@ export default function BookedAndExchange() {
       {/* Header & Breadcrumbs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Booked and Exchange</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Exchange</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Manage new phone pre-orders, old phone trade-in valuations, and exchange reconciliations.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Booked and Exchange</span>
+            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Exchange</span>
           </div>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
@@ -312,37 +321,59 @@ export default function BookedAndExchange() {
       </div>
 
       {/* KPI Cards Summary Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Total Booking Value</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Booking Value</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
             <CurrencyAmount amount={totalBookingValue} />
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{filteredExchanges.length} New Phone Bookings</div>
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #16a34a' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Total Exchange Valuation</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#16a34a', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Exchange Valuation</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#16a34a', marginTop: '6px' }}>
             <CurrencyAmount amount={totalExchangeValue} />
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{filteredExchanges.length} Trade-in Old Devices</div>
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #7c3aed' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Net Cash Collectible Balance</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#7c3aed', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Collectible Balance</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#7c3aed', marginTop: '6px' }}>
             <CurrencyAmount amount={netPayableBalance} />
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Difference payable by customers</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Customer net balance due</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #2563eb' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Jeet</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#2563eb', marginTop: '6px' }}>
+            {bookedByJeet.length} Bookings
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+            <CurrencyAmount amount={bookedByJeet.reduce((s, i) => s + i.newAmount, 0)} /> total
+          </div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #d946ef' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Sonal</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#d946ef', marginTop: '6px' }}>
+            {bookedBySonal.length} Bookings
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+            <CurrencyAmount amount={bookedBySonal.reduce((s, i) => s + i.newAmount, 0)} /> total
+          </div>
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #ea580c' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>Active Status</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ea580c', marginTop: '6px' }}>
-            {filteredExchanges.length} Active
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Others</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#ea580c', marginTop: '6px' }}>
+            {bookedByOthers.length} Bookings
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Pending Customer Delivery</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+            <CurrencyAmount amount={bookedByOthers.reduce((s, i) => s + i.newAmount, 0)} /> total
+          </div>
         </div>
       </div>
 
@@ -480,7 +511,7 @@ export default function BookedAndExchange() {
                 <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
-                <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount 🔄 Exchange</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount</th>
 
                 {/* Old Mobile Subheaders */}
                 <th style={{ backgroundColor: '#f1f5f9' }}>Brand Name</th>
@@ -489,7 +520,7 @@ export default function BookedAndExchange() {
                 <th style={{ backgroundColor: '#f1f5f9' }}>RAM (GB)</th>
                 <th style={{ backgroundColor: '#f1f5f9' }}>Color</th>
                 <th style={{ backgroundColor: '#f1f5f9' }}>Purchased By</th>
-                <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount 🔄 Exchange</th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount </th>
               </tr>
             </thead>
             <tbody>
@@ -529,43 +560,33 @@ export default function BookedAndExchange() {
                       <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                     </td>
 
-                    <td style={{ position: 'relative' }}>
-                      <button
-                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                        className="btn-secondary"
-                        style={{ padding: '6px' }}
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
-
-                      {/* Actions: Delivered (New In-hand) / Cancel (Old In-hand) */}
-                      {activeMenuId === row.id && (
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: '100%',
-                          zIndex: 50,
-                          background: '#ffffff',
-                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                          borderRadius: '8px',
-                          padding: '6px',
-                          minWidth: '180px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <button
-                            onClick={() => handleDeliverAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {row.isExchanged || row.status === 'Exchanged' ? (
+                          <span style={{ 
+                            background: '#dcfce7', 
+                            color: '#15803d', 
+                            border: '1px solid #bbf7d0', 
+                            padding: '6px 14px', 
+                            borderRadius: '8px', 
+                            fontSize: '12px', 
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            Exchange ✔️
+                          </span>
+                        ) : (
+                          <button 
+                            onClick={() => handleExchangeClick(row.id)}
+                            className="btn-primary" 
+                            style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', fontWeight: 800 }}
                           >
-                            <CheckCircle size={14} /> Delivered (New In-hand)
+                            Exchange
                           </button>
-                          <button
-                            onClick={() => handleCancelAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                          >
-                            <XCircle size={14} /> Cancel (Old In-hand)
-                          </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

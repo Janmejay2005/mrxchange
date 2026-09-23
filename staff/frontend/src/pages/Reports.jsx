@@ -398,7 +398,7 @@ export default function Reports() {
               { id: 'rejected', label: 'Rejected Stock', desc: 'Damaged / defective units' },
               { id: 'pending_payments', label: 'Pending and Receiving Payments', desc: 'Customer payments & dues journal' },
               { id: 'profit_expense_statistic', label: 'Profit, Expense and Statistic', desc: 'Financial profitability & expenses report' },
-              { id: 'booked_exchange', label: 'Book and Exchange', desc: 'Pre-booked & exchanged devices registry' },
+              { id: 'booked_exchange', label: 'Exchange', desc: 'Pre-booked & exchanged devices registry' },
             ].map(target => (
               <label 
                 key={target.id}

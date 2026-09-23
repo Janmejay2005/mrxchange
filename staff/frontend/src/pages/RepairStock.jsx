@@ -167,6 +167,41 @@ export default function RepairStock() {
         </div>
       </div>
 
+      {/* KPI Cards Summary Section for Repair Costs & Valuations */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #ea580c' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items Under Repair</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ea580c', marginTop: '6px' }}>
+            {filteredDevices.length} Devices
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Active repair process</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Purchase Cost</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
+            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0)} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Initial acquisition value</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Repair Cost</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#7c3aed', marginTop: '6px' }}>
+            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.repair_cost || d.estimated_repair_cost || 1500)), 0)} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Estimated / Incurred repairs</div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #16a34a' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Inventory Investment</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#16a34a', marginTop: '6px' }}>
+            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0) + (Number(d.repair_cost || d.estimated_repair_cost || 1500)), 0)} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Purchase + Repair combined</div>
+        </div>
+      </div>
+
       {/* Repair Stock Table */}
       <div className="table-responsive">
         <table className="custom-table">

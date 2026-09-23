@@ -80,6 +80,21 @@
         }
       });
 
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.key === 'Escape' || e.code === 'Escape') {
+            e.preventDefault();
+            if (showAddModal) {
+              setShowAddModal(false);
+            } else if (currentRoute !== 'dashboard') {
+              setCurrentRoute('dashboard');
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [showAddModal, currentRoute]);
+
       const handleAddSubmit = (e) => {
         e.preventDefault();
         const created = {
@@ -329,7 +344,6 @@
                           <th className="p-4">Storage</th>
                           <th className="p-4">RAM</th>
                           <th className="p-4">Color</th>
-                          <th className="p-4">Condition</th>
                           <th className="p-4">Action</th>
                         </tr>
                       </thead>
@@ -345,7 +359,6 @@
                             <td className="p-4">{d.storage} GB</td>
                             <td className="p-4">{d.ram} GB</td>
                             <td className="p-4">{d.colour}</td>
-                            <td className="p-4"><span className="text-emerald-600 font-bold">{d.condition}</span></td>
                             <td className="p-4 relative">
                               <button 
                                 onClick={() => setActionMenuId(actionMenuId === d.id ? null : d.id)}

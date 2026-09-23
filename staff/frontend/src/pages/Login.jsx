@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-  const [identifier, setIdentifier] = useState('Staff23');
-  const [password, setPassword] = useState('staff123');
+  const [identifier, setIdentifier] = useState('Jeet@1');
+  const [password, setPassword] = useState('jeetxchange');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
   const navigate = useNavigate();
@@ -17,17 +17,17 @@ export default function Login() {
       await login(identifier, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid credentials. Please try Staff23/staff123 or Admin23/admin123');
+      setError('Invalid username or password. Please check credentials or contact Super Admin.');
     }
   };
 
-  const fillCredentials = (role) => {
-    if (role === 'STAFF') {
-      setIdentifier('Staff23');
-      setPassword('staff123');
-    } else {
-      setIdentifier('Admin23');
-      setPassword('admin123');
+  const fillCredentials = (userType) => {
+    if (userType === 'JEET') {
+      setIdentifier('Jeet@1');
+      setPassword('jeetxchange');
+    } else if (userType === 'SONAL') {
+      setIdentifier('Sonal@1');
+      setPassword('sonalxchange');
     }
   };
 
@@ -49,82 +49,78 @@ export default function Login() {
         )}
 
         <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label className="form-label">Username or Email</label>
-            <div style={{ position: 'relative' }}>
-              <input 
-                type="text" 
-                className="form-control" 
-                placeholder="e.g. Staff23 or Admin23"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-              />
-            </div>
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', color: '#334155' }}>Username</label>
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="e.g. Jeet@1 or Sonal@1"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input 
-                type="password" 
-                className="form-control" 
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', color: '#334155' }}>Password</label>
+            <input 
+              type="password" 
+              className="form-control" 
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
 
           <button 
             type="submit" 
             className="btn-primary" 
             disabled={loading}
-            style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '12px', opacity: loading ? 0.7 : 1 }}
+            style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '8px', opacity: loading ? 0.7 : 1, borderRadius: '8px', fontSize: '15px', fontWeight: 700 }}
           >
             {loading ? 'Authenticating...' : 'Sign In'} <ArrowRight size={16} />
           </button>
         </form>
 
-        {/* Quick Demo Credentials */}
+        {/* Super Admin Quick Logins */}
         <div style={{ marginTop: '24px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <ShieldCheck size={14} color="#0284c7" /> Quick Demo Login (Click to Fill):
+            <ShieldCheck size={14} color="#7c3aed" /> Super Admin Accounts:
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"
-              onClick={() => fillCredentials('STAFF')}
+              onClick={() => fillCredentials('JEET')}
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: identifier === 'Staff23' ? '2px solid #0284c7' : '1px solid #cbd5e1',
-                background: identifier === 'Staff23' ? '#e0f2fe' : '#ffffff',
+                border: identifier === 'Jeet@1' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                background: identifier === 'Jeet@1' ? '#e0f2fe' : '#ffffff',
                 textAlign: 'left',
                 fontSize: '11px',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontWeight: 700, color: '#0369a1' }}>Staff User</div>
-              <div style={{ color: '#64748b' }}>Staff23 / staff123</div>
+              <div style={{ fontWeight: 700, color: '#0369a1' }}>Jeet Patel</div>
+              <div style={{ color: '#64748b' }}>Jeet@1</div>
             </button>
 
             <button
               type="button"
-              onClick={() => fillCredentials('SUPERADMIN')}
+              onClick={() => fillCredentials('SONAL')}
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: identifier === 'Admin23' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
-                background: identifier === 'Admin23' ? '#f5f3ff' : '#ffffff',
+                border: identifier === 'Sonal@1' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                background: identifier === 'Sonal@1' ? '#f5f3ff' : '#ffffff',
                 textAlign: 'left',
                 fontSize: '11px',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontWeight: 700, color: '#7c3aed' }}>Superadmin</div>
-              <div style={{ color: '#64748b' }}>Admin23 / admin123</div>
+              <div style={{ fontWeight: 700, color: '#7c3aed' }}>Sonal Sharma</div>
+              <div style={{ color: '#64748b' }}>Sonal@1</div>
             </button>
           </div>
         </div>

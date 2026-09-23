@@ -405,7 +405,6 @@ export default function OldInventory() {
               <th>Brand / Model</th>
               <th>Storage</th>
               <th>RAM</th>
-              <th>Condition</th>
               <th>Paid Amount</th>
               <th>Paid By</th>
               <th>Date Added</th>
@@ -472,18 +471,6 @@ export default function OldInventory() {
                   </td>
                   <td>{device.storage} GB</td>
                   <td>{device.ram} GB</td>
-                  <td>
-                    <span style={{ 
-                      padding: '2px 8px', 
-                      borderRadius: '12px', 
-                      fontSize: '11px', 
-                      fontWeight: 700,
-                      background: device.condition === 'Fresh' ? '#ecfdf5' : '#fffbeb',
-                      color: device.condition === 'Fresh' ? '#047857' : '#b45309'
-                    }}>
-                      {device.condition || 'Fair'}
-                    </span>
-                  </td>
                   <td>
                     <CurrencyAmount amount={device.purchase_amount} />
                   </td>

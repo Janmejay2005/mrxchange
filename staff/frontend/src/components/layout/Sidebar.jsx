@@ -8,6 +8,7 @@ import {
   Trash2, 
   FileText, 
   RefreshCw,
+  BookmarkCheck,
   Package,
   CircleDollarSign,
   BarChart2,
@@ -18,7 +19,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar({ isOpen, isCollapsed, onClose }) {
-  const { logout, isSuperAdmin, user } = useAuth();
+  const { logout, isSuperAdmin, canAccessTab, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -26,26 +27,26 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     navigate('/login');
   };
 
-  // Nav items with strict Role separation
+  // Nav items with dynamic access control
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'ALL' },
-    { label: 'Old Inventory', path: '/old-inventory', icon: Layers, role: 'ALL' },
-    { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone, role: 'ALL' },
-    { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench, role: 'ALL' },
-    { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2, role: 'ALL' },
-    { label: 'Book and Exchange', path: '/booked-exchange', icon: RefreshCw, role: 'ALL' },
-    { label: 'New In-hand Inventory', path: '/new-in-hand', icon: Package, role: 'ALL' },
-    { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign, role: 'ALL' },
-    { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2, role: 'ALL' },
-    { label: 'Report', path: '/reports', icon: FileText, role: 'ALL' },
-    { label: 'Members in Super Admin', path: '/members-super-admin', icon: Users, role: 'ALL' },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Old Inventory', path: '/old-inventory', icon: Layers },
+    { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
+    { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
+    { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
+    { label: 'Exchange', path: '/booked-exchange', icon: RefreshCw },
+    { label: 'Booked', path: '/booked', icon: BookmarkCheck },
+    { label: 'New In-hand Inventory', path: '/new-in-hand', icon: Package },
+    { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },
+    { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2 },
+    { label: 'Report', path: '/reports', icon: FileText },
+    { label: 'Members', path: '/members-super-admin', icon: Users },
   ];
 
-  // Filter items based on logged-in user role
+  // Filter items based on logged-in user allowed tabs (Jeet & Sonal Super Admins see all)
   const filteredNavItems = navItems.filter(item => {
-    if (item.role === 'ALL') return true;
-    if (item.role === 'SUPERADMIN') return isSuperAdmin;
-    return false;
+    if (isSuperAdmin) return true;
+    return canAccessTab ? canAccessTab(item.path) : true;
   });
 
   return (

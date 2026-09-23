@@ -13,6 +13,7 @@ import RepairStock from './pages/RepairStock';
 import RejectedStock from './pages/RejectedStock';
 import Reports from './pages/Reports';
 import BookedAndExchange from './pages/BookedAndExchange';
+import Booked from './pages/Booked';
 import PendingAndReceivingPayments from './pages/PendingAndReceivingPayments';
 import ProfitExpenseAndStatistic from './pages/ProfitExpenseAndStatistic';
 import MembersSuperAdmin from './pages/MembersSuperAdmin';
@@ -70,6 +71,7 @@ export default function App() {
               <Route path="repair-stock" element={<RepairStock />} />
               <Route path="rejected-stocks" element={<RejectedStock />} />
               <Route path="booked-exchange" element={<BookedAndExchange />} />
+              <Route path="booked" element={<Booked />} />
               <Route path="new-in-hand" element={<NewInHandStock />} />
               <Route path="pending-payments" element={<PendingAndReceivingPayments />} />
               <Route path="profit-expense-statistic" element={<ProfitExpenseAndStatistic />} />

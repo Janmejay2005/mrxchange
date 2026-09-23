@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
 export default function Shell() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        e.preventDefault();
+        // Go up to dashboard if on a sub-page, but never go back to login page
+        if (location.pathname !== '/dashboard' && location.pathname !== '/') {
+          navigate('/dashboard');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate, location.pathname]);
 
   useEffect(() => {
     const handleResize = () => {
