@@ -1026,7 +1026,7 @@ export default function BookedAndExchange() {
                     <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
                   </div>
                   <div>
-                    <label className="form-label">Pay By (Customer Name) *</label>
+                    <label className="form-label">Pay By *</label>
                     <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
                   </div>
 

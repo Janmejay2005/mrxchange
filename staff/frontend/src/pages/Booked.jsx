@@ -192,6 +192,43 @@ export default function Booked() {
     }
   };
 
+  const handleExchangeAction = (id) => {
+    const item = bookedList.find(b => b.id === id);
+    if (item) {
+      setBookedList(prev => prev.map(b => b.id === id ? { ...b, isExchanged: true, status: 'Exchanged' } : b));
+      
+      const exchangeItem = {
+        id: Date.now(),
+        date: item.date || new Date().toISOString().split('T')[0],
+        newBrand: item.brand,
+        newModel: item.model,
+        newStorage: Number(item.storage) || 128,
+        newRam: Number(item.ram) || 6,
+        newColor: item.color || 'Standard',
+        newPurchasedBy: item.customerName || item.bookedBy,
+        newAmount: Number(item.bookedAmount) || 0,
+        oldBrand: item.brand,
+        oldModel: item.model,
+        oldStorage: Number(item.storage) || 128,
+        oldRam: Number(item.ram) || 6,
+        oldColor: 'Default',
+        oldPurchasedBy: item.bookedBy,
+        oldAmount: 0,
+        oldImage: '',
+        status: 'Exchanged'
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+        localStorage.setItem('mrx_exchanges', JSON.stringify([exchangeItem, ...stored]));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      } catch (e) {
+        console.error(e);
+      }
+      alert(`Booking "${item.bookingId}" (${item.brand} ${item.model}) sent to Exchange tab!`);
+    }
+  };
+
   const handleCancelBooking = (id) => {
     const item = bookedList.find(b => b.id === id);
     if (item) {
@@ -428,7 +465,7 @@ export default function Booked() {
                           background: '#dcfce7', 
                           color: '#15803d', 
                           border: '1px solid #bbf7d0', 
-                          padding: '6px 14px', 
+                          padding: '6px 12px', 
                           borderRadius: '8px', 
                           fontSize: '12px', 
                           fontWeight: 800, 
@@ -442,10 +479,35 @@ export default function Booked() {
                         <button 
                           onClick={() => handleBookAction(b.id)}
                           className="btn-primary" 
-                          style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', fontWeight: 800 }}
-                          title="Confirm Booking & Transfer to Exchange"
+                          style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '8px', fontWeight: 800 }}
+                          title="Confirm Booking"
                         >
                           Book
+                        </button>
+                      )}
+
+                      {b.isExchanged ? (
+                        <span style={{ 
+                          background: '#fef9c3', 
+                          color: '#854d0e', 
+                          border: '1px solid #fef08a', 
+                          padding: '6px 12px', 
+                          borderRadius: '8px', 
+                          fontSize: '12px', 
+                          fontWeight: 800, 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '4px' 
+                        }}>
+                          Exchange ✔️
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => handleExchangeAction(b.id)}
+                          style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', fontSize: '12px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}
+                          title="Send Data to Exchange Tab"
+                        >
+                          Exchange
                         </button>
                       )}
 
