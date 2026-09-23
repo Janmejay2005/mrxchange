@@ -22,20 +22,20 @@ export default function PendingAndReceivingPayments() {
   });
 
   // Equate Modal State
+  const [selectedPayment, setSelectedPayment] = useState(null);
   const [isEquateModalOpen, setIsEquateModalOpen] = useState(false);
   const [equateForm, setEquateForm] = useState({
-    unitAmount: '',
-    quantity: 1,
-    equatedBy: 'Staff',
-    equatedTo: '',
+    pendingPayment: '',
+    equatedBy: 'Jeet',
+    customerName: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
     paidAmount: '',
-    date: '2026-09-15'
+    date: new Date().toISOString().split('T')[0]
   });
 
   const [payments, setPayments] = useState([
-    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Patel', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
-    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Sharma', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
+    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
+    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
     { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card', remarks: 'Installment 2 pending' },
     { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid via GPay' },
     { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI', remarks: 'Remaining next month' },
@@ -54,6 +54,19 @@ export default function PendingAndReceivingPayments() {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  };
+
+  const handleOpenEquateModal = (row = null) => {
+    setSelectedPayment(row);
+    setEquateForm({
+      pendingPayment: String(row ? row.pendingAmount : ''),
+      equatedBy: 'Jeet',
+      customerName: row ? row.customerName : '',
+      paymentType: row && row.pendingAmount === 0 ? 'COMPLETE' : 'INSTALLMENT',
+      paidAmount: String(row ? row.paidAmount : ''),
+      date: row ? (toYMD(row.date) || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
+    });
+    setIsEquateModalOpen(true);
   };
 
   const filteredPayments = payments.filter((item) => {
@@ -87,8 +100,25 @@ export default function PendingAndReceivingPayments() {
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
-    const calcTotal = (Number(equateForm.unitAmount) || 0) * (Number(equateForm.quantity) || 1);
-    alert(`Equated successfully! Total amount: ₹ ${calcTotal.toLocaleString('en-IN')}`);
+    if (selectedPayment) {
+      const newPaidAmt = Number(equateForm.paidAmount) || selectedPayment.paidAmount;
+      setPayments(prev => prev.map(p => {
+        if (p.id === selectedPayment.id) {
+          const newPending = Math.max(0, p.totalAmount - newPaidAmt);
+          return {
+            ...p,
+            customerName: equateForm.customerName || p.customerName,
+            paidAmount: newPaidAmt,
+            pendingAmount: newPending,
+            status: newPending === 0 ? 'Received' : 'Pending'
+          };
+        }
+        return p;
+      }));
+      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Equated by: ${equateForm.equatedBy}`);
+    } else {
+      alert(`Equated successfully for ${equateForm.customerName || 'Customer'}! Equated by: ${equateForm.equatedBy}`);
+    }
     setIsEquateModalOpen(false);
   };
 
@@ -118,8 +148,6 @@ export default function PendingAndReceivingPayments() {
     });
   };
 
-  const calculatedTotalAmount = (Number(equateForm.unitAmount) || 0) * (Number(equateForm.quantity) || 1);
-
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -135,7 +163,7 @@ export default function PendingAndReceivingPayments() {
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
           </button>
-          <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
+          <button onClick={() => handleOpenEquateModal(null)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
             <Plus size={16} /> Add Payment
           </button>
         </div>
@@ -163,15 +191,11 @@ export default function PendingAndReceivingPayments() {
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Person / Customer</label>
           <select className="form-control" value={personCustomer} onChange={(e) => setPersonCustomer(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
-            <option>Jeet</option>
-            <option>Sonal</option>
-            <option>Rohit</option>
-            <option>Neha</option>
-            <option>Aman</option>
-            <option>Karan</option>
-            <option>Vikram</option>
-            <option>Sunal</option>
-            <option>Ananya</option>
+            <option>Jeet Khubchandani</option>
+            <option>Sonal Wadwani</option>
+            <option>Rohit Kumar</option>
+            <option>Neha Gupta</option>
+            <option>Aman Verma</option>
           </select>
         </div>
         <div>
@@ -250,7 +274,7 @@ export default function PendingAndReceivingPayments() {
                   <td data-label="Payment Mode">{row.mode}</td>
                   <td data-label="Remarks" style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
                   <td data-label="Action">
-                    <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                    <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
                       Equate
                     </button>
                   </td>
@@ -272,72 +296,38 @@ export default function PendingAndReceivingPayments() {
                 </div>
                 <div>
                   <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>Equate Mobile</h2>
-                  <p style={{ fontSize: '13px', color: '#64748b' }}>Enter the amount and quantity to calculate total equated payment.</p>
+                  <p style={{ fontSize: '13px', color: '#64748b' }}>Review and equate pending payment for selected customer.</p>
                 </div>
               </div>
               <button onClick={() => setIsEquateModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
             <form onSubmit={handleEquateSubmit}>
-              {/* Amount per Unit */}
+              {/* Pending Payment Field */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Unit Amount (₹) *</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>Pending Payment (₹) *</label>
                 <input 
                   type="number" 
                   className="form-control" 
-                  placeholder="e.g. 25000" 
-                  value={equateForm.unitAmount} 
-                  onChange={(e) => setEquateForm({ ...equateForm, unitAmount: e.target.value })} 
+                  placeholder="₹ Pending payment amount" 
+                  value={equateForm.pendingPayment} 
+                  onChange={(e) => setEquateForm({ ...equateForm, pendingPayment: e.target.value })} 
                   required
                 />
-              </div>
-
-              {/* Quantity Counter */}
-              <div style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Quantity *</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button type="button" onClick={() => setEquateForm({ ...equateForm, quantity: Math.max(1, equateForm.quantity - 1) })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>-</button>
-                  <input 
-                    type="number" 
-                    className="form-control" 
-                    value={equateForm.quantity} 
-                    onChange={(e) => setEquateForm({ ...equateForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                    style={{ width: '80px', textAlign: 'center', fontWeight: 700 }} 
-                  />
-                  <button type="button" onClick={() => setEquateForm({ ...equateForm, quantity: equateForm.quantity + 1 })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>+</button>
-                </div>
-              </div>
-
-              {/* Dynamic Calculation Output (Quantity * Amount) */}
-              <div style={{ background: '#f0f9ff', border: '1px solid #38bdf8', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', textTransform: 'uppercase' }}>
-                  Total Equated Amount (Quantity × Unit Amount)
-                </div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
-                  ₹ {calculatedTotalAmount.toLocaleString('en-IN')}
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                  {equateForm.quantity} unit(s) × ₹ {Number(equateForm.unitAmount || 0).toLocaleString('en-IN')}
-                </div>
               </div>
 
               {/* Equated by */}
               <div style={{ marginBottom: '16px' }}>
                 <label className="form-label">Equated by</label>
                 <select className="form-control" value={equateForm.equatedBy} onChange={(e) => setEquateForm({ ...equateForm, equatedBy: e.target.value })}>
-                  <option>Select staff</option>
-                  <option>Jeet</option>
-                  <option>Sonal</option>
-                  <option>Rohit</option>
-                  <option>Neha</option>
-                  <option>Aman</option>
+                  <option value="Jeet">Jeet</option>
                 </select>
               </div>
 
-              {/* Equated to */}
+              {/* Customer Name */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Equated to (Party / Customer Name)</label>
-                <input type="text" className="form-control" placeholder="Enter customer/party name" value={equateForm.equatedTo} onChange={(e) => setEquateForm({ ...equateForm, equatedTo: e.target.value })} />
+                <label className="form-label">Customer Name</label>
+                <input type="text" className="form-control" placeholder="Enter customer name" value={equateForm.customerName} onChange={(e) => setEquateForm({ ...equateForm, customerName: e.target.value })} required />
               </div>
 
               {/* Installment vs Complete Mode Toggle */}
