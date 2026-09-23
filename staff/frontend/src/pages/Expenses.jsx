@@ -32,7 +32,7 @@ export default function Expenses() {
     category: 'SALARY',
     amount: '',
     recipient: '',
-    admin_name: 'Jeet',
+    admin_name: 'Jeet Khubchandani',
     expense_date: new Date().toISOString().split('T')[0],
     remarks: ''
   });
@@ -59,11 +59,11 @@ export default function Expenses() {
       console.error(err);
       // Fallback demo expenses
       setExpenses([
-        { id: '1', expense_code: 'EXP-001', category: 'SALARY', amount: 25000, admin_name: 'Jeet', recipient: 'Technician Staff', expense_date: '2026-09-10', remarks: 'Monthly technician salaries' },
+        { id: '1', expense_code: 'EXP-001', category: 'SALARY', amount: 25000, admin_name: 'Jeet Khubchandani', recipient: 'Technician Staff', expense_date: '2026-09-10', remarks: 'Monthly technician salaries' },
         { id: '2', expense_code: 'EXP-002', category: 'REPAIRING_COST', amount: 6800, admin_name: 'Sunal', recipient: 'Sunil Electronics Wholesale', expense_date: '2026-09-12', remarks: 'Displays & Batteries batch purchase' },
-        { id: '3', expense_code: 'EXP-003', category: 'OTHER', amount: 4500, admin_name: 'Jeet', recipient: 'Power Corporation', expense_date: '2026-09-14', remarks: 'Shop electricity & internet' },
+        { id: '3', expense_code: 'EXP-003', category: 'OTHER', amount: 4500, admin_name: 'Jeet Khubchandani', recipient: 'Power Corporation', expense_date: '2026-09-14', remarks: 'Shop electricity & internet' },
         { id: '4', expense_code: 'EXP-004', category: 'REPAIRING_COST', amount: 2400, admin_name: 'Sunal', recipient: 'Aman Tech', expense_date: '2026-09-16', remarks: 'Specialized Motherboard IC soldering' },
-        { id: '5', expense_code: 'EXP-005', category: 'OTHER', amount: 1800, admin_name: 'Jeet', recipient: 'Packaging Supply Co.', expense_date: '2026-09-17', remarks: 'Phone boxes & bubble wraps' }
+        { id: '5', expense_code: 'EXP-005', category: 'OTHER', amount: 1800, admin_name: 'Jeet Khubchandani', recipient: 'Packaging Supply Co.', expense_date: '2026-09-17', remarks: 'Phone boxes & bubble wraps' }
       ]);
       setTotalExpenses(40500);
       setBreakdown([
@@ -231,7 +231,8 @@ export default function Expenses() {
             onChange={(e) => setSelectedAdmin(e.target.value)}
           >
             <option value="All Admins">All Admins</option>
-            <option value="Jeet">Jeet</option>
+            <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+            <option value="Sonal Wadwani">Sonal Wadwani</option>
             <option value="Sunal">Sunal</option>
             <option value="Admin23">Admin23</option>
           </select>
@@ -353,7 +354,8 @@ export default function Expenses() {
                       value={newExpense.admin_name}
                       onChange={(e) => setNewExpense({ ...newExpense, admin_name: e.target.value })}
                     >
-                      <option value="Jeet">Jeet</option>
+                      <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                      <option value="Sonal Wadwani">Sonal Wadwani</option>
                       <option value="Sunal">Sunal</option>
                       <option value="Admin23">Admin23</option>
                     </select>

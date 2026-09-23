@@ -33,8 +33,8 @@ const ALL_APPLICATION_TABS = [
 ];
 
 const INITIAL_MEMBERS = [
-  { id: '1', name: 'Jeet Patel', username: 'Jeet@1', email: 'jeet@mrxchange.com', phone: '+91 98765 43210', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-01-10', avatar: 'JP', allowedTabs: ['*'] },
-  { id: '2', name: 'Sonal Sharma', username: 'Sonal@1', email: 'sonal@mrxchange.com', phone: '+91 98765 12345', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-03-15', avatar: 'SS', allowedTabs: ['*'] },
+  { id: '1', name: 'Jeet Khubchandani', username: 'Jeet@1', email: 'jeet@mrxchange.com', phone: '+91 98765 43210', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-01-10', avatar: 'JK', allowedTabs: ['*'] },
+  { id: '2', name: 'Sonal Wadwani', username: 'Sonal@1', email: 'sonal@mrxchange.com', phone: '+91 98765 12345', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-03-15', avatar: 'SW', allowedTabs: ['*'] },
   { id: '3', name: 'Rohit Kumar', username: 'Rohit@1', email: 'rohit@mrxchange.com', phone: '+91 98123 45678', role: 'STAFF', status: 'ACTIVE', joinedDate: '2025-05-20', avatar: 'RK', allowedTabs: ['/dashboard', '/old-inventory', '/old-in-hand', '/booked-exchange'] },
   { id: '4', name: 'Neha Gupta', username: 'Neha@1', email: 'neha@mrxchange.com', phone: '+91 97890 12345', role: 'STAFF', status: 'ACTIVE', joinedDate: '2025-06-01', avatar: 'NG', allowedTabs: ['/dashboard', '/booked-exchange', '/new-in-hand'] },
   { id: '5', name: 'Aman Verma', username: 'Aman@1', email: 'aman@mrxchange.com', phone: '+91 96543 21098', role: 'STAFF', status: 'INACTIVE', joinedDate: '2025-07-12', avatar: 'AV', allowedTabs: ['/dashboard', '/repair-stock'] }
@@ -192,8 +192,8 @@ export default function MembersSuperAdmin() {
   };
 
   const handleDeleteMember = (id, name) => {
-    if (name === 'Jeet Patel' || name === 'Sonal Sharma') {
-      alert('Default Super Admins (Jeet Patel & Sonal Sharma) cannot be removed.');
+    if (name === 'Jeet Khubchandani' || name === 'Sonal Wadwani' || name === 'Jeet Patel' || name === 'Sonal Sharma') {
+      alert('Default Super Admins (Jeet Khubchandani & Sonal Wadwani) cannot be removed.');
       return;
     }
     if (window.confirm(`Are you sure you want to remove "${name}" from team members?`)) {
@@ -215,7 +215,7 @@ export default function MembersSuperAdmin() {
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Members</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-            Jeet & Sonal Super Admin Control • Add team members, set usernames/passwords, and grant tab access permissions.
+            Jeet Khubchandani & Sonal Wadwani Super Admin Control • Add team members, set usernames/passwords, and grant tab access permissions.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -397,7 +397,7 @@ export default function MembersSuperAdmin() {
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
                   {modalStep === 1 
                     ? 'Enter member credentials (Username & Password).' 
-                    : 'Select which tabs Jeet or Sonal grant this member access to.'}
+                    : 'Select which tabs Jeet Khubchandani or Sonal Wadwani grant this member access to.'}
                 </p>
               </div>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>

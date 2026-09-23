@@ -102,7 +102,7 @@ export default function Login() {
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontWeight: 700, color: '#0369a1' }}>Jeet Patel</div>
+              <div style={{ fontWeight: 700, color: '#0369a1' }}>Jeet Khubchandani</div>
               <div style={{ color: '#64748b' }}>Jeet@1</div>
             </button>
 
@@ -119,7 +119,7 @@ export default function Login() {
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontWeight: 700, color: '#7c3aed' }}>Sonal Sharma</div>
+              <div style={{ fontWeight: 700, color: '#7c3aed' }}>Sonal Wadwani</div>
               <div style={{ color: '#64748b' }}>Sonal@1</div>
             </button>
           </div>

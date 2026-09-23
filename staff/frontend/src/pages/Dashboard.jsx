@@ -98,7 +98,7 @@ export default function Dashboard() {
             expense_ratio: 22.19
           },
           admin_performance: [
-            { admin: 'Jeet', sales: 127500, expenses: 31300, net_profit: 32500, investment: 700000, roi: '14.6' },
+            { admin: 'Jeet Khubchandani', sales: 127500, expenses: 31300, net_profit: 32500, investment: 700000, roi: '14.6' },
             { admin: 'Sunal', sales: 55000, expenses: 9200, net_profit: 18000, investment: 150000, roi: '12.0' }
           ]
         });
@@ -178,7 +178,8 @@ export default function Dashboard() {
               onChange={(e) => setSelectedAdmin(e.target.value)}
             >
               <option value="All Admins">All Admins</option>
-              <option value="Jeet">Jeet</option>
+              <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+              <option value="Sonal Wadwani">Sonal Wadwani</option>
               <option value="Sunal">Sunal</option>
               <option value="Admin23">Admin23</option>
             </select>
@@ -394,7 +395,7 @@ export default function Dashboard() {
         <div className="card-container" style={{ marginBottom: '28px' }}>
           <div className="card-header-flex">
             <h2 className="card-title">Admin-Wise Partner Attribution Table</h2>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>Combined Partners: Jeet & Sunal</span>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>Combined Partners: Jeet Khubchandani & Sonal Wadwani</span>
           </div>
           <div className="table-responsive">
             <table className="custom-table">

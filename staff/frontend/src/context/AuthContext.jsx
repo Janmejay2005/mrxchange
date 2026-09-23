@@ -41,11 +41,11 @@ export function AuthProvider({ children }) {
       const idTrim = (identifier || '').trim();
       const passTrim = (password || '').trim();
 
-      // Default Super Admins: Jeet & Sonal
+      // Default Super Admins: Jeet Khubchandani & Sonal Wadwani
       if (idTrim === 'Jeet@1' && passTrim === 'jeetxchange') {
         const superAdminUser = {
           id: 'jeet-superadmin-1',
-          name: 'Jeet Patel',
+          name: 'Jeet Khubchandani',
           username: 'Jeet@1',
           email: 'jeet@mrxchange.com',
           role: 'SUPERADMIN',
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       if (idTrim === 'Sonal@1' && passTrim === 'sonalxchange') {
         const superAdminUser = {
           id: 'sonal-superadmin-2',
-          name: 'Sonal Sharma',
+          name: 'Sonal Wadwani',
           username: 'Sonal@1',
           email: 'sonal@mrxchange.com',
           role: 'SUPERADMIN',

@@ -347,7 +347,7 @@ export default function BookedAndExchange() {
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #2563eb' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Jeet</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Jeet Khubchandani</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: '#2563eb', marginTop: '6px' }}>
             {bookedByJeet.length} Bookings
           </div>
@@ -357,7 +357,7 @@ export default function BookedAndExchange() {
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #d946ef' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Sonal</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Sonal Wadwani</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: '#d946ef', marginTop: '6px' }}>
             {bookedBySonal.length} Bookings
           </div>
@@ -461,8 +461,8 @@ export default function BookedAndExchange() {
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Purchased By / Customer</label>
           <select className="form-control" value={purchasedBy} onChange={(e) => setPurchasedBy(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
-            <option>Jeet</option>
-            <option>Sonal</option>
+            <option>Jeet Khubchandani</option>
+            <option>Sonal Wadwani</option>
             <option>Rohit</option>
             <option>Neha</option>
             <option>Aman</option>

@@ -32,7 +32,7 @@ export default function Investments() {
   const [newInvestment, setNewInvestment] = useState({
     investment_type: 'INVENTORY',
     amount: '',
-    investor_name: 'Jeet',
+    investor_name: 'Jeet Khubchandani',
     investment_date: new Date().toISOString().split('T')[0],
     remarks: ''
   });
@@ -61,9 +61,9 @@ export default function Investments() {
       console.error(err);
       // Fallback demo investments
       setInvestments([
-        { id: '1', investment_code: 'INV-001', investment_type: 'INVENTORY', amount: 500000, investor_name: 'Jeet', investment_date: '2026-09-01', remarks: 'Mobile inventory bulk capital' },
+        { id: '1', investment_code: 'INV-001', investment_type: 'INVENTORY', amount: 500000, investor_name: 'Jeet Khubchandani', investment_date: '2026-09-01', remarks: 'Mobile inventory bulk capital' },
         { id: '2', investment_code: 'INV-002', investment_type: 'EQUIPMENT', amount: 150000, investor_name: 'Sunal', investment_date: '2026-09-05', remarks: 'Screen separators & testing kits' },
-        { id: '3', investment_code: 'INV-003', investment_type: 'WORKING_CAPITAL', amount: 200000, investor_name: 'Jeet', investment_date: '2026-09-08', remarks: 'Working capital reserve' }
+        { id: '3', investment_code: 'INV-003', investment_type: 'WORKING_CAPITAL', amount: 200000, investor_name: 'Jeet Khubchandani', investment_date: '2026-09-08', remarks: 'Working capital reserve' }
       ]);
       setTotalInvestment(850000);
       setNetProfit(102000);
@@ -221,7 +221,8 @@ export default function Investments() {
             onChange={(e) => setSelectedInvestor(e.target.value)}
           >
             <option value="All Admins">All Investors</option>
-            <option value="Jeet">Jeet</option>
+            <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+            <option value="Sonal Wadwani">Sonal Wadwani</option>
             <option value="Sunal">Sunal</option>
           </select>
         </div>
@@ -340,7 +341,8 @@ export default function Investments() {
                     value={newInvestment.investor_name}
                     onChange={(e) => setNewInvestment({ ...newInvestment, investor_name: e.target.value })}
                   >
-                    <option value="Jeet">Jeet</option>
+                    <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                    <option value="Sonal Wadwani">Sonal Wadwani</option>
                     <option value="Sunal">Sunal</option>
                     <option value="Partner Capital">Partner Capital</option>
                   </select>

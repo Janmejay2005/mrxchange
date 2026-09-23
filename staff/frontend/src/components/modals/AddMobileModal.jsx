@@ -308,8 +308,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                   <option value="Aadarsh">Aadarsh</option>
                   <option value="Neha">Neha</option>
                   <option value="Aman">Aman</option>
-                  <option value="Jeet">Jeet</option>
-                  <option value="Sunal">Sunal</option>
+                  <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                  <option value="Sonal Wadwani">Sonal Wadwani</option>
                 </select>
               </div>
             </div>
@@ -324,22 +324,6 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
               />
-            </div>
-
-            {/* Phone Condition & Destination Inventory Selector */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Phone Condition & Destination Inventory *</label>
-              <select 
-                className="form-control"
-                style={{ fontWeight: 700 }}
-                value={formData.conditionStatus}
-                onChange={(e) => setFormData({ ...formData, conditionStatus: e.target.value })}
-              >
-                <option value="OLD_IN_HAND">📱 Good Condition → Move to Old In-hand Inventory</option>
-                <option value="IN_REPAIR">🔧 Needs Repair → Move to Repair Inventory</option>
-                <option value="REJECTED">🗑️ Damaged / Rejected → Move to Rejected Inventory</option>
-                <option value="OLD_INVENTORY">📦 Master Old Inventory</option>
-              </select>
             </div>
 
             {/* DUAL IMAGE UPLOAD SECTION */}

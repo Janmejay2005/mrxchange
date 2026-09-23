@@ -72,11 +72,11 @@ export default function Booked() {
   };
 
   const [bookedList, setBookedList] = useState([
-    { id: 1, bookingId: 'BK-1001', date: '2026-09-15', bookedBy: 'Jeet Patel', customerName: 'Rajesh Mehta', customerPhone: '+91 98250 12345', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 256, ram: 8, color: 'Natural Titanium', bookedAmount: 125000, viaMode: 'UPI', viaId: 'rajesh@upi', platform: 'Store', status: 'Booked' },
-    { id: 2, bookingId: 'BK-1002', date: '2026-09-14', bookedBy: 'Sonal Sharma', customerName: 'Anita Shah', customerPhone: '+91 98980 67890', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 512, ram: 12, color: 'Titanium Gray', bookedAmount: 118000, viaMode: 'Card', viaId: 'HDFC-4821', platform: 'Online', status: 'Booked' },
-    { id: 3, bookingId: 'BK-1003', date: '2026-09-13', bookedBy: 'Jeet Patel', customerName: 'Vikas Sharma', customerPhone: '+91 97123 45678', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Obsidian', bookedAmount: 92000, viaMode: 'Cash', viaId: '-', platform: 'Store', status: 'Booked' },
+    { id: 1, bookingId: 'BK-1001', date: '2026-09-15', bookedBy: 'Jeet Khubchandani', customerName: 'Rajesh Mehta', customerPhone: '+91 98250 12345', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 256, ram: 8, color: 'Natural Titanium', bookedAmount: 125000, viaMode: 'UPI', viaId: 'rajesh@upi', platform: 'Store', status: 'Booked' },
+    { id: 2, bookingId: 'BK-1002', date: '2026-09-14', bookedBy: 'Sonal Wadwani', customerName: 'Anita Shah', customerPhone: '+91 98980 67890', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 512, ram: 12, color: 'Titanium Gray', bookedAmount: 118000, viaMode: 'Card', viaId: 'HDFC-4821', platform: 'Online', status: 'Booked' },
+    { id: 3, bookingId: 'BK-1003', date: '2026-09-13', bookedBy: 'Jeet Khubchandani', customerName: 'Vikas Sharma', customerPhone: '+91 97123 45678', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Obsidian', bookedAmount: 92000, viaMode: 'Cash', viaId: '-', platform: 'Store', status: 'Booked' },
     { id: 4, bookingId: 'BK-1004', date: '2026-09-12', bookedBy: 'Rohit Kumar', customerName: 'Kunal Patel', customerPhone: '+91 99090 11223', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Flowy Emerald', bookedAmount: 64999, viaMode: 'UPI', viaId: 'kunal@okhdfcbank', platform: 'Store', status: 'Booked' },
-    { id: 5, bookingId: 'BK-1005', date: '2026-09-11', bookedBy: 'Sonal Sharma', customerName: 'Priya Joshi', customerPhone: '+91 98799 44556', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', bookedAmount: 89999, viaMode: 'Card', viaId: 'ICICI-9012', platform: 'Online', status: 'Booked' }
+    { id: 5, bookingId: 'BK-1005', date: '2026-09-11', bookedBy: 'Sonal Wadwani', customerName: 'Priya Joshi', customerPhone: '+91 98799 44556', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', bookedAmount: 89999, viaMode: 'Card', viaId: 'ICICI-9012', platform: 'Online', status: 'Booked' }
   ]);
 
   const toYMD = (val) => {
@@ -273,7 +273,7 @@ export default function Booked() {
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #2563eb' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Jeet</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Jeet Khubchandani</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: '#2563eb', marginTop: '6px' }}>
             {bookedByJeet.length} Bookings
           </div>
@@ -283,7 +283,7 @@ export default function Booked() {
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #d946ef' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Sonal</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booked by Sonal Wadwani</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: '#d946ef', marginTop: '6px' }}>
             {bookedBySonal.length} Bookings
           </div>
@@ -365,8 +365,8 @@ export default function Booked() {
               style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, background: '#ffffff' }}
             >
               <option value="All">All Staff / Admin</option>
-              <option value="Jeet">Jeet Patel</option>
-              <option value="Sonal">Sonal Sharma</option>
+              <option value="Jeet">Jeet Khubchandani</option>
+              <option value="Sonal">Sonal Wadwani</option>
               <option value="Rohit">Rohit Kumar</option>
             </select>
           </div>
@@ -587,8 +587,8 @@ export default function Booked() {
                     value={bookForm.bookedBy}
                     onChange={(e) => setBookForm({ ...bookForm, bookedBy: e.target.value })}
                   >
-                    <option value="Jeet Patel">Jeet Patel (Superadmin)</option>
-                    <option value="Sonal Sharma">Sonal Sharma (Superadmin)</option>
+                    <option value="Jeet Khubchandani">Jeet Khubchandani (Superadmin)</option>
+                    <option value="Sonal Wadwani">Sonal Wadwani (Superadmin)</option>
                     <option value="Rohit Kumar">Rohit Kumar</option>
                     <option value="Neha Gupta">Neha Gupta</option>
                   </select>
