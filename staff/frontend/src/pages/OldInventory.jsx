@@ -168,31 +168,27 @@ export default function OldInventory() {
       const sampleList = getSampleDevices();
       const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
-      const rawCombined = [...localInventory, ...dataList];
-      const seenKeys = new Set();
-      const combinedData = [];
+      const rawCombined = [...localInventory, ...dataList, ...sampleList];
+      const seenFingerprints = new Set();
+      const inventoryDevices = [];
+
       for (const item of rawCombined) {
-        const key = item.id 
-          ? String(item.id) 
-          : item.device_code 
-          ? String(item.device_code) 
-          : `${item.brand}_${item.model}_${item.purchase_amount}_${item.intake_date}`;
-          
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
-          combinedData.push(item);
+        if (!item) continue;
+        const brand = (item.brand || '').trim().toLowerCase();
+        const model = (item.model || '').trim().toLowerCase();
+        const amount = Number(item.purchase_amount || item.amount || 0);
+        const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
+        const date = item.intake_date || item.created_at || item.date || '';
+
+        const fingerprint = `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+
+        if (!seenFingerprints.has(fingerprint)) {
+          seenFingerprints.add(fingerprint);
+          if (!item.status || item.status === 'OLD_INVENTORY' || item.status === 'OLD_IN_HAND') {
+            inventoryDevices.push(item);
+          }
         }
       }
-
-      const dataIds = new Set(combinedData.map(d => String(d.id)));
-      const dataCodes = new Set(combinedData.map(d => d.device_code).filter(Boolean));
-
-      const filteredSamples = sampleList.filter(s => 
-        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
-      );
-
-      const allDevices = [...combinedData, ...filteredSamples];
-      const inventoryDevices = allDevices.filter(d => (!d.status || d.status === 'OLD_INVENTORY' || d.status === 'OLD_IN_HAND'));
       
       setDevices(inventoryDevices);
       setLoading(false);

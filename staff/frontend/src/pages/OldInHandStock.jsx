@@ -156,26 +156,27 @@ export default function OldInHandStock() {
         { id: 'old_hand_4', device_code: 'MRX-00104', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, paid_by: 'Rohit', intake_date: '2026-09-13', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' }
       ];
 
-      const rawCombined = [...cancelledItems, ...dataList];
-      const seenKeys = new Set();
-      const combinedData = [];
+      const rawCombined = [...cancelledItems, ...dataList, ...sampleStock];
+      const seenFingerprints = new Set();
+      const allInHand = [];
+
       for (const item of rawCombined) {
-        const key = String(item.id || item.device_code);
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
-          combinedData.push(item);
+        if (!item) continue;
+        const brand = (item.brand || '').trim().toLowerCase();
+        const model = (item.model || '').trim().toLowerCase();
+        const amount = Number(item.purchase_amount || item.amount || 0);
+        const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
+        const date = item.intake_date || item.created_at || item.date || '';
+
+        const fingerprint = `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+
+        if (!seenFingerprints.has(fingerprint)) {
+          seenFingerprints.add(fingerprint);
+          allInHand.push(item);
         }
       }
 
-      const dataIds = new Set(combinedData.map(d => String(d.id)));
-      const dataCodes = new Set(combinedData.map(d => d.device_code).filter(Boolean));
-
-      const filteredSamples = sampleStock.filter(s =>
-        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
-      );
-
-      const allInHand = [...combinedData, ...filteredSamples].filter(d => d.status === 'OLD_IN_HAND' || !d.status);
-      setDevices(allInHand);
+      setDevices(allInHand.filter(d => d.status === 'OLD_IN_HAND' || !d.status));
 
       const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
       setStats(statsRes.data);

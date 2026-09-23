@@ -94,40 +94,37 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     }
 
     const allImagesList = [images.image1, images.image2, ...images.additional].filter(Boolean);
-    const newDeviceObj = {
-      id: String(Date.now()),
-      brand: effectiveBrand,
-      model: formData.model,
-      storage: Number(formData.storage),
-      ram: Number(formData.ram),
-      colour: formData.colour,
-      purchase_amount: parseFloat(formData.purchase_amount) || 0,
-      paid_by: formData.paid_by,
-      status: formData.conditionStatus || 'OLD_IN_HAND',
-      intake_date: formData.date,
-      image_url: images.image1 || images.image2 || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100',
-      images: allImagesList
-    };
+    const mainImageUrl = images.image1 || images.image2 || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100';
 
     try {
       setLoading(true);
-      await deviceService.createDevice({
+      const created = await deviceService.createDevice({
         ...formData,
         brand: effectiveBrand,
-        status: formData.conditionStatus,
+        status: formData.conditionStatus || 'OLD_IN_HAND',
         purchase_amount: parseFloat(formData.purchase_amount) || 0,
-        image_data: images.image1 || images.image2 || null,
+        image_url: mainImageUrl,
+        image_data: mainImageUrl,
         images: allImagesList
       });
+
+      // Save to mrx_old_in_hand_stock if status is OLD_IN_HAND
+      if (!formData.conditionStatus || formData.conditionStatus === 'OLD_IN_HAND') {
+        const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+        const isPresent = oldInHandStock.some(d => String(d.id) === String(created.id) || (d.brand === created.brand && d.model === created.model && d.purchase_amount === created.purchase_amount));
+        if (!isPresent) {
+          localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([created, ...oldInHandStock]));
+        }
+      }
+
+      // Save to mrx_old_inventory
+      const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const isPresentInv = oldInventoryStock.some(d => String(d.id) === String(created.id) || (d.brand === created.brand && d.model === created.model && d.purchase_amount === created.purchase_amount));
+      if (!isPresentInv) {
+        localStorage.setItem('mrx_old_inventory', JSON.stringify([created, ...oldInventoryStock]));
+      }
     } catch (err) {
       console.error(err);
-    }
-
-    // Save locally ONCE to mrx_old_inventory
-    const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-    const isAlreadyAdded = oldInventoryStock.some(d => String(d.id) === String(newDeviceObj.id));
-    if (!isAlreadyAdded) {
-      localStorage.setItem('mrx_old_inventory', JSON.stringify([newDeviceObj, ...oldInventoryStock]));
     }
 
     // Trigger update event across tabs
