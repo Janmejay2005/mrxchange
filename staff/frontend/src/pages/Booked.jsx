@@ -41,19 +41,38 @@ export default function Booked() {
   });
 
   // Fetch Old In-hand devices for auto-filling Book modal
-  const [inHandDevices, setInHandDevices] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      if (stored.length > 0) return stored;
-    } catch (e) {}
-    return [
-      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, purchase_amount: 32000 },
-      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, purchase_amount: 28000 },
-      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, purchase_amount: 18000 },
-      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, purchase_amount: 20000 }
-    ];
-  });
+  const [inHandDevices, setInHandDevices] = useState([]);
   const [selectedInHandId, setSelectedInHandId] = useState('');
+
+  React.useEffect(() => {
+    const fetchInHand = () => {
+      const sampleStock = [
+        { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, purchase_amount: 32000, paid_by: 'Rohit' },
+        { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, purchase_amount: 28000, paid_by: 'Aadarsh' },
+        { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, purchase_amount: 18000, paid_by: 'Neha' },
+        { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, purchase_amount: 20000, paid_by: 'Rohit' }
+      ];
+      try {
+        const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+        const storedInventoryInHand = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
+        const allRaw = [...stored, ...storedInventoryInHand, ...sampleStock];
+        const seen = new Set();
+        const formatted = [];
+        for (const item of allRaw) {
+          if (!item) continue;
+          const fp = `${(item.brand || '').trim().toLowerCase()}|${(item.model || '').trim().toLowerCase()}|${item.purchase_amount || item.amount || 0}`;
+          if (!seen.has(fp)) {
+            seen.add(fp);
+            formatted.push(item);
+          }
+        }
+        setInHandDevices(formatted);
+      } catch (e) {
+        setInHandDevices(sampleStock);
+      }
+    };
+    fetchInHand();
+  }, [isBookModalOpen]);
 
   const handleSelectInHandDevice = (deviceId) => {
     setSelectedInHandId(deviceId);
@@ -66,7 +85,7 @@ export default function Booked() {
         model: found.model || '',
         storage: String(found.storage || 128),
         ram: String(found.ram || 6),
-        bookedAmount: String(found.purchase_amount || '')
+        bookedAmount: String(found.purchase_amount || found.amount || '')
       }));
     }
   };

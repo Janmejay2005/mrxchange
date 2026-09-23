@@ -30,11 +30,10 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
   // Nav items with dynamic access control
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Old Inventory', path: '/old-inventory', icon: Layers },
+    { label: 'Add Inventory', path: '/old-inventory', icon: Layers },
     { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
-    { label: 'Booked', path: '/booked', icon: BookmarkCheck },
     { label: 'Exchange', path: '/booked-exchange', icon: RefreshCw },
     { label: 'New In-hand Inventory', path: '/new-in-hand', icon: Package },
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },

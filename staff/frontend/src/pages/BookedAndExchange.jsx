@@ -54,28 +54,59 @@ export default function BookedAndExchange() {
   const [oldInHandDevices, setOldInHandDevices] = useState([]);
 
   React.useEffect(() => {
-    const sampleOldInHand = [
-      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200' },
-      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh', image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200' },
-      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200' },
-      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200' }
-    ];
-    try {
-      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const formattedStored = stored.map(item => ({
-        id: item.id || item.device_code,
-        brand: item.brand,
-        model: item.model,
-        storage: item.storage,
-        ram: item.ram,
-        amount: item.purchase_amount || item.amount || 0,
-        paid_by: item.paid_by || item.purchasedBy || 'Staff',
-        image_url: item.image_url || (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'
-      }));
-      setOldInHandDevices([...formattedStored, ...sampleOldInHand]);
-    } catch (e) {
-      setOldInHandDevices(sampleOldInHand);
-    }
+    const fetchLiveInHandStock = async () => {
+      const sampleOldInHand = [
+        { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200' },
+        { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh', image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200' },
+        { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200' },
+        { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200' }
+      ];
+
+      let apiDevices = [];
+      try {
+        const res = await deviceService.getDevices({ status: 'OLD_IN_HAND' });
+        apiDevices = Array.isArray(res) ? res : (res?.data || []);
+      } catch (e) {}
+
+      const localInHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'OLD_IN_HAND');
+      const localInventoryInHand = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
+
+      const allRaw = [...localInHand, ...localDevices, ...localInventoryInHand, ...apiDevices, ...sampleOldInHand];
+      const seen = new Set();
+      const formatted = [];
+
+      for (const item of allRaw) {
+        if (!item) continue;
+        const brand = item.brand || '';
+        const model = item.model || '';
+        const storage = item.storage || 128;
+        const ram = item.ram || 6;
+        const amount = item.purchase_amount || item.amount || 0;
+        const paidBy = item.paid_by || item.purchasedBy || 'Staff';
+        const img = item.image_url || (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200';
+
+        const fingerprint = `${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${storage}|${ram}|${amount}`;
+
+        if (!seen.has(fingerprint)) {
+          seen.add(fingerprint);
+          formatted.push({
+            id: item.id || item.device_code || `dev_${Date.now()}_${Math.random()}`,
+            brand,
+            model,
+            storage,
+            ram,
+            amount,
+            paid_by: paidBy,
+            image_url: img
+          });
+        }
+      }
+
+      setOldInHandDevices(formatted);
+    };
+
+    fetchLiveInHandStock();
   }, [isModalOpen]);
 
   const handleSelectOldInHandDevice = (devId) => {
