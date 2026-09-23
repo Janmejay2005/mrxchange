@@ -190,6 +190,14 @@ export default function OldInHandStock() {
 
   useEffect(() => {
     fetchOldInHandStock();
+
+    const handleSync = () => fetchOldInHandStock();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
+    };
   }, [localSearch, globalSearch, selectedBrand, selectedDate]);
 
   const toYMD = (val) => {

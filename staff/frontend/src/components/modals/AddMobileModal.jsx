@@ -123,11 +123,18 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       console.error(err);
     }
 
-    // Save locally based on status selection
-    if (formData.conditionStatus === 'OLD_IN_HAND') {
+    // Save locally to mrx_old_inventory so it appears in Old Inventory tab
+    const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+    localStorage.setItem('mrx_old_inventory', JSON.stringify([newDeviceObj, ...oldInventoryStock]));
+
+    // Also save to mrx_old_in_hand_stock if status is OLD_IN_HAND or default
+    if (!formData.conditionStatus || formData.conditionStatus === 'OLD_IN_HAND' || formData.conditionStatus === 'OLD_INVENTORY') {
       const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([newDeviceObj, ...oldInHandStock]));
     }
+
+    // Trigger update event across tabs
+    window.dispatchEvent(new Event('mrx_inventory_updated'));
 
     setLoading(false);
     setFormData({

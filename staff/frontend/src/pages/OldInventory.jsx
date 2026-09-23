@@ -152,37 +152,63 @@ export default function OldInventory() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await deviceService.getDevices({
-        q: globalSearch || '',
-        brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
-        from: selectedDate || '',
-        to: selectedDate || ''
-      });
-      const dataList = Array.isArray(res) ? res : (res?.data || []);
-      const sampleList = getSampleDevices();
+      let dataList = [];
+      try {
+        const res = await deviceService.getDevices({
+          q: globalSearch || '',
+          brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
+          from: selectedDate || '',
+          to: selectedDate || ''
+        });
+        dataList = Array.isArray(res) ? res : (res?.data || []);
+      } catch (e) {
+        console.error(e);
+      }
 
-      // Deduplicate: dataList overrides sampleList for the same id or device_code
-      const dataIds = new Set(dataList.map(d => String(d.id)));
-      const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
+      const sampleList = getSampleDevices();
+      const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+
+      const rawCombined = [...localInventory, ...dataList];
+      const seenKeys = new Set();
+      const combinedData = [];
+      for (const item of rawCombined) {
+        const key = String(item.id || item.device_code);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          combinedData.push(item);
+        }
+      }
+
+      const dataIds = new Set(combinedData.map(d => String(d.id)));
+      const dataCodes = new Set(combinedData.map(d => d.device_code).filter(Boolean));
 
       const filteredSamples = sampleList.filter(s => 
         !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
       );
 
-      const allDevices = [...dataList, ...filteredSamples];
-      const inventoryDevices = allDevices.filter(d => (!d.status || d.status === 'OLD_INVENTORY'));
+      const allDevices = [...combinedData, ...filteredSamples];
+      const inventoryDevices = allDevices.filter(d => (!d.status || d.status === 'OLD_INVENTORY' || d.status === 'OLD_IN_HAND'));
       
       setDevices(inventoryDevices);
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setDevices(getSampleDevices().filter(s => !s.status || s.status === 'OLD_INVENTORY'));
+      const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      setDevices([...localInventory, ...getSampleDevices()]);
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchInventory();
+
+    const handleSync = () => fetchInventory();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
+    };
   }, [globalSearch, selectedDate, selectedBrand]);
 
   const handleStatusChange = async (device, newStatus) => {
