@@ -13,6 +13,7 @@ import { investmentService, statsService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { exportToXls } from '../utils/pdfGenerator';
 
 export default function Investments() {
   const { isSuperAdmin } = useAuth();
@@ -102,9 +103,17 @@ export default function Investments() {
     }
   };
 
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('ledger', { type: 'INVESTMENT' });
-    window.open(url, '_blank');
+  const handleExportXls = () => {
+    const headers = ['Transaction Code', 'Partner / Investor', 'Amount (Rs)', 'Payment Method', 'Date', 'Description'];
+    const rows = filteredInvestments.map(inv => [
+      inv.transaction_code || inv.id,
+      inv.admin_name || inv.investor || '-',
+      inv.amount || 0,
+      inv.payment_method || '-',
+      inv.transaction_date ? String(inv.transaction_date).slice(0, 10) : '-',
+      inv.description || '-'
+    ]);
+    exportToXls('Capital Investments Report', headers, rows, `Investments_Report_${new Date().toISOString().slice(0, 10)}.xls`);
   };
 
   const handleExportPdf = () => {
@@ -132,8 +141,8 @@ export default function Investments() {
           <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '8px 18px', background: '#7c3aed' }}>
             <Plus size={16} /> Add Capital Investment
           </button>
-          <button onClick={handleExportCsv} className="btn-secondary">
-            <Download size={15} color="#0284c7" /> CSV
+          <button onClick={handleExportXls} className="btn-secondary">
+            <Download size={15} color="#0284c7" /> Excel (.xls)
           </button>
           <button onClick={handleExportPdf} className="btn-secondary">
             <FileText size={15} color="#dc2626" /> PDF

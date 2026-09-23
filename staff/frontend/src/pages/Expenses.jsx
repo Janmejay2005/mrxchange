@@ -14,6 +14,7 @@ import { expenseService, statsService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { exportToXls } from '../utils/pdfGenerator';
 
 export default function Expenses() {
   const { isSuperAdmin } = useAuth();
@@ -101,9 +102,18 @@ export default function Expenses() {
     }
   };
 
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('expenses', { admin: selectedAdmin, from: selectedDate || '' });
-    window.open(url, '_blank');
+  const handleExportXls = () => {
+    const headers = ['Expense Code', 'Category', 'Amount (Rs)', 'Admin', 'Recipient', 'Date', 'Remarks'];
+    const rows = filteredExpenses.map(e => [
+      e.expense_code || e.id,
+      e.category || '-',
+      e.amount || 0,
+      e.admin_name || '-',
+      e.recipient || '-',
+      e.expense_date ? String(e.expense_date).slice(0, 10) : '-',
+      e.remarks || '-'
+    ]);
+    exportToXls('Operating Expenses Report', headers, rows, `Expenses_Report_${new Date().toISOString().slice(0, 10)}.xls`);
   };
 
   const handleExportPdf = () => {
@@ -131,8 +141,8 @@ export default function Expenses() {
           <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '8px 18px' }}>
             <Plus size={16} /> Record Expense
           </button>
-          <button onClick={handleExportCsv} className="btn-secondary">
-            <Download size={15} color="#0284c7" /> CSV
+          <button onClick={handleExportXls} className="btn-secondary">
+            <Download size={15} color="#0284c7" /> Excel (.xls)
           </button>
           <button onClick={handleExportPdf} className="btn-secondary">
             <FileText size={15} color="#dc2626" /> PDF

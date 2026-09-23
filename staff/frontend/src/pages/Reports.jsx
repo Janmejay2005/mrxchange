@@ -18,7 +18,7 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 import { statsService, deviceService } from '../services/api';
 import { KPICard } from '../components/common/UIComponents';
 import { useAuth } from '../context/AuthContext';
-import { exportToCsv, exportToPdf } from '../utils/pdfGenerator';
+import { exportToXls, exportToPdf } from '../utils/pdfGenerator';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
@@ -49,7 +49,7 @@ export default function Reports() {
 
   // Export selection
   const [exportTarget, setExportTarget] = useState('all_inventory');
-  const [exportFormat, setExportFormat] = useState('CSV'); // CSV or PDF
+  const [exportFormat, setExportFormat] = useState('XLS'); // XLS or PDF
 
   const fetchReports = async () => {
     try {
@@ -140,21 +140,22 @@ export default function Reports() {
       const res = await deviceService.getDevices({});
       const rawDevices = res.data || [];
 
-      if (exportFormat === 'CSV') {
-        const rows = rawDevices.map(d => ({
-          ID: d.id,
-          Code: d.device_code || d.id,
-          Brand: d.brand,
-          Model: d.model,
-          Storage: d.storage,
-          RAM: d.ram,
-          Color: d.colour,
-          Amount: d.purchase_amount,
-          PaidBy: d.paid_by,
-          Date: d.intake_date,
-          Status: d.status
-        }));
-        exportToCsv(rows, `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.csv`);
+      if (exportFormat === 'XLS') {
+        const headers = ['ID', 'Device Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchase Amount', 'Paid By', 'Date', 'Status'];
+        const rows = rawDevices.map(d => [
+          d.id,
+          d.device_code || d.id,
+          d.brand,
+          d.model,
+          d.storage,
+          d.ram,
+          d.colour,
+          d.purchase_amount,
+          d.paid_by,
+          d.intake_date,
+          d.status
+        ]);
+        exportToXls(`Report: ${exportTarget.toUpperCase().replace(/_/g, ' ')}`, headers, rows, `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.xls`);
       } else {
         const headers = ['Code', 'Brand', 'Model', 'Storage', 'Color', 'Amount', 'Status'];
         const rows = rawDevices.map(d => [
@@ -221,7 +222,7 @@ export default function Reports() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Reports & Analytics</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Inventory performance metrics and official CSV/PDF export generation.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Inventory performance metrics and official XLS/PDF export generation.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
           <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Reports</span>
@@ -413,7 +414,7 @@ export default function Reports() {
       {/* Export Reports Section */}
       <div className="card-container" style={{ marginTop: '24px' }}>
         <h2 className="card-title" style={{ marginBottom: '6px' }}>Export Reports</h2>
-        <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>Select the dataset scope and export format (CSV or PDF).</p>
+        <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>Select the dataset scope and export format (XLS or PDF).</p>
 
         {/* Dataset Selection */}
         <div style={{ marginBottom: '24px' }}>
@@ -462,30 +463,30 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Format Selection - CSV & PDF */}
+        {/* Format Selection - XLS & PDF */}
         <div>
           <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>2. Select Export Format</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: '14px' }}>
               <button
                 type="button"
-                onClick={() => setExportFormat('CSV')}
+                onClick={() => setExportFormat('XLS')}
                 style={{
                   padding: '12px 24px',
                   borderRadius: '8px',
-                  border: exportFormat === 'CSV' ? '2px solid #0284c7' : '1px solid #e2e8f0',
-                  background: exportFormat === 'CSV' ? '#e0f2fe' : '#ffffff',
+                  border: exportFormat === 'XLS' ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                  background: exportFormat === 'XLS' ? '#e0f2fe' : '#ffffff',
                   fontWeight: 700,
                   fontSize: '14px',
-                  color: exportFormat === 'CSV' ? '#0284c7' : '#0f172a',
+                  color: exportFormat === 'XLS' ? '#0284c7' : '#0f172a',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   cursor: 'pointer'
                 }}
               >
-                <FileSpreadsheet size={18} color={exportFormat === 'CSV' ? '#0284c7' : '#64748b'} />
-                CSV Spreadsheet (.csv)
+                <FileSpreadsheet size={18} color={exportFormat === 'XLS' ? '#0284c7' : '#64748b'} />
+                Excel Spreadsheet (.xls)
               </button>
 
               <button

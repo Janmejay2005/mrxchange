@@ -88,26 +88,71 @@ export function printPdf(title, headers, rows) {
   x.document.close();
 }
 
-// Direct CSV Blob Download (solves popup blocker issues)
-export function exportToCsv(title, headers, rows, filename = 'report.csv') {
-  const lines = [headers.join(',')];
+// Direct XLS Excel Blob Download
+export function exportToXls(title, headers, rows, filename = 'report.xls') {
+  const cleanHeaders = headers || (rows.length > 0 ? Object.keys(rows[0]) : []);
+  
+  const titleRow = title 
+    ? `<tr><th colspan="${cleanHeaders.length}" style="background-color: #0b132b; color: #ffffff; font-size: 16px; font-weight: bold; padding: 12px; text-align: center;">${title}</th></tr>`
+    : '';
 
-  rows.forEach(row => {
-    const formatted = row.map(cell => {
+  const headerCols = cleanHeaders
+    .map(h => `<th style="background-color: #0284c7; color: #ffffff; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1;">${h}</th>`)
+    .join('');
+  const headerRow = `<tr>${headerCols}</tr>`;
+
+  const bodyRows = rows.map((row, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+    const rowValues = Array.isArray(row) ? row : Object.values(row);
+    const cols = rowValues.map(cell => {
       const val = (cell === null || cell === undefined) ? '' : String(cell);
-      return `"${val.replace(/"/g, '""')}"`;
-    });
-    lines.push(formatted.join(','));
-  });
+      return `<td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+    }).join('');
+    return `<tr style="background-color: ${bg};">${cols}</tr>`;
+  }).join('');
 
-  const csvContent = lines.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const template = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>${(title || 'Sheet1').replace(/[\\/?*\[\]]/g, '').slice(0, 31)}</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+      </head>
+      <body>
+        <table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
+          ${titleRow}
+          ${headerRow}
+          ${bodyRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', filename);
+  const finalFilename = filename.toLowerCase().endsWith('.xls') ? filename : `${filename.replace(/\.csv$/, '')}.xls`;
+  link.setAttribute('download', finalFilename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
+
+// Alias exportToCsv to exportToXls for legacy callers
+export const exportToCsv = exportToXls;
+

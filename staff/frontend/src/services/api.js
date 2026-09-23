@@ -229,6 +229,10 @@ export const statsService = {
     const query = new URLSearchParams(params).toString();
     return fetchApi(`/superadmin/analytics?${query}`);
   },
+  getXlsExportUrl: (scope, filters = {}) => {
+    const query = new URLSearchParams({ scope, ...filters }).toString();
+    return `${API_BASE}/exports/csv?${query}`;
+  },
   getCsvExportUrl: (scope, filters = {}) => {
     const query = new URLSearchParams({ scope, ...filters }).toString();
     return `${API_BASE}/exports/csv?${query}`;

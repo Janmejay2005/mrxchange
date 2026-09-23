@@ -5,8 +5,9 @@ export async function exportCsv(req, res) {
     const pool = getPool();
     const { scope = 'inventory', status, admin, from, to } = req.query;
 
-    let filename = `MRX_${scope}_${new Date().toISOString().split('T')[0]}.csv`;
-    let csvData = '';
+    let filename = `MRX_${scope}_${new Date().toISOString().split('T')[0]}.xls`;
+    let headers = [];
+    let tableRows = [];
 
     if (scope === 'ledger') {
       let conditions = ['1=1'];
@@ -28,22 +29,17 @@ export async function exportCsv(req, res) {
         params
       );
 
-      const headers = ['Transaction Code', 'Type', 'Flow', 'Amount (INR)', 'Admin', 'Payment Method', 'Date', 'Description'];
-      const lines = [headers.join(',')];
-
-      for (const r of rows) {
-        lines.push([
-          `"${r.transaction_code || ''}"`,
-          `"${r.transaction_type || ''}"`,
-          `"${r.flow_type || ''}"`,
-          r.amount,
-          `"${r.admin_name || ''}"`,
-          `"${r.payment_method || ''}"`,
-          `"${r.transaction_date ? String(r.transaction_date).slice(0, 10) : ''}"`,
-          `"${(r.description || '').replace(/"/g, '""')}"`
-        ].join(','));
-      }
-      csvData = lines.join('\n');
+      headers = ['Transaction Code', 'Type', 'Flow', 'Amount (INR)', 'Admin', 'Payment Method', 'Date', 'Description'];
+      tableRows = rows.map(r => [
+        r.transaction_code || '',
+        r.transaction_type || '',
+        r.flow_type || '',
+        r.amount,
+        r.admin_name || '',
+        r.payment_method || '',
+        r.transaction_date ? String(r.transaction_date).slice(0, 10) : '',
+        r.description || ''
+      ]);
     } else if (scope === 'expenses') {
       let conditions = ['1=1'];
       let params = [];
@@ -60,21 +56,16 @@ export async function exportCsv(req, res) {
         params
       );
 
-      const headers = ['Expense Code', 'Category', 'Amount (INR)', 'Admin', 'Recipient', 'Date', 'Remarks'];
-      const lines = [headers.join(',')];
-
-      for (const r of rows) {
-        lines.push([
-          `"${r.expense_code || ''}"`,
-          `"${r.category || ''}"`,
-          r.amount,
-          `"${r.admin_name || ''}"`,
-          `"${(r.recipient || '').replace(/"/g, '""')}"`,
-          `"${r.expense_date ? String(r.expense_date).slice(0, 10) : ''}"`,
-          `"${(r.remarks || '').replace(/"/g, '""')}"`
-        ].join(','));
-      }
-      csvData = lines.join('\n');
+      headers = ['Expense Code', 'Category', 'Amount (INR)', 'Admin', 'Recipient', 'Date', 'Remarks'];
+      tableRows = rows.map(r => [
+        r.expense_code || '',
+        r.category || '',
+        r.amount,
+        r.admin_name || '',
+        r.recipient || '',
+        r.expense_date ? String(r.expense_date).slice(0, 10) : '',
+        r.remarks || ''
+      ]);
     } else {
       // Default: Inventory Devices
       let conditions = ['1=1'];
@@ -96,32 +87,61 @@ export async function exportCsv(req, res) {
         params
       );
 
-      // Notice IMEI is excluded from export per PRD requirements
-      const headers = ['Device Code', 'Brand', 'Model', 'RAM (GB)', 'Storage (GB)', 'Color', 'Condition', 'Purchase Amount (INR)', 'Paid By', 'Intake Date', 'Status', 'Remarks'];
-      const lines = [headers.join(',')];
-
-      for (const r of rows) {
-        lines.push([
-          `"${r.device_code || ''}"`,
-          `"${r.brand || ''}"`,
-          `"${r.model || ''}"`,
-          r.ram,
-          r.storage,
-          `"${r.colour || ''}"`,
-          `"${r.condition || ''}"`,
-          r.purchase_amount,
-          `"${r.paid_by || ''}"`,
-          `"${r.intake_date ? String(r.intake_date).slice(0, 10) : ''}"`,
-          `"${r.status || ''}"`,
-          `"${(r.remarks || '').replace(/"/g, '""')}"`
-        ].join(','));
-      }
-      csvData = lines.join('\n');
+      headers = ['Device Code', 'Brand', 'Model', 'RAM (GB)', 'Storage (GB)', 'Color', 'Condition', 'Purchase Amount (INR)', 'Paid By', 'Intake Date', 'Status', 'Remarks'];
+      tableRows = rows.map(r => [
+        r.device_code || '',
+        r.brand || '',
+        r.model || '',
+        r.ram,
+        r.storage,
+        r.colour || '',
+        r.condition || '',
+        r.purchase_amount,
+        r.paid_by || '',
+        r.intake_date ? String(r.intake_date).slice(0, 10) : '',
+        r.status || '',
+        r.remarks || ''
+      ]);
     }
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    const headerCols = headers.map(h => `<th style="background-color: #0284c7; color: #ffffff; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1;">${h}</th>`).join('');
+    const bodyRows = tableRows.map((r, idx) => {
+      const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+      const cols = r.map(c => `<td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${String(c).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`).join('');
+      return `<tr style="background-color: ${bg};">${cols}</tr>`;
+    }).join('');
+
+    const xlsContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8" />
+          <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>${scope.toUpperCase()}</x:Name>
+                  <x:WorksheetOptions>
+                    <x:DisplayGridlines/>
+                  </x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+          <![endif]-->
+        </head>
+        <body>
+          <table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
+            <thead><tr>${headerCols}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.status(200).send(csvData);
+    res.status(200).send(xlsContent);
   } catch (error) {
     console.error('exportCsv error:', error);
     res.status(500).json({ success: false, message: error.message });

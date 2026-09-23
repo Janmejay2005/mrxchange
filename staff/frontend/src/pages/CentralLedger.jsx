@@ -14,6 +14,7 @@ import { ledgerService, statsService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { exportToXls } from '../utils/pdfGenerator';
 
 export default function CentralLedger() {
   const { isSuperAdmin } = useAuth();
@@ -64,12 +65,19 @@ export default function CentralLedger() {
     fetchLedger();
   }, [selectedAdmin, selectedType, searchQuery, globalSearch, selectedDate]);
 
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('ledger', { 
-      admin: selectedAdmin,
-      from: selectedDate || '' 
-    });
-    window.open(url, '_blank');
+  const handleExportXls = () => {
+    const headers = ['Transaction Code', 'Type', 'Flow', 'Amount (Rs)', 'Admin', 'Payment Method', 'Date', 'Description'];
+    const rows = filteredEntries.map(e => [
+      e.transaction_code || e.id,
+      e.transaction_type || '-',
+      e.flow_type || '-',
+      e.amount || 0,
+      e.admin_name || '-',
+      e.payment_method || '-',
+      e.transaction_date ? String(e.transaction_date).slice(0, 10) : '-',
+      e.description || '-'
+    ]);
+    exportToXls('Central Financial Ledger Report', headers, rows, `Central_Ledger_${new Date().toISOString().slice(0, 10)}.xls`);
   };
 
   const handleExportPdf = () => {
@@ -97,8 +105,8 @@ export default function CentralLedger() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={handleExportCsv} className="btn-secondary" title="Export Ledger as CSV">
-            <Download size={15} color="#0284c7" /> Export CSV
+          <button onClick={handleExportXls} className="btn-secondary" title="Export Ledger as Excel (.xls)">
+            <Download size={15} color="#0284c7" /> Export Excel (.xls)
           </button>
           <button onClick={handleExportPdf} className="btn-secondary" title="Export Ledger as PDF">
             <FileText size={15} color="#dc2626" /> Export PDF

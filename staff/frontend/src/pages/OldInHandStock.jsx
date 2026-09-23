@@ -17,6 +17,7 @@ import {
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { exportToXls } from '../utils/pdfGenerator';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
@@ -232,9 +233,21 @@ export default function OldInHandStock() {
     }
   };
 
-  const handleExportCsv = () => {
-    const url = statsService.getCsvExportUrl('inventory', { status: 'OLD_IN_HAND' });
-    window.open(url, '_blank');
+  const handleExportXls = () => {
+    const headers = ['#', 'Device Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchase Amount (Rs)', 'Intake Date', 'Status'];
+    const rows = filteredDevices.map((d, idx) => [
+      idx + 1,
+      d.device_code || d.id,
+      d.brand,
+      d.model,
+      `${d.storage} GB`,
+      `${d.ram} GB`,
+      d.colour || '-',
+      d.purchase_amount,
+      d.intake_date || '-',
+      d.status || 'OLD_IN_HAND'
+    ]);
+    exportToXls('Old In-hand Stock Report', headers, rows, `Old_In_Hand_Stock_${new Date().toISOString().slice(0, 10)}.xls`);
   };
 
   const handleExportPdf = () => {
@@ -273,8 +286,8 @@ export default function OldInHandStock() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleExportCsv} className="btn-secondary" title="Export CSV">
-            <Download size={15} color="#0284c7" /> CSV
+          <button onClick={handleExportXls} className="btn-secondary" title="Export Excel (.xls)">
+            <Download size={15} color="#0284c7" /> Excel (.xls)
           </button>
           <button onClick={handleExportPdf} className="btn-secondary" title="Export PDF">
             <FileText size={15} color="#dc2626" /> PDF
