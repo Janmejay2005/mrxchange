@@ -181,24 +181,26 @@ export default function Booked() {
         newColor: item.color || 'Standard',
         newPurchasedBy: item.bookedBy || 'Staff',
         newAmount: item.bookedAmount || 0,
-        oldBrand: 'Pending Trade-in',
-        oldModel: 'TBD',
-        oldStorage: 128,
-        oldRam: 6,
+        oldBrand: item.oldBrand || 'Trade-in Device',
+        oldModel: item.oldModel || 'TBD',
+        oldStorage: item.oldStorage || 128,
+        oldRam: item.oldRam || 6,
         oldColor: 'Default',
         oldPurchasedBy: 'Customer',
-        oldAmount: 0,
+        oldAmount: item.oldAmount || 0,
+        oldImage: item.oldImage || '',
         status: 'Booked'
       };
 
       try {
         const existingExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
         localStorage.setItem('mrx_exchanges', JSON.stringify([exchangeItem, ...existingExchanges]));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
       } catch (e) {
         console.error(e);
       }
 
-      alert(`Booking "${item.bookingId}" (${item.brand} ${item.model}) confirmed! Data transferred to Exchange.`);
+      alert(`Booking "${item.bookingId}" (${item.brand} ${item.model}) confirmed! Data transferred directly to Exchange tab ✔️.`);
     }
   };
 

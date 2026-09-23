@@ -34,6 +34,7 @@ export default function BookedAndExchange() {
     oldRam: '8',
     oldAmount: '25000',
     oldPayBy: 'Staff',
+    oldImage: '',
 
     // Booking New Phone
     exchangeValue: '25000',
@@ -42,7 +43,7 @@ export default function BookedAndExchange() {
     newStorage: '256',
     newRam: '12',
     newColor: 'Bay Blue',
-    newPayBy: 'Jeet Patel',
+    newPayBy: 'Jeet Khubchandani',
     platform: 'Offline / Store',
     purchasedAmount: '64000',
     via: 'Cash',
@@ -54,10 +55,10 @@ export default function BookedAndExchange() {
 
   React.useEffect(() => {
     const sampleOldInHand = [
-      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit' },
-      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh' },
-      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha' },
-      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit' }
+      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200' },
+      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh', image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200' },
+      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200' },
+      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200' }
     ];
     try {
       const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
@@ -68,7 +69,8 @@ export default function BookedAndExchange() {
         storage: item.storage,
         ram: item.ram,
         amount: item.purchase_amount || item.amount || 0,
-        paid_by: item.paid_by || item.purchasedBy || 'Staff'
+        paid_by: item.paid_by || item.purchasedBy || 'Staff',
+        image_url: item.image_url || (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'
       }));
       setOldInHandDevices([...formattedStored, ...sampleOldInHand]);
     } catch (e) {
@@ -86,21 +88,49 @@ export default function BookedAndExchange() {
         oldStorage: String(dev.storage || prev.oldStorage),
         oldRam: String(dev.ram || prev.oldRam),
         oldAmount: String(dev.amount || prev.oldAmount),
-        oldPayBy: dev.paid_by || prev.oldPayBy
+        oldPayBy: dev.paid_by || prev.oldPayBy,
+        oldImage: dev.image_url || dev.image || (dev.images && dev.images[0]) || ''
       }));
     }
   };
 
-  const [exchanges, setExchanges] = useState([
-    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15 Pro Max', newStorage: 256, newRam: 8, newColor: 'Natural Titanium', newPurchasedBy: 'Jeet', newAmount: 125000, oldBrand: 'Samsung', oldModel: 'S23 Ultra', oldStorage: 256, oldRam: 12, oldColor: 'Phantom Black', oldPurchasedBy: 'Jeet', oldAmount: 58000, status: 'Booked' },
-    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'Galaxy S24 Ultra', newStorage: 512, newRam: 12, newColor: 'Titanium Gray', newPurchasedBy: 'Sonal', newAmount: 118000, oldBrand: 'OnePlus', oldModel: '11', oldStorage: 256, oldRam: 16, oldColor: 'Eternal Green', oldPurchasedBy: 'Sonal', oldAmount: 32000, status: 'Booked' },
-    { id: 3, date: '13 Sep 2026', newBrand: 'Google Pixel', newModel: 'Pixel 8 Pro', newStorage: 256, newRam: 12, newColor: 'Obsidian', newPurchasedBy: 'Rohit', newAmount: 92000, oldBrand: 'Google Pixel', oldModel: 'Pixel 6 Pro', oldStorage: 128, oldRam: 12, oldColor: 'Stormy Black', oldPurchasedBy: 'Rohit', oldAmount: 26000, status: 'Booked' },
+  const defaultExchanges = [
+    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15 Pro Max', newStorage: 256, newRam: 8, newColor: 'Natural Titanium', newPurchasedBy: 'Jeet Khubchandani', newAmount: 125000, oldBrand: 'Samsung', oldModel: 'S23 Ultra', oldStorage: 256, oldRam: 12, oldColor: 'Phantom Black', oldPurchasedBy: 'Jeet Khubchandani', oldAmount: 58000, oldImage: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200', status: 'Booked' },
+    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'Galaxy S24 Ultra', newStorage: 512, newRam: 12, newColor: 'Titanium Gray', newPurchasedBy: 'Sonal Wadwani', newAmount: 118000, oldBrand: 'OnePlus', oldModel: '11', oldStorage: 256, oldRam: 16, oldColor: 'Eternal Green', oldPurchasedBy: 'Sonal Wadwani', oldAmount: 32000, oldImage: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200', status: 'Booked' },
+    { id: 3, date: '13 Sep 2026', newBrand: 'Google Pixel', newModel: 'Pixel 8 Pro', newStorage: 256, newRam: 12, newColor: 'Obsidian', newPurchasedBy: 'Rohit Kumar', newAmount: 92000, oldBrand: 'Google Pixel', oldModel: 'Pixel 6 Pro', oldStorage: 128, oldRam: 12, oldColor: 'Stormy Black', oldPurchasedBy: 'Rohit Kumar', oldAmount: 26000, oldImage: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200', status: 'Booked' },
     { id: 4, date: '12 Sep 2026', newBrand: 'OnePlus', newModel: 'OnePlus 12', newStorage: 512, newRam: 16, newColor: 'Flowy Emerald', newPurchasedBy: 'Neha', newAmount: 64999, oldBrand: 'Xiaomi', oldModel: '12 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 22000, status: 'Booked' },
     { id: 5, date: '11 Sep 2026', newBrand: 'Vivo', newModel: 'X100 Pro', newStorage: 512, newRam: 16, newColor: 'Asteroid Black', newPurchasedBy: 'Aman', newAmount: 89999, oldBrand: 'Vivo', oldModel: 'V27 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Magic Blue', oldPurchasedBy: 'Aman', oldAmount: 24000, status: 'Booked' },
     { id: 6, date: '10 Sep 2026', newBrand: 'Nothing', newModel: 'Phone (2)', newStorage: 256, newRam: 12, newColor: 'Dark Gray', newPurchasedBy: 'Karan', newAmount: 44999, oldBrand: 'Nothing', oldModel: 'Phone (1)', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Karan', oldAmount: 18000, status: 'Booked' },
     { id: 7, date: '09 Sep 2026', newBrand: 'Motorola', newModel: 'Edge 50 Ultra', newStorage: 512, newRam: 16, newColor: 'Peach Fuzz', newPurchasedBy: 'Vikram', newAmount: 59999, oldBrand: 'Motorola', oldModel: 'Edge 40', oldStorage: 256, oldRam: 8, oldColor: 'Eclipse Black', oldPurchasedBy: 'Vikram', oldAmount: 20000, status: 'Booked' },
     { id: 8, date: '08 Sep 2026', newBrand: 'Xiaomi', newModel: '14 Ultra', newStorage: 512, newRam: 16, newColor: 'Black', newPurchasedBy: 'Ananya', newAmount: 99999, oldBrand: 'Oppo', oldModel: 'Reno 10 Pro+', oldStorage: 256, oldRam: 12, oldColor: 'Silver', oldPurchasedBy: 'Ananya', oldAmount: 29000, status: 'Booked' }
-  ]);
+  ];
+
+  const getStoredExchanges = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+      if (stored && stored.length > 0) {
+        const storedIds = new Set(stored.map(i => String(i.id)));
+        const remainingDefaults = defaultExchanges.filter(d => !storedIds.has(String(d.id)));
+        return [...stored, ...remainingDefaults];
+      }
+    } catch (e) {}
+    return defaultExchanges;
+  };
+
+  const [exchanges, setExchanges] = useState(getStoredExchanges);
+
+  React.useEffect(() => {
+    const syncExchanges = () => {
+      setExchanges(getStoredExchanges());
+    };
+
+    window.addEventListener('storage', syncExchanges);
+    window.addEventListener('mrx_exchanges_updated', syncExchanges);
+    return () => {
+      window.removeEventListener('storage', syncExchanges);
+      window.removeEventListener('mrx_exchanges_updated', syncExchanges);
+    };
+  }, []);
 
   const toYMD = (val) => {
     if (!val) return '';
@@ -153,7 +183,12 @@ export default function BookedAndExchange() {
   const bookedByOthers = filteredExchanges.filter(item => !bookedByJeet.includes(item) && !bookedBySonal.includes(item));
 
   const handleExchangeClick = (id) => {
-    setExchanges(prev => prev.map(row => row.id === id ? { ...row, isExchanged: true, status: 'Exchanged' } : row));
+    const updated = exchanges.map(row => row.id === id ? { ...row, isExchanged: true, status: 'Exchanged' } : row);
+    setExchanges(updated);
+    try {
+      localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (e) {}
     alert('Exchange confirmed! Item marked as Exchange ✔️.');
   };
 
@@ -164,7 +199,7 @@ export default function BookedAndExchange() {
     const exVal = Number(bookForm.exchangeValue) || oldAmt;
 
     const newEntry = {
-      id: exchanges.length + 1,
+      id: Date.now(),
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       newBrand: bookForm.newBrand,
       newModel: bookForm.newModel,
@@ -180,9 +215,18 @@ export default function BookedAndExchange() {
       oldColor: 'Default',
       oldPurchasedBy: bookForm.oldPayBy || 'Staff',
       oldAmount: oldAmt,
+      oldImage: bookForm.oldImage || '',
       status: 'Booked'
     };
-    setExchanges([newEntry, ...exchanges]);
+
+    const updated = [newEntry, ...exchanges];
+    setExchanges(updated);
+    try {
+      localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (err) {
+      console.error(err);
+    }
     setIsModalOpen(false);
   };
 
@@ -206,7 +250,12 @@ export default function BookedAndExchange() {
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
     }
 
-    setExchanges(prev => prev.filter(item => item.id !== id));
+    const updated = exchanges.filter(item => item.id !== id);
+    setExchanges(updated);
+    try {
+      localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (e) {}
     setActiveMenuId(null);
     alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! New mobile transferred to New In-hand Stock.`);
     navigate('/new-in-hand');
@@ -227,14 +276,19 @@ export default function BookedAndExchange() {
         paid_by: itemToCancel.oldPurchasedBy,
         intake_date: new Date().toISOString().split('T')[0],
         status: 'OLD_IN_HAND',
-        image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
+        image_url: itemToCancel.oldImage || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
       };
 
       const existingOldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([oldStockItem, ...existingOldStock]));
     }
 
-    setExchanges(prev => prev.filter(item => item.id !== id));
+    const updated = exchanges.filter(item => item.id !== id);
+    setExchanges(updated);
+    try {
+      localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (e) {}
     setActiveMenuId(null);
     alert(`Booking Cancelled! Exchanged old device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" transferred to Old In-hand Inventory.`);
     navigate('/old-in-hand');
@@ -788,7 +842,7 @@ export default function BookedAndExchange() {
                 {/* Data of Old inhand picker */}
                 <div style={{ marginBottom: '16px', background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px dashed #0284c7' }}>
                   <label className="form-label" style={{ color: '#0284c7', fontWeight: 700, marginBottom: '6px', display: 'block' }}>
-                    📦 Pick Mobile from Old In-hand Stock (Auto-fill)
+                    📦 Pick Mobile from Old In-hand Stock (Auto-fill & Fetch Image)
                   </label>
                   <select 
                     className="form-control" 
@@ -802,6 +856,21 @@ export default function BookedAndExchange() {
                       </option>
                     ))}
                   </select>
+
+                  {/* Display Fetched Image Preview */}
+                  {bookForm.oldImage && (
+                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                      <img 
+                        src={bookForm.oldImage} 
+                        alt="Fetched Device" 
+                        style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} 
+                      />
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#15803d' }}>📷 Fetched Device Image</div>
+                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>Image loaded directly from Old In-hand Stock item</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
