@@ -21,14 +21,14 @@ export default function PendingAndReceivingPayments() {
     summaryInfo: []
   });
 
-  // Sell Modal State
-  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-  const [sellForm, setSellForm] = useState({
+  // Equate Modal State
+  const [isEquateModalOpen, setIsEquateModalOpen] = useState(false);
+  const [equateForm, setEquateForm] = useState({
+    unitAmount: '',
     quantity: 1,
-    soldBy: 'Staff',
-    soldTo: '',
+    equatedBy: 'Staff',
+    equatedTo: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
-    actualAmount: '',
     paidAmount: '',
     date: '2026-09-15'
   });
@@ -85,10 +85,11 @@ export default function PendingAndReceivingPayments() {
     return true;
   });
 
-  const handleSellSubmit = (e) => {
+  const handleEquateSubmit = (e) => {
     e.preventDefault();
-    alert('Sale recorded successfully!');
-    setIsSellModalOpen(false);
+    const calcTotal = (Number(equateForm.unitAmount) || 0) * (Number(equateForm.quantity) || 1);
+    alert(`Equated successfully! Total amount: ₹ ${calcTotal.toLocaleString('en-IN')}`);
+    setIsEquateModalOpen(false);
   };
 
   const handleExportPdf = () => {
@@ -117,6 +118,8 @@ export default function PendingAndReceivingPayments() {
     });
   };
 
+  const calculatedTotalAmount = (Number(equateForm.unitAmount) || 0) * (Number(equateForm.quantity) || 1);
+
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -132,7 +135,7 @@ export default function PendingAndReceivingPayments() {
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
           </button>
-          <button onClick={() => setIsSellModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
+          <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
             <Plus size={16} /> Add Payment
           </button>
         </div>
@@ -247,8 +250,8 @@ export default function PendingAndReceivingPayments() {
                 <td>{row.mode}</td>
                 <td style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
                 <td>
-                  <button onClick={() => setIsSellModalOpen(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                    Sell
+                  <button onClick={() => setIsEquateModalOpen(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
+                    Equate
                   </button>
                 </td>
               </tr>
@@ -258,8 +261,8 @@ export default function PendingAndReceivingPayments() {
         </table>
       </div>
 
-      {/* Sell Mobile Modal */}
-      {isSellModalOpen && (
+      {/* Equate Mobile Modal */}
+      {isEquateModalOpen && (
         <div className="modal-overlay">
           <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
@@ -268,54 +271,88 @@ export default function PendingAndReceivingPayments() {
                   <ShoppingCart size={22} />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>Sell Mobile</h2>
-                  <p style={{ fontSize: '13px', color: '#64748b' }}>Enter the details to sell this device.</p>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>Equate Mobile</h2>
+                  <p style={{ fontSize: '13px', color: '#64748b' }}>Enter the amount and quantity to calculate total equated payment.</p>
                 </div>
               </div>
-              <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+              <button onClick={() => setIsEquateModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
-            <form onSubmit={handleSellSubmit}>
+            <form onSubmit={handleEquateSubmit}>
+              {/* Amount per Unit */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Unit Amount (₹) *</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="e.g. 25000" 
+                  value={equateForm.unitAmount} 
+                  onChange={(e) => setEquateForm({ ...equateForm, unitAmount: e.target.value })} 
+                  required
+                />
+              </div>
+
               {/* Quantity Counter */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Quantity</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>Quantity *</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button type="button" onClick={() => setSellForm({ ...sellForm, quantity: Math.max(1, sellForm.quantity - 1) })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>-</button>
-                  <input type="number" className="form-control" value={sellForm.quantity} readOnly style={{ width: '80px', textAlign: 'center', fontWeight: 700 }} />
-                  <button type="button" onClick={() => setSellForm({ ...sellForm, quantity: sellForm.quantity + 1 })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>+</button>
+                  <button type="button" onClick={() => setEquateForm({ ...equateForm, quantity: Math.max(1, equateForm.quantity - 1) })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>-</button>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={equateForm.quantity} 
+                    onChange={(e) => setEquateForm({ ...equateForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                    style={{ width: '80px', textAlign: 'center', fontWeight: 700 }} 
+                  />
+                  <button type="button" onClick={() => setEquateForm({ ...equateForm, quantity: equateForm.quantity + 1 })} className="btn-secondary" style={{ width: '36px', height: '36px', padding: 0 }}>+</button>
                 </div>
               </div>
 
-              {/* Sold by */}
+              {/* Dynamic Calculation Output (Quantity * Amount) */}
+              <div style={{ background: '#f0f9ff', border: '1px solid #38bdf8', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', textTransform: 'uppercase' }}>
+                  Total Equated Amount (Quantity × Unit Amount)
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
+                  ₹ {calculatedTotalAmount.toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                  {equateForm.quantity} unit(s) × ₹ {Number(equateForm.unitAmount || 0).toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              {/* Equated by */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Sold by</label>
-                <select className="form-control" value={sellForm.soldBy} onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })}>
+                <label className="form-label">Equated by</label>
+                <select className="form-control" value={equateForm.equatedBy} onChange={(e) => setEquateForm({ ...equateForm, equatedBy: e.target.value })}>
                   <option>Select staff</option>
+                  <option>Jeet</option>
+                  <option>Sonal</option>
                   <option>Rohit</option>
                   <option>Neha</option>
-                  <option>Aadarsh</option>
+                  <option>Aman</option>
                 </select>
               </div>
 
-              {/* Sold to */}
+              {/* Equated to */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Sold to (Party name)</label>
-                <input type="text" className="form-control" placeholder="Enter customer/party name" value={sellForm.soldTo} onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} />
+                <label className="form-label">Equated to (Party / Customer Name)</label>
+                <input type="text" className="form-control" placeholder="Enter customer/party name" value={equateForm.equatedTo} onChange={(e) => setEquateForm({ ...equateForm, equatedTo: e.target.value })} />
               </div>
 
               {/* Installment vs Complete Mode Toggle */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Installment or complete</label>
+                <label className="form-label">Payment Mode</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
                     type="button"
-                    onClick={() => setSellForm({ ...sellForm, paymentType: 'INSTALLMENT' })}
+                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'INSTALLMENT' })}
                     style={{
                       padding: '10px',
                       borderRadius: '8px',
-                      border: sellForm.paymentType === 'INSTALLMENT' ? '2px solid #0284c7' : '1px solid #e2e8f0',
-                      background: sellForm.paymentType === 'INSTALLMENT' ? '#e0f2fe' : '#ffffff',
-                      color: sellForm.paymentType === 'INSTALLMENT' ? '#0284c7' : '#475569',
+                      border: equateForm.paymentType === 'INSTALLMENT' ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                      background: equateForm.paymentType === 'INSTALLMENT' ? '#e0f2fe' : '#ffffff',
+                      color: equateForm.paymentType === 'INSTALLMENT' ? '#0284c7' : '#475569',
                       fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
@@ -328,13 +365,13 @@ export default function PendingAndReceivingPayments() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSellForm({ ...sellForm, paymentType: 'COMPLETE' })}
+                    onClick={() => setEquateForm({ ...equateForm, paymentType: 'COMPLETE' })}
                     style={{
                       padding: '10px',
                       borderRadius: '8px',
-                      border: sellForm.paymentType === 'COMPLETE' ? '2px solid #059669' : '1px solid #e2e8f0',
-                      background: sellForm.paymentType === 'COMPLETE' ? '#ecfdf5' : '#ffffff',
-                      color: sellForm.paymentType === 'COMPLETE' ? '#059669' : '#475569',
+                      border: equateForm.paymentType === 'COMPLETE' ? '2px solid #059669' : '1px solid #e2e8f0',
+                      background: equateForm.paymentType === 'COMPLETE' ? '#ecfdf5' : '#ffffff',
+                      color: equateForm.paymentType === 'COMPLETE' ? '#059669' : '#475569',
                       fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
@@ -348,26 +385,21 @@ export default function PendingAndReceivingPayments() {
                 </div>
               </div>
 
-              {/* Amounts & Date */}
+              {/* Paid amount & Date */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                  <label className="form-label">Actual amount</label>
-                  <input type="number" className="form-control" placeholder="₹ 0" value={sellForm.actualAmount} onChange={(e) => setSellForm({ ...sellForm, actualAmount: e.target.value })} />
+                  <label className="form-label">Paid amount</label>
+                  <input type="number" className="form-control" placeholder="₹ 0" value={equateForm.paidAmount} onChange={(e) => setEquateForm({ ...equateForm, paidAmount: e.target.value })} />
                 </div>
                 <div>
-                  <label className="form-label">Paid amount</label>
-                  <input type="number" className="form-control" placeholder="₹ 0" value={sellForm.paidAmount} onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} />
+                  <label className="form-label">Date</label>
+                  <input type="date" className="form-control" value={equateForm.date} onChange={(e) => setEquateForm({ ...equateForm, date: e.target.value })} />
                 </div>
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <label className="form-label">Date</label>
-                <input type="date" className="form-control" value={sellForm.date} onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })} />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save</button>
+                <button type="button" onClick={() => setIsEquateModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Save Equated</button>
               </div>
             </form>
           </div>

@@ -20,11 +20,30 @@ import MembersSuperAdmin from './pages/MembersSuperAdmin';
 import Login from './pages/Login';
 import SplashScreen from './components/common/SplashScreen';
 
+import { useLocation } from 'react-router-dom';
+
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, canAccessTab } = useAuth();
+  const location = useLocation();
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  const currentPath = location.pathname;
+  const allowed = user.allowedTabs || [];
+  const isSuper = user.isSuperAdmin || user.role === 'SUPERADMIN' || allowed.includes('*');
+
+  if (!isSuper) {
+    const firstAllowed = allowed.find(t => t !== '*') || '/dashboard';
+
+    if (currentPath === '/' || !canAccessTab(currentPath)) {
+      if (currentPath !== firstAllowed) {
+        return <Navigate to={firstAllowed} replace />;
+      }
+    }
+  }
+
   return children;
 }
 

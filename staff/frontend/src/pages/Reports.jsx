@@ -10,7 +10,8 @@ import {
   IndianRupee, 
   Home,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Calendar
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
@@ -37,8 +38,9 @@ export default function Reports() {
     summaryInfo: []
   });
 
-  // Filter selections
-  const [dateRange, setDateRange] = useState('All Time');
+  // Filter selections: From Date & To Date Calendar Selection
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
 
@@ -67,24 +69,30 @@ export default function Reports() {
       if (rawDevices.length === 0) {
         // Fallback rich dataset if backend offline or empty
         rawDevices = [
-          { id: 1, brand: 'Google Pixel', model: 'Pixel 8 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '15 Sep' },
-          { id: 2, brand: 'Apple', model: 'iPhone 15 Pro Max', purchase_amount: 105000, status: 'OLD_IN_HAND', intake_date: '14 Sep' },
-          { id: 3, brand: 'Samsung', model: 'Galaxy S24 Ultra', purchase_amount: 88000, status: 'IN_REPAIR', intake_date: '14 Sep' },
-          { id: 4, brand: 'OnePlus', model: 'OnePlus 12', purchase_amount: 49000, status: 'REJECTED', intake_date: '13 Sep' },
-          { id: 5, brand: 'Vivo', model: 'X100 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '13 Sep' },
-          { id: 6, brand: 'Nothing', model: 'Phone (2a)', purchase_amount: 19000, status: 'OLD_IN_HAND', intake_date: '12 Sep' },
-          { id: 7, brand: 'Xiaomi', model: '14 Ultra', purchase_amount: 74000, status: 'OLD_INVENTORY', intake_date: '11 Sep' },
-          { id: 8, brand: 'Realme', model: 'GT 5 Pro', purchase_amount: 31000, status: 'IN_REPAIR', intake_date: '10 Sep' },
-          { id: 9, brand: 'Motorola', model: 'Edge 50 Ultra', purchase_amount: 43000, status: 'OLD_IN_HAND', intake_date: '09 Sep' }
+          { id: 1, brand: 'Google Pixel', model: 'Pixel 8 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '2026-09-15' },
+          { id: 2, brand: 'Apple', model: 'iPhone 15 Pro Max', purchase_amount: 105000, status: 'OLD_IN_HAND', intake_date: '2026-09-14' },
+          { id: 3, brand: 'Samsung', model: 'Galaxy S24 Ultra', purchase_amount: 88000, status: 'IN_REPAIR', intake_date: '2026-09-14' },
+          { id: 4, brand: 'OnePlus', model: 'OnePlus 12', purchase_amount: 49000, status: 'REJECTED', intake_date: '2026-09-13' },
+          { id: 5, brand: 'Vivo', model: 'X100 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '2026-09-13' },
+          { id: 6, brand: 'Nothing', model: 'Phone (2a)', purchase_amount: 19000, status: 'OLD_IN_HAND', intake_date: '2026-09-12' },
+          { id: 7, brand: 'Xiaomi', model: '14 Ultra', purchase_amount: 74000, status: 'OLD_INVENTORY', intake_date: '2026-09-11' },
+          { id: 8, brand: 'Realme', model: 'GT 5 Pro', purchase_amount: 31000, status: 'IN_REPAIR', intake_date: '2026-09-10' },
+          { id: 9, brand: 'Motorola', model: 'Edge 50 Ultra', purchase_amount: 43000, status: 'OLD_IN_HAND', intake_date: '2026-09-09' }
         ];
+      }
 
-        // Apply filters locally on fallback list
-        if (selectedBrand !== 'All Brands') {
-          rawDevices = rawDevices.filter(d => d.brand === selectedBrand);
-        }
-        if (selectedStatus !== 'All Status') {
-          rawDevices = rawDevices.filter(d => d.status === selectedStatus);
-        }
+      // Apply local filters (Brand, Status, Date Range)
+      if (selectedBrand !== 'All Brands') {
+        rawDevices = rawDevices.filter(d => d.brand === selectedBrand);
+      }
+      if (selectedStatus !== 'All Status') {
+        rawDevices = rawDevices.filter(d => d.status === selectedStatus);
+      }
+      if (fromDate) {
+        rawDevices = rawDevices.filter(d => (d.intake_date || '') >= fromDate);
+      }
+      if (toDate) {
+        rawDevices = rawDevices.filter(d => (d.intake_date || '') <= toDate);
       }
 
       const totalVal = rawDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
@@ -125,7 +133,7 @@ export default function Reports() {
 
   useEffect(() => {
     fetchReports();
-  }, [dateRange, selectedBrand, selectedStatus]);
+  }, [fromDate, toDate, selectedBrand, selectedStatus]);
 
   const handleExport = async () => {
     try {
@@ -220,19 +228,41 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Top Filter Bar */}
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <select 
-          className="form-control"
-          style={{ width: '180px', padding: '8px 12px' }}
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-        >
-          <option>All Time</option>
-          <option>Today</option>
-          <option>This Week</option>
-          <option>This Month</option>
-        </select>
+      {/* Top Filter Bar with Calendar Date Selection (From Date to To Date) */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Calendar size={18} color="#0284c7" />
+          <label style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>From Date:</label>
+          <input 
+            type="date" 
+            className="form-control" 
+            style={{ width: '150px', padding: '6px 10px' }}
+            value={fromDate} 
+            onChange={(e) => setFromDate(e.target.value)} 
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Calendar size={18} color="#0284c7" />
+          <label style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>To Date:</label>
+          <input 
+            type="date" 
+            className="form-control" 
+            style={{ width: '150px', padding: '6px 10px' }}
+            value={toDate} 
+            onChange={(e) => setToDate(e.target.value)} 
+          />
+        </div>
+
+        {(fromDate || toDate) && (
+          <button 
+            type="button" 
+            onClick={() => { setFromDate(''); setToDate(''); }} 
+            style={{ fontSize: '12px', color: '#ef4444', background: '#fee2e2', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+          >
+            Clear Dates
+          </button>
+        )}
 
         <select 
           className="form-control" 
