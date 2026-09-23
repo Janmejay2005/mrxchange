@@ -317,16 +317,14 @@ export default function NewInHandStock() {
                     <CurrencyAmount amount={item.amount} />
                   </td>
                   <td data-label="Further Procedure">
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      background: '#f1f5f9',
-                      color: '#475569'
-                    }}>
-                      {item.procedure || 'In Hand'}
-                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => openSellModal(item)} 
+                      className="btn-primary"
+                      style={{ padding: '6px 16px', fontSize: '12px', borderRadius: '6px', fontWeight: 800 }}
+                    >
+                      Sell
+                    </button>
                   </td>
                 </tr>
               ))
