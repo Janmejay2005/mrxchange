@@ -14,6 +14,7 @@ export default function BookedAndExchange() {
   const [purchasedBy, setPurchasedBy] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [expandedImage, setExpandedImage] = useState(null);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -300,11 +301,11 @@ export default function BookedAndExchange() {
         device_code: `MRX-${Date.now().toString().slice(-5)}`,
         brand: itemToCancel.oldBrand,
         model: itemToCancel.oldModel,
-        storage: itemToCancel.oldStorage,
-        ram: itemToCancel.oldRam,
-        colour: itemToCancel.oldColor,
-        purchase_amount: itemToCancel.oldAmount,
-        paid_by: itemToCancel.oldPurchasedBy,
+        storage: Number(itemToCancel.oldStorage) || 128,
+        ram: Number(itemToCancel.oldRam) || 6,
+        colour: itemToCancel.oldColor || 'Default',
+        purchase_amount: Number(itemToCancel.oldAmount) || 0,
+        paid_by: itemToCancel.oldPurchasedBy || 'Staff',
         intake_date: new Date().toISOString().split('T')[0],
         status: 'OLD_IN_HAND',
         image_url: itemToCancel.oldImage || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
@@ -312,6 +313,11 @@ export default function BookedAndExchange() {
 
       const existingOldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([oldStockItem, ...existingOldStock]));
+
+      const existingInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([oldStockItem, ...existingInventory]));
+      
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
     }
 
     const updated = exchanges.filter(item => item.id !== id);
@@ -321,7 +327,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Booking Cancelled! Exchanged old device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" transferred to Old In-hand Inventory.`);
+    alert(`Exchange Rejected! Old trade-in device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" transferred directly to Old In-hand Inventory.`);
     navigate('/old-in-hand');
   };
 
@@ -894,11 +900,13 @@ export default function BookedAndExchange() {
                       <img 
                         src={bookForm.oldImage} 
                         alt="Fetched Device" 
-                        style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} 
+                        onClick={() => setExpandedImage(bookForm.oldImage)}
+                        title="Click to view full image"
+                        style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer' }} 
                       />
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#15803d' }}>📷 Fetched Device Image</div>
-                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>Image loaded directly from Old In-hand Stock item</div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#15803d' }}>📷 Fetched Device Image (Clickable)</div>
+                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>Click photo to zoom & expand image view</div>
                       </div>
                     </div>
                   )}
@@ -1098,6 +1106,30 @@ export default function BookedAndExchange() {
         filename={exportModalConfig.filename}
         summaryInfo={exportModalConfig.summaryInfo}
       />
+
+      {/* Fullscreen Expandable Image Lightbox Modal */}
+      {expandedImage && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setExpandedImage(null)} 
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.85)', cursor: 'zoom-out', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setExpandedImage(null)}
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+              title="Close Preview"
+            >
+              <X size={28} />
+            </button>
+            <img 
+              src={expandedImage} 
+              alt="Expanded Preview" 
+              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '12px', objectFit: 'contain', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', border: '2px solid #ffffff' }} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

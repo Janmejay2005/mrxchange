@@ -198,7 +198,7 @@ export default function NewInHandStock() {
       item.color || '-',
       item.purchasedBy || '-',
       `Rs. ${item.amount.toLocaleString()}`,
-      'Book / Sell'
+      'Sell'
     ]);
     const totalVal = filteredStock.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     setExportModalConfig({
