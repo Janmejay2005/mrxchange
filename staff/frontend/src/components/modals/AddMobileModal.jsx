@@ -11,8 +11,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     ram: '6',
     colour: 'Midnight Black',
     purchase_amount: '',
-    paid_by: 'Rohit',
-    conditionStatus: 'OLD_IN_HAND', // 'OLD_IN_HAND', 'IN_REPAIR', 'REJECTED'
+    paid_by: '',
+    conditionStatus: 'OLD_INVENTORY',
     remarks: '',
     date: new Date().toISOString().split('T')[0]
   });
@@ -101,27 +101,19 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       const created = await deviceService.createDevice({
         ...formData,
         brand: effectiveBrand,
-        status: formData.conditionStatus || 'OLD_IN_HAND',
+        status: 'OLD_INVENTORY',
         purchase_amount: parseFloat(formData.purchase_amount) || 0,
         image_url: mainImageUrl,
         image_data: mainImageUrl,
         images: allImagesList
       });
 
-      // Save to mrx_old_in_hand_stock if status is OLD_IN_HAND
-      if (!formData.conditionStatus || formData.conditionStatus === 'OLD_IN_HAND') {
-        const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-        const isPresent = oldInHandStock.some(d => String(d.id) === String(created.id) || (d.brand === created.brand && d.model === created.model && d.purchase_amount === created.purchase_amount));
-        if (!isPresent) {
-          localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([created, ...oldInHandStock]));
-        }
-      }
-
-      // Save to mrx_old_inventory
+      // Save exclusively to mrx_old_inventory as default status
       const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      const isPresentInv = oldInventoryStock.some(d => String(d.id) === String(created.id) || (d.brand === created.brand && d.model === created.model && d.purchase_amount === created.purchase_amount));
+      const targetObj = { ...created, status: 'OLD_INVENTORY' };
+      const isPresentInv = oldInventoryStock.some(d => String(d.id) === String(targetObj.id) || (d.brand === targetObj.brand && d.model === targetObj.model && d.purchase_amount === targetObj.purchase_amount));
       if (!isPresentInv) {
-        localStorage.setItem('mrx_old_inventory', JSON.stringify([created, ...oldInventoryStock]));
+        localStorage.setItem('mrx_old_inventory', JSON.stringify([targetObj, ...oldInventoryStock]));
       }
     } catch (err) {
       console.error(err);

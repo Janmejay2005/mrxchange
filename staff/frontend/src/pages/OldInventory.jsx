@@ -184,7 +184,7 @@ export default function OldInventory() {
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);
-          if (!item.status || item.status === 'OLD_INVENTORY' || item.status === 'OLD_IN_HAND') {
+          if (!item.status || item.status === 'OLD_INVENTORY') {
             inventoryDevices.push(item);
           }
         }
