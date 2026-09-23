@@ -172,7 +172,12 @@ export default function OldInventory() {
       const seenKeys = new Set();
       const combinedData = [];
       for (const item of rawCombined) {
-        const key = String(item.id || item.device_code);
+        const key = item.id 
+          ? String(item.id) 
+          : item.device_code 
+          ? String(item.device_code) 
+          : `${item.brand}_${item.model}_${item.purchase_amount}_${item.intake_date}`;
+          
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
           combinedData.push(item);

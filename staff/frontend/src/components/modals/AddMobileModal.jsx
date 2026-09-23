@@ -123,14 +123,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       console.error(err);
     }
 
-    // Save locally to mrx_old_inventory so it appears in Old Inventory tab
+    // Save locally ONCE to mrx_old_inventory
     const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-    localStorage.setItem('mrx_old_inventory', JSON.stringify([newDeviceObj, ...oldInventoryStock]));
-
-    // Also save to mrx_old_in_hand_stock if status is OLD_IN_HAND or default
-    if (!formData.conditionStatus || formData.conditionStatus === 'OLD_IN_HAND' || formData.conditionStatus === 'OLD_INVENTORY') {
-      const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([newDeviceObj, ...oldInHandStock]));
+    const isAlreadyAdded = oldInventoryStock.some(d => String(d.id) === String(newDeviceObj.id));
+    if (!isAlreadyAdded) {
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([newDeviceObj, ...oldInventoryStock]));
     }
 
     // Trigger update event across tabs
@@ -306,18 +303,13 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Paid By *</label>
-                <select 
+                <input 
+                  type="text"
                   className="form-control"
+                  placeholder="Enter name (e.g. Rohit, Jeet Khubchandani...)"
                   value={formData.paid_by}
                   onChange={(e) => setFormData({ ...formData, paid_by: e.target.value })}
-                >
-                  <option value="Rohit">Rohit</option>
-                  <option value="Aadarsh">Aadarsh</option>
-                  <option value="Neha">Neha</option>
-                  <option value="Aman">Aman</option>
-                  <option value="Jeet Khubchandani">Jeet Khubchandani</option>
-                  <option value="Sonal Wadwani">Sonal Wadwani</option>
-                </select>
+                />
               </div>
             </div>
 
