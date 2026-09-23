@@ -111,13 +111,17 @@ export default function NewInHandStock() {
 
   const openSellModal = (item = null) => {
     setSelectedStockItem(item);
+    const fetchedModel = item ? `${item.brand} ${item.model}` : '';
+    const initialPrice = item ? (item.amount || '') : '';
     setSellForm({
-      quantity: 1,
+      model: fetchedModel,
       soldBy: 'Staff',
-      soldTo: item ? item.purchasedBy || '' : '',
-      paymentType: 'installment',
-      actualAmount: item ? item.amount || '' : '',
-      paidAmount: item ? item.amount || '' : '',
+      unit: 1,
+      soldTo: item ? (item.purchasedBy || '') : '',
+      soldPrice: initialPrice,
+      totalAmount: initialPrice,
+      paidAmount: initialPrice,
+      remarks: '',
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
@@ -316,20 +320,14 @@ export default function NewInHandStock() {
                     <CurrencyAmount amount={item.amount} />
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button 
-                        onClick={() => openEditModal(item)} 
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        <Edit size={14} /> Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteDevice(item.sno)} 
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => openSellModal(item)} 
+                      className="btn-primary"
+                      style={{ padding: '6px 16px', fontSize: '12px', borderRadius: '6px', fontWeight: 800 }}
+                    >
+                      Sell
+                    </button>
                   </td>
                 </tr>
               ))
@@ -338,155 +336,129 @@ export default function NewInHandStock() {
         </table>
       </div>
 
-      {/* Book / Sell Device Modal matching user diagram */}
+      {/* Sell Mobile Modal with Editable Fields / Remarks */}
       {isSellModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
+          <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Book / Sell Device</h2>
-                {selectedStockItem && (
-                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
-                    {selectedStockItem.brand} {selectedStockItem.model} ({selectedStockItem.storage}GB / {selectedStockItem.ram}GB)
-                  </p>
-                )}
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Sell Mobile</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                  Enter sale details for selected new in-hand mobile.
+                </p>
               </div>
               <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
             <form onSubmit={handleSellSubmit}>
-              {/* -> Quantity */}
-              <div style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Quantity</label>
-                <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc' }}>
-                  <button 
-                    type="button" 
-                    onClick={() => setSellForm(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))} 
-                    style={{ padding: '8px 16px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 800, fontSize: '16px', color: '#334155' }}
-                  >
-                    -
-                  </button>
-                  <span style={{ width: '44px', textAlign: 'center', fontWeight: 800, fontSize: '15px', color: '#0f172a' }}>
-                    {sellForm.quantity}
-                  </span>
-                  <button 
-                    type="button" 
-                    onClick={() => setSellForm(prev => ({ ...prev, quantity: prev.quantity + 1 }))} 
-                    style={{ padding: '8px 16px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 800, fontSize: '16px', color: '#334155' }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* -> Sold by */}
+              {/* 1. Model (Fetched from New In-Hand, Editable as Remarks) */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Sold by *</label>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>
+                  Model (Fetched from New In-hand) *
+                </label>
                 <input 
                   type="text" 
                   className="form-control" 
-                  placeholder="Enter salesperson / staff name" 
-                  value={sellForm.soldBy} 
-                  onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
+                  value={sellForm.model} 
+                  onChange={(e) => setSellForm({ ...sellForm, model: e.target.value })} 
+                  placeholder="e.g. Apple iPhone 15 Pro Max"
                   required 
                 />
               </div>
 
-              {/* -> Sold to (Party name) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* 2. Sold by */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Sold by *</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="e.g. Rohit / Staff" 
+                    value={sellForm.soldBy} 
+                    onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
+                    required 
+                  />
+                </div>
+
+                {/* 3. Unit (Quantity) */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Unit (Quantity) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.unit} 
+                    onChange={(e) => {
+                      const u = Math.max(1, parseInt(e.target.value) || 1);
+                      const sp = Number(sellForm.soldPrice) || 0;
+                      setSellForm({ ...sellForm, unit: u, totalAmount: u * sp });
+                    }} 
+                    min="1"
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* 4. Sold to (Customer / Party Name) */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Sold to (Party name) *</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>Sold to (Party / Customer Name) *</label>
                 <input 
                   type="text" 
                   className="form-control" 
-                  placeholder="Enter customer / party name" 
+                  placeholder="Enter customer or party name" 
                   value={sellForm.soldTo} 
                   onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} 
                   required 
                 />
               </div>
 
-              {/* -> Installment or complete */}
-              <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Installment or complete *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '4px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSellForm({ ...sellForm, paymentType: 'installment' })}
-                    style={{
-                      padding: '9px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      background: sellForm.paymentType === 'installment' ? '#0284c7' : 'transparent',
-                      color: sellForm.paymentType === 'installment' ? '#ffffff' : '#64748b',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    Installment
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSellForm({ ...sellForm, paymentType: 'complete' })}
-                    style={{
-                      padding: '9px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      background: sellForm.paymentType === 'complete' ? '#059669' : 'transparent',
-                      color: sellForm.paymentType === 'complete' ? '#ffffff' : '#64748b',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    Complete
-                  </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* 5. Sold Price */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Sold Price (₹ Per Unit) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    placeholder="₹ 0" 
+                    value={sellForm.soldPrice} 
+                    onChange={(e) => {
+                      const sp = e.target.value;
+                      const u = Number(sellForm.unit) || 1;
+                      setSellForm({ ...sellForm, soldPrice: sp, totalAmount: Number(sp) * u });
+                    }} 
+                    required 
+                  />
+                </div>
+
+                {/* 6. Total Amount (Unit * Sold Price, Editable as Remarks) */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    placeholder="₹ Total Amount" 
+                    value={sellForm.totalAmount} 
+                    onChange={(e) => setSellForm({ ...sellForm, totalAmount: e.target.value })} 
+                    required 
+                  />
                 </div>
               </div>
 
-              {/* -> Actual amount */}
-              <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Actual amount (₹) *</label>
+              {/* 7. Paid amount */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Paid amount (₹) *</label>
                 <input 
                   type="number" 
                   className="form-control" 
-                  placeholder="₹ Total sale price" 
-                  value={sellForm.actualAmount} 
-                  onChange={(e) => setSellForm({ ...sellForm, actualAmount: e.target.value })} 
-                  required 
-                />
-              </div>
-
-              {/* -> Paid amount */}
-              <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Paid amount (₹) *</label>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  placeholder="₹ Paid amount" 
+                  placeholder="₹ Paid Amount" 
                   value={sellForm.paidAmount} 
                   onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
                   required 
                 />
               </div>
 
-              {/* -> Date */}
-              <div style={{ marginBottom: '20px' }}>
-                <label className="form-label">Date *</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  value={sellForm.date} 
-                  onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })} 
-                  required 
-                />
-              </div>
-
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Confirm Sale / Booking</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Confirm Sale</button>
               </div>
             </form>
           </div>

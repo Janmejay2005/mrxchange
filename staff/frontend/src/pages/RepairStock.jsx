@@ -94,13 +94,41 @@ export default function RepairStock() {
   const handleCompleteRepair = async () => {
     try {
       const { device, actualCost, paidBy, notes } = completeModal;
-      await deviceService.updateStatus(device.id, {
+      const initialAmount = Number(device?.purchase_amount || 0);
+      const repairAmount = Number(actualCost || 0);
+      const totalNewAmount = initialAmount + repairAmount;
+
+      const inHandDevice = {
+        ...device,
+        purchase_amount: totalNewAmount,
+        initial_purchase_amount: initialAmount,
+        repair_cost: repairAmount,
+        repair_person: paidBy || 'Technician',
+        repair_notes: notes || 'Repaired and tested OK',
         status: 'OLD_IN_HAND',
-        reason: `Repair completed: ${notes || 'Ready for stock'}`,
-        repair_cost: actualCost,
-        repair_paid_by: paidBy
-      });
+        intake_date: new Date().toISOString().split('T')[0]
+      };
+
+      // Save into mrx_old_in_hand_stock localStorage
+      const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const filtered = oldInHandStock.filter(d => String(d.id) !== String(device.id));
+      filtered.unshift(inHandDevice);
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
+
+      try {
+        await deviceService.updateStatus(device.id, {
+          status: 'OLD_IN_HAND',
+          purchase_amount: totalNewAmount,
+          repair_cost: repairAmount,
+          repair_paid_by: paidBy,
+          reason: `Repair completed: ${notes || 'Ready for stock'}`
+        });
+      } catch (e) {
+        console.error(e);
+      }
+
       setCompleteModal({ ...completeModal, isOpen: false });
+      alert(`Repair completed! Device moved to Old In-hand Inventory with total valuation ₹ ${totalNewAmount.toLocaleString('en-IN')} (Initial ₹ ${initialAmount.toLocaleString('en-IN')} + Repair ₹ ${repairAmount.toLocaleString('en-IN')}).`);
       navigate('/old-in-hand');
     } catch (err) {
       console.error(err);
@@ -307,19 +335,15 @@ export default function RepairStock() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Paid By *</label>
-                <select
+                <label className="form-label" style={{ fontWeight: 700 }}>Technician / Person Name *</label>
+                <input
+                  type="text"
                   className="form-control"
+                  placeholder="Enter technician name (e.g. Ramesh / Rohit)"
                   value={completeModal.paidBy}
                   onChange={(e) => setCompleteModal({ ...completeModal, paidBy: e.target.value })}
-                >
-                  <option value="Rohit">Rohit</option>
-                  <option value="Aadarsh">Aadarsh</option>
-                  <option value="Neha">Neha</option>
-                  <option value="Aman">Aman</option>
-                  <option value="Jeet">Jeet</option>
-                  <option value="Sunal">Sunal</option>
-                </select>
+                  required
+                />
               </div>
 
               <div className="form-group">

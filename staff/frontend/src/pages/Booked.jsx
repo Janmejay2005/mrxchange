@@ -40,6 +40,37 @@ export default function Booked() {
     customerPhone: ''
   });
 
+  // Fetch Old In-hand devices for auto-filling Book modal
+  const [inHandDevices, setInHandDevices] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      if (stored.length > 0) return stored;
+    } catch (e) {}
+    return [
+      { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, purchase_amount: 32000 },
+      { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, purchase_amount: 28000 },
+      { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, purchase_amount: 18000 },
+      { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, purchase_amount: 20000 }
+    ];
+  });
+  const [selectedInHandId, setSelectedInHandId] = useState('');
+
+  const handleSelectInHandDevice = (deviceId) => {
+    setSelectedInHandId(deviceId);
+    if (!deviceId) return;
+    const found = inHandDevices.find(d => String(d.id) === String(deviceId));
+    if (found) {
+      setBookForm(prev => ({
+        ...prev,
+        brand: found.brand || 'Apple',
+        model: found.model || '',
+        storage: String(found.storage || 128),
+        ram: String(found.ram || 6),
+        bookedAmount: String(found.purchase_amount || '')
+      }));
+    }
+  };
+
   const [bookedList, setBookedList] = useState([
     { id: 1, bookingId: 'BK-1001', date: '2026-09-15', bookedBy: 'Jeet Patel', customerName: 'Rajesh Mehta', customerPhone: '+91 98250 12345', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 256, ram: 8, color: 'Natural Titanium', bookedAmount: 125000, viaMode: 'UPI', viaId: 'rajesh@upi', platform: 'Store', status: 'Booked' },
     { id: 2, bookingId: 'BK-1002', date: '2026-09-14', bookedBy: 'Sonal Sharma', customerName: 'Anita Shah', customerPhone: '+91 98980 67890', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 512, ram: 12, color: 'Titanium Gray', bookedAmount: 118000, viaMode: 'Card', viaId: 'HDFC-4821', platform: 'Online', status: 'Booked' },
@@ -464,6 +495,26 @@ export default function Booked() {
             </div>
 
             <form onSubmit={handleBookSubmit}>
+              {/* Optional Auto-fill from Old In-hand Stock */}
+              <div style={{ marginBottom: '16px', background: '#f0f9ff', border: '1px solid #38bdf8', padding: '12px', borderRadius: '10px' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0369a1', margin: 0, marginBottom: '6px' }}>
+                  📱 Select from Old In-hand Inventory (Optional Auto-fill)
+                </label>
+                <select 
+                  className="form-control"
+                  value={selectedInHandId}
+                  onChange={(e) => handleSelectInHandDevice(e.target.value)}
+                  style={{ fontSize: '13px', fontWeight: 600 }}
+                >
+                  <option value="">-- Choose Existing In-hand Mobile --</option>
+                  {inHandDevices.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.brand} {item.model} ({item.storage}GB RAM: {item.ram}GB) - ₹{Number(item.purchase_amount || 0).toLocaleString('en-IN')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Row 1: Mob name (dd) | Mob model (R) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>

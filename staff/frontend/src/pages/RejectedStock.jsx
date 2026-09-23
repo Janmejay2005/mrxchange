@@ -188,6 +188,7 @@ export default function RejectedStock() {
               <th>Paid By</th>
               <th>Date</th>
               <th>Last Reason of Rejection</th>
+              <th style={{ textAlign: 'center' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -196,9 +197,9 @@ export default function RejectedStock() {
                 <td>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{device.brand}</td>
                 <td style={{ fontWeight: 700 }}>{device.model}</td>
-                <td>{device.storage}</td>
-                <td>{device.ram}</td>
-                <td>{device.colour}</td>
+                <td>{device.storage} GB</td>
+                <td>{device.ram} GB</td>
+                <td>{device.colour || '-'}</td>
                 <td style={{ fontWeight: 700 }}>
                   <CurrencyAmount amount={device.purchase_amount} />
                 </td>
@@ -206,6 +207,19 @@ export default function RejectedStock() {
                 <td style={{ color: '#64748b' }}>{device.intake_date}</td>
                 <td style={{ color: '#dc2626', fontWeight: 600 }}>
                   {device.last_rejection_reason || 'Defective piece'}
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Delete ${device.brand} ${device.model} from Rejected Stock?`)) {
+                        setDevices(prev => prev.filter(d => String(d.id) !== String(device.id)));
+                        alert('Item deleted from Rejected Stock!');
+                      }
+                    }}
+                    style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
                 </td>
               </tr>
             ))}

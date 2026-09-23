@@ -408,22 +408,13 @@ export default function OldInHandStock() {
                   <td><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
                   <td>{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(d)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        <Edit size={14} /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteDevice(d.id)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDevice(d.id)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
                   </td>
                 </tr>
               ))

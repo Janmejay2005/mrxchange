@@ -562,30 +562,20 @@ export default function BookedAndExchange() {
 
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        {row.isExchanged || row.status === 'Exchanged' ? (
-                          <span style={{ 
-                            background: '#dcfce7', 
-                            color: '#15803d', 
-                            border: '1px solid #bbf7d0', 
-                            padding: '6px 14px', 
-                            borderRadius: '8px', 
-                            fontSize: '12px', 
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            Exchange ✔️
-                          </span>
-                        ) : (
-                          <button 
-                            onClick={() => handleExchangeClick(row.id)}
-                            className="btn-primary" 
-                            style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', fontWeight: 800 }}
-                          >
-                            Exchange
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => handleDeliverAction(row.id)}
+                          style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Deliver new phone -> Move to New In-hand Inventory"
+                        >
+                          <CheckCircle size={14} /> Deliver
+                        </button>
+                        <button 
+                          onClick={() => handleCancelAction(row.id)}
+                          style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Rejected exchange -> Move old device to Old In-hand Inventory"
+                        >
+                          <XCircle size={14} /> Rejected
+                        </button>
                       </div>
                     </td>
                   </tr>
