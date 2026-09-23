@@ -124,6 +124,40 @@ export default function OldInHandStock() {
     }
   };
 
+  const handleExchangeAction = (device) => {
+    setDevices(prev => prev.map(item => String(item.id) === String(device.id) ? { ...item, isExchanged: true, status: 'Exchanged' } : item));
+
+    const exchangeItem = {
+      id: Date.now(),
+      date: device.intake_date ? String(device.intake_date).slice(0, 10) : new Date().toISOString().split('T')[0],
+      newBrand: device.brand || 'Apple',
+      newModel: device.model || '',
+      newStorage: Number(device.storage) || 128,
+      newRam: Number(device.ram) || 6,
+      newColor: device.colour || 'Standard',
+      newPurchasedBy: device.paid_by || 'Staff',
+      newAmount: Number(device.purchase_amount) || 0,
+      oldBrand: device.brand || '',
+      oldModel: device.model || '',
+      oldStorage: Number(device.storage) || 128,
+      oldRam: Number(device.ram) || 6,
+      oldColor: device.colour || 'Default',
+      oldPurchasedBy: device.paid_by || 'Staff',
+      oldAmount: Number(device.purchase_amount) || 0,
+      oldImage: device.image_url || (device.images && device.images[0]) || '',
+      status: 'Exchanged'
+    };
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+      localStorage.setItem('mrx_exchanges', JSON.stringify([exchangeItem, ...stored]));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+    alert(`Device "${device.brand} ${device.model}" transferred to Exchange tab!`);
+  };
+
   // Sell Modal State
   const [sellModal, setSellModal] = useState({
     isOpen: false,
@@ -430,13 +464,38 @@ export default function OldInHandStock() {
                   <td data-label="Purchased By"><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
                   <td data-label="Date Added">{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
                   <td data-label="Action" style={{ textAlign: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteDevice(d.id)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                      {d.isExchanged ? (
+                        <span style={{ 
+                          background: '#fef9c3', 
+                          color: '#854d0e', 
+                          border: '1px solid #fef08a', 
+                          padding: '6px 12px', 
+                          borderRadius: '6px', 
+                          fontSize: '12px', 
+                          fontWeight: 800 
+                        }}>
+                          Exchange ✔️
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleExchangeAction(d)}
+                          style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                          title="Transfer device data to Exchange tab"
+                        >
+                          Exchange
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDevice(d.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
