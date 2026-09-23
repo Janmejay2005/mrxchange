@@ -167,40 +167,9 @@ export default function Booked() {
   const handleBookAction = (id) => {
     const item = bookedList.find(b => b.id === id);
     if (item) {
-      // Mark as Booked in local state
+      // Mark as Booked in local state (uneditable Booked status)
       setBookedList(prev => prev.map(b => b.id === id ? { ...b, isBooked: true, status: 'Booked' } : b));
-
-      // Transfer data of new mobile to Exchange
-      const exchangeItem = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        newBrand: item.brand,
-        newModel: item.model,
-        newStorage: item.storage,
-        newRam: item.ram,
-        newColor: item.color || 'Standard',
-        newPurchasedBy: item.bookedBy || 'Staff',
-        newAmount: item.bookedAmount || 0,
-        oldBrand: item.oldBrand || 'Trade-in Device',
-        oldModel: item.oldModel || 'TBD',
-        oldStorage: item.oldStorage || 128,
-        oldRam: item.oldRam || 6,
-        oldColor: 'Default',
-        oldPurchasedBy: 'Customer',
-        oldAmount: item.oldAmount || 0,
-        oldImage: item.oldImage || '',
-        status: 'Booked'
-      };
-
-      try {
-        const existingExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
-        localStorage.setItem('mrx_exchanges', JSON.stringify([exchangeItem, ...existingExchanges]));
-        window.dispatchEvent(new Event('mrx_exchanges_updated'));
-      } catch (e) {
-        console.error(e);
-      }
-
-      alert(`Booking "${item.bookingId}" (${item.brand} ${item.model}) confirmed! Data transferred directly to Exchange tab ✔️.`);
+      alert(`Booking "${item.bookingId}" (${item.brand} ${item.model}) marked as Booked ✔️.`);
     }
   };
 
