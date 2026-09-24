@@ -90,7 +90,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     const effectiveBrand = (formData.brand === 'Other' ? formData.customBrand : formData.brand) || 'Apple';
     const effectiveModel = formData.model ? formData.model.trim() : '';
 
-    if (!effectiveModel || !formData.purchase_amount) {
+    if (!effectiveModel || formData.purchase_amount === '' || formData.purchase_amount === null || formData.purchase_amount === undefined) {
       setError('Please enter Mobile Model Name and Purchased Amount');
       return;
     }
@@ -123,6 +123,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       setLoading(true);
       const apiCreated = await deviceService.createDevice({
         ...formData,
+        id: localDeviceObj.id,
         brand: effectiveBrand,
         model: effectiveModel,
         status: 'OLD_INVENTORY',

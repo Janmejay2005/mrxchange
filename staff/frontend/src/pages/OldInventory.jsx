@@ -797,6 +797,13 @@ export default function OldInventory() {
         onClose={() => setIsCameraOpen(false)}
         onCapture={(dataUrl) => setEditForm(prev => ({ ...prev, image_url: dataUrl }))}
       />
+
+      {/* Add Mobile Entry Modal */}
+      <AddMobileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchInventory}
+      />
     </div>
   );
 }
