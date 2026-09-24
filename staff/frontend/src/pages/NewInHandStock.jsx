@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera } from 'lucide-react';
-import { CurrencyAmount } from '../components/common/UIComponents';
+import React, { useState, useEffect } from 'react';
+import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera, ShoppingBag, AlertTriangle, CheckCircle } from 'lucide-react';
+import { CurrencyAmount, KPICard } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
@@ -24,12 +24,15 @@ export default function NewInHandStock() {
   // Book / Sell Modal State
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [sellError, setSellError] = useState('');
   const [sellForm, setSellForm] = useState({
-    quantity: 1,
+    model: '',
+    unit: 1,
     soldBy: 'Staff',
     soldTo: '',
-    paymentType: 'installment', // 'installment' | 'complete'
-    actualAmount: '',
+    paymentType: 'COMPLETE', // 'INSTALLMENT' | 'COMPLETE'
+    soldPrice: '',
+    totalAmount: '',
     paidAmount: '',
     date: new Date().toISOString().split('T')[0]
   });
@@ -46,29 +49,70 @@ export default function NewInHandStock() {
     color: '',
     purchasedBy: '',
     amount: '',
+    totalUnits: 1,
     image_url: ''
   });
 
-  const [stock, setStock] = useState(() => {
-    const initial = [
-      { sno: 1, date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, procedure: 'Sell' },
-      { sno: 2, date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, procedure: 'Sell' },
-      { sno: 3, date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, procedure: 'Hold' },
-      { sno: 4, date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, procedure: 'Sell' },
-      { sno: 5, date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, procedure: 'Sell' },
-      { sno: 6, date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, procedure: 'Check' },
-      { sno: 7, date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, procedure: 'Sell' },
-      { sno: 8, date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, procedure: 'Sell' },
-      { sno: 9, date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, procedure: 'Hold' },
-      { sno: 10, date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, procedure: 'Sell' }
-    ];
+  const getInitialSampleStock = () => [
+    { sno: 'sample_1', date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, totalUnits: 15, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_2', date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, totalUnits: 24, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_3', date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, totalUnits: 10, soldUnits: 0, procedure: 'Hold' },
+    { sno: 'sample_4', date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, totalUnits: 8, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_5', date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, totalUnits: 12, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_6', date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, totalUnits: 5, soldUnits: 0, procedure: 'Check' },
+    { sno: 'sample_7', date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, totalUnits: 6, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_8', date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, totalUnits: 7, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_9', date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, totalUnits: 9, soldUnits: 0, procedure: 'Hold' },
+    { sno: 'sample_10', date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, totalUnits: 4, soldUnits: 0, procedure: 'Sell' }
+  ];
+
+  const fetchCombinedStock = () => {
     try {
       const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      return [...deliveredItems, ...initial];
+      const samples = getInitialSampleStock();
+      const seenKeys = new Set();
+      const combined = [];
+
+      for (const item of [...deliveredItems, ...samples]) {
+        const key = String(item.sno || item.id || `${item.brand}_${item.model}_${item.date}`);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          combined.push({
+            ...item,
+            sno: item.sno || key,
+            totalUnits: Number(item.totalUnits || item.quantity || 1),
+            soldUnits: Number(item.soldUnits || 0)
+          });
+        }
+      }
+      return combined;
     } catch (e) {
-      return initial;
+      return getInitialSampleStock();
     }
-  });
+  };
+
+  const [stock, setStock] = useState(fetchCombinedStock);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setStock(fetchCombinedStock());
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
+    };
+  }, []);
+
+  const saveStockToStorage = (updatedStockList) => {
+    setStock(updatedStockList);
+    try {
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify(updatedStockList));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+  };
 
   const toYMD = (val) => {
     if (!val) return '';
@@ -109,22 +153,68 @@ export default function NewInHandStock() {
     return true;
   });
 
-  const openSellModal = (item = null) => {
+  // Calculate Total Available Stock Units across all brands
+  const totalAvailableUnits = filteredStock.reduce((sum, item) => {
+    const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
+    return sum + avail;
+  }, 0);
+
+  const totalDeliveredValuation = filteredStock.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+  const openSellModal = (item) => {
     setSelectedStockItem(item);
-    const fetchedModel = item ? `${item.brand} ${item.model}` : '';
-    const initialPrice = item ? (item.amount || '') : '';
+    setSellError('');
+    const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
+    const fetchedModel = `${item.brand} ${item.model}`;
+    const initialPrice = item.amount || 0;
+    
     setSellForm({
       model: fetchedModel,
       soldBy: 'Staff',
-      unit: 1,
-      soldTo: item ? (item.purchasedBy || '') : '',
+      unit: avail > 0 ? 1 : 0,
+      soldTo: item.purchasedBy || 'Customer',
       soldPrice: initialPrice,
       totalAmount: initialPrice,
       paidAmount: initialPrice,
-      remarks: '',
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
+  };
+
+  const handleSellSubmit = (e) => {
+    e.preventDefault();
+    setSellError('');
+
+    if (!selectedStockItem) return;
+
+    const availableUnits = Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0));
+    const requestedUnits = Number(sellForm.unit) || 1;
+
+    if (availableUnits <= 0) {
+      setSellError(`⚠️ Out of stock! 0 units available for ${selectedStockItem.brand} ${selectedStockItem.model}.`);
+      return;
+    }
+
+    if (requestedUnits > availableUnits) {
+      setSellError(`⚠️ Cannot sell ${requestedUnits} unit(s). Only ${availableUnits} unit(s) available in stock for ${selectedStockItem.brand} ${selectedStockItem.model}.`);
+      return;
+    }
+
+    // Deduct stock quantity (increment soldUnits by requestedUnits)
+    const updatedStock = stock.map(item => {
+      if (String(item.sno) === String(selectedStockItem.sno)) {
+        const newSoldUnits = (item.soldUnits || 0) + requestedUnits;
+        return {
+          ...item,
+          soldUnits: newSoldUnits
+        };
+      }
+      return item;
+    });
+
+    saveStockToStorage(updatedStock);
+    alert(`Successfully sold ${requestedUnits} unit(s) of "${selectedStockItem.brand} ${selectedStockItem.model}" to ${sellForm.soldTo}! ${availableUnits - requestedUnits} unit(s) remaining in stock.`);
+    setIsSellModalOpen(false);
   };
 
   const openEditModal = (item) => {
@@ -137,6 +227,7 @@ export default function NewInHandStock() {
       color: item.color,
       purchasedBy: item.purchasedBy,
       amount: item.amount,
+      totalUnits: item.totalUnits || 1,
       image_url: item.image_url || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'
     });
     setIsEditModalOpen(true);
@@ -155,7 +246,7 @@ export default function NewInHandStock() {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    setStock(prev => prev.map(item => item.sno === editForm.sno ? {
+    const updatedStock = stock.map(item => item.sno === editForm.sno ? {
       ...item,
       brand: editForm.brand,
       model: editForm.model,
@@ -164,51 +255,49 @@ export default function NewInHandStock() {
       color: editForm.color,
       purchasedBy: editForm.purchasedBy,
       amount: Number(editForm.amount),
+      totalUnits: Number(editForm.totalUnits) || 1,
       image_url: editForm.image_url,
       images: [editForm.image_url]
-    } : item));
+    } : item);
+
+    saveStockToStorage(updatedStock);
     setIsEditModalOpen(false);
-    alert('Device details and photo updated successfully!');
+    alert('Device details updated successfully!');
   };
 
   const handleDeleteDevice = (sno) => {
     if (window.confirm('Are you sure you want to delete this device from New In-hand stock?')) {
-      setStock(prev => prev.filter(item => item.sno !== sno));
-      const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      const updatedDelivered = deliveredItems.filter(item => item.sno !== sno);
-      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify(updatedDelivered));
+      const updatedStock = stock.filter(item => item.sno !== sno);
+      saveStockToStorage(updatedStock);
     }
   };
 
-  const handleSellSubmit = (e) => {
-    e.preventDefault();
-    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold / booked successfully! Recorded for ${sellForm.soldTo}.`);
-    setIsSellModalOpen(false);
-  };
-
   const handleExportPdf = () => {
-    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchased By', 'Amount (Rs)', 'Further Procedure'];
-    const rows = filteredStock.map((item, idx) => [
-      idx + 1,
-      item.date,
-      item.brand,
-      item.model,
-      `${item.storage} GB`,
-      `${item.ram} GB`,
-      item.color || '-',
-      item.purchasedBy || '-',
-      `Rs. ${item.amount.toLocaleString()}`,
-      'Sell'
-    ]);
-    const totalVal = filteredStock.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Available Units', 'Purchased By', 'Amount (Rs)'];
+    const rows = filteredStock.map((item, idx) => {
+      const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
+      return [
+        idx + 1,
+        item.date,
+        item.brand,
+        item.model,
+        `${item.storage} GB`,
+        `${item.ram} GB`,
+        item.color || '-',
+        `${avail} / ${item.totalUnits || 1} Units`,
+        item.purchasedBy || '-',
+        `Rs. ${item.amount.toLocaleString()}`
+      ];
+    });
     setExportModalConfig({
       isOpen: true,
-      title: 'New In-hand Stock PDF Report',
+      title: 'New In-hand Stock Inventory Report',
       headers,
       rows,
       filename: `New_In_Hand_Stock_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Valuation', value: `Rs. ${totalVal.toLocaleString()}`, color: '#0284c7' }
+        { label: 'Total Available Units', value: `${totalAvailableUnits} Units`, color: '#0284c7' },
+        { label: 'Total Valuation', value: `Rs. ${totalDeliveredValuation.toLocaleString()}`, color: '#059669' }
       ]
     });
   };
@@ -216,19 +305,43 @@ export default function NewInHandStock() {
   return (
     <div>
       {/* Header & Breadcrumbs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>New In-hand Stock</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>List of newly purchased mobiles currently in hand.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+            Available stock units fetched from exchange deliveries • Strict quantity-based sales control.
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>New In-hand Stock</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
-            <FileText size={16} /> Export PDF
+            <FileText size={16} /> Export PDF Report
           </button>
         </div>
+      </div>
+
+      {/* KPI Cards Summary */}
+      <div className="kpi-grid" style={{ marginBottom: '24px' }}>
+        <KPICard 
+          title="Total Available New Stock Units" 
+          value={`${totalAvailableUnits} Units`} 
+          icon={Package}
+          iconBg="#e0f2fe"
+          iconColor="#0284c7"
+        />
+        <KPICard 
+          title="Listed Device Models" 
+          value={`${filteredStock.length} Models`} 
+          icon={ShoppingBag}
+          iconBg="#ecfdf5"
+          iconColor="#059669"
+        />
+        <KPICard 
+          title="Total Inventory Valuation" 
+          value={`₹${totalDeliveredValuation.toLocaleString('en-IN')}`} 
+          icon={FileText}
+          iconBg="#f5f3ff"
+          iconColor="#7c3aed"
+        />
       </div>
 
       {/* Top Filter Bar */}
@@ -274,7 +387,6 @@ export default function NewInHandStock() {
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
           <button onClick={() => { setFromDate(''); setToDate(''); setBrand('All'); setSearchQuery(''); }} className="btn-secondary">Clear</button>
-          <button className="btn-primary">Apply</button>
         </div>
       </div>
 
@@ -283,121 +395,186 @@ export default function NewInHandStock() {
         <table className="custom-table">
           <thead>
             <tr>
-              <th>Sno</th>
+              <th>#</th>
               <th>Date</th>
               <th>Brand Name</th>
               <th>Model</th>
-              <th>Storage (GB)</th>
-              <th>RAM (GB)</th>
+              <th>Specs (Storage / RAM)</th>
               <th>Color</th>
+              <th>Available Stock Units</th>
               <th>Purchased By</th>
               <th>Purchased Amount (₹)</th>
-              <th>Further Procedure</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                  No devices match the specified filter criteria.
+                  No new in-hand stock items match the specified filters.
                 </td>
               </tr>
             ) : (
-              filteredStock.map((item, idx) => (
-                <tr key={item.sno}>
-                  <td data-label="Sno">{idx + 1}</td>
-                  <td data-label="Date">{item.date}</td>
-                  <td data-label="Brand" style={{ fontWeight: 600 }}>{item.brand}</td>
-                  <td data-label="Model" style={{ fontWeight: 700 }}>{item.model}</td>
-                  <td data-label="Storage">{item.storage} GB</td>
-                  <td data-label="RAM">{item.ram} GB</td>
-                  <td data-label="Color">{item.color}</td>
-                  <td data-label="Purchased By">{item.purchasedBy}</td>
-                  <td data-label="Purchased Amount" style={{ fontWeight: 700 }}>
-                    <CurrencyAmount amount={item.amount} />
-                  </td>
-                  <td data-label="Further Procedure">
-                    <button 
-                      type="button"
-                      onClick={() => openSellModal(item)} 
-                      className="btn-primary"
-                      style={{ padding: '6px 16px', fontSize: '12px', borderRadius: '6px', fontWeight: 800 }}
-                    >
-                      Sell
-                    </button>
-                  </td>
-                </tr>
-              ))
+              filteredStock.map((item, idx) => {
+                const availUnits = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
+                const isOutOfStock = availUnits <= 0;
+
+                return (
+                  <tr key={item.sno}>
+                    <td data-label="#">{idx + 1}</td>
+                    <td data-label="Date">{item.date}</td>
+                    <td data-label="Brand" style={{ fontWeight: 700, color: '#0f172a' }}>{item.brand}</td>
+                    <td data-label="Model" style={{ fontWeight: 800, color: '#0284c7' }}>{item.model}</td>
+                    <td data-label="Specs">{item.storage} GB / {item.ram} GB</td>
+                    <td data-label="Color">{item.color}</td>
+                    <td data-label="Available Stock">
+                      <span style={{ 
+                        padding: '4px 10px', 
+                        borderRadius: '12px', 
+                        fontSize: '12px', 
+                        fontWeight: 800,
+                        backgroundColor: isOutOfStock ? '#fee2e2' : '#ecfdf5',
+                        color: isOutOfStock ? '#dc2626' : '#047857',
+                        border: isOutOfStock ? '1px solid #fecaca' : '1px solid #a7f3d0'
+                      }}>
+                        {isOutOfStock ? '❌ Out of Stock (0 Units)' : `📦 ${availUnits} / ${item.totalUnits || 1} Units Available`}
+                      </span>
+                    </td>
+                    <td data-label="Purchased By" style={{ fontWeight: 600 }}>{item.purchasedBy}</td>
+                    <td data-label="Purchased Amount" style={{ fontWeight: 700 }}>
+                      <CurrencyAmount amount={item.amount} />
+                    </td>
+                    <td data-label="Action">
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => openSellModal(item)} 
+                          style={{ 
+                            padding: '6px 16px', 
+                            fontSize: '12px', 
+                            borderRadius: '6px', 
+                            fontWeight: 800,
+                            backgroundColor: isOutOfStock ? '#94a3b8' : '#0284c7',
+                            color: '#ffffff',
+                            border: 'none',
+                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                            opacity: isOutOfStock ? 0.6 : 1
+                          }}
+                          title={isOutOfStock ? "Out of Stock - Cannot sell more than available quantity" : `Sell from ${availUnits} available units`}
+                        >
+                          {isOutOfStock ? 'Sold Out' : 'Sell'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(item)}
+                          className="btn-secondary"
+                          style={{ padding: '6px 10px', fontSize: '11px' }}
+                          title="Edit stock details & total units"
+                        >
+                          <Edit size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Sell Mobile Modal with Editable Fields / Remarks */}
-      {isSellModalOpen && (
+      {/* Sell Mobile Modal with Available Stock Enforcement */}
+      {isSellModalOpen && selectedStockItem && (
         <div className="modal-overlay">
           <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Sell Mobile</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Sell New Mobile</h2>
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
-                  Enter sale details for selected new in-hand mobile.
+                  Quantities strictly limited to available stock units fetched from exchange deliveries.
                 </p>
               </div>
               <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
+            {/* Available Stock Units Info Box */}
+            <div style={{ background: '#f0fdf4', padding: '12px 16px', borderRadius: '10px', border: '1px solid #bbf7d0', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>Available Stock Units</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#15803d', marginTop: '2px' }}>
+                  📦 {Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0))} Unit(s) Available ({selectedStockItem.brand} {selectedStockItem.model})
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', color: '#15803d', fontWeight: 700 }}>
+                Total: {selectedStockItem.totalUnits || 1} | Sold: {selectedStockItem.soldUnits || 0}
+              </div>
+            </div>
+
+            {sellError && (
+              <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#dc2626', borderRadius: '8px', fontSize: '13px', border: '1px solid #fecaca', marginBottom: '14px', fontWeight: 700 }}>
+                {sellError}
+              </div>
+            )}
+
             <form onSubmit={handleSellSubmit}>
-              {/* 1. Model (Fetched from New In-Hand, Editable as Remarks) */}
+              {/* Device Model */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>
-                  Model (Fetched from New In-hand) *
-                </label>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Device Model *</label>
                 <input 
                   type="text" 
                   className="form-control" 
                   value={sellForm.model} 
                   onChange={(e) => setSellForm({ ...sellForm, model: e.target.value })} 
-                  placeholder="e.g. Apple iPhone 15 Pro Max"
                   required 
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                {/* 2. Sold by */}
+                {/* Sold by */}
                 <div>
                   <label className="form-label" style={{ fontWeight: 700 }}>Sold by *</label>
                   <input 
                     type="text" 
                     className="form-control" 
-                    placeholder="e.g. Rohit / Staff" 
+                    placeholder="e.g. Staff" 
                     value={sellForm.soldBy} 
                     onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
                     required 
                   />
                 </div>
 
-                {/* 3. Unit (Quantity) */}
+                {/* Unit (Quantity) with Max Limit Validation */}
                 <div>
-                  <label className="form-label" style={{ fontWeight: 700 }}>Unit (Quantity) *</label>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#dc2626' }}>
+                    Sell Quantity (Max: {Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0))}) *
+                  </label>
                   <input 
                     type="number" 
                     className="form-control" 
                     value={sellForm.unit} 
                     onChange={(e) => {
-                      const u = Math.max(1, parseInt(e.target.value) || 1);
+                      const u = parseInt(e.target.value) || 0;
                       const sp = Number(sellForm.soldPrice) || 0;
                       setSellForm({ ...sellForm, unit: u, totalAmount: u * sp });
+                      const maxUnits = Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0));
+                      if (u > maxUnits) {
+                        setSellError(`⚠️ Cannot sell ${u} units. Only ${maxUnits} unit(s) available in stock.`);
+                      } else {
+                        setSellError('');
+                      }
                     }} 
                     min="1"
+                    max={Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0))}
                     required 
                   />
                 </div>
               </div>
 
-              {/* 4. Sold to (Customer / Party Name) */}
+              {/* Customer / Party Name */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Sold to (Party / Customer Name) *</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>Customer Name *</label>
                 <input 
                   type="text" 
                   className="form-control" 
@@ -409,13 +586,12 @@ export default function NewInHandStock() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                {/* 5. Sold Price */}
+                {/* Sold Price per Unit */}
                 <div>
-                  <label className="form-label" style={{ fontWeight: 700 }}>Sold Price (₹ Per Unit) *</label>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Price Per Unit (₹) *</label>
                   <input 
                     type="number" 
                     className="form-control" 
-                    placeholder="₹ 0" 
                     value={sellForm.soldPrice} 
                     onChange={(e) => {
                       const sp = e.target.value;
@@ -426,13 +602,12 @@ export default function NewInHandStock() {
                   />
                 </div>
 
-                {/* 6. Total Amount (Unit * Sold Price, Editable as Remarks) */}
+                {/* Total Amount */}
                 <div>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Amount (₹) *</label>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Selling Price (₹) *</label>
                   <input 
                     type="number" 
                     className="form-control" 
-                    placeholder="₹ Total Amount" 
                     value={sellForm.totalAmount} 
                     onChange={(e) => setSellForm({ ...sellForm, totalAmount: e.target.value })} 
                     required 
@@ -440,13 +615,13 @@ export default function NewInHandStock() {
                 </div>
               </div>
 
-              {/* 7. Paid amount */}
-              <div style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Paid amount (₹) *</label>
+              {/* Paid Amount */}
+              <div style={{ marginBottom: '18px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Paid Amount (₹) *</label>
                 <input 
                   type="number" 
                   className="form-control" 
-                  placeholder="₹ Paid Amount" 
+                  placeholder="₹ Amount paid so far" 
                   value={sellForm.paidAmount} 
                   onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
                   required 
@@ -455,7 +630,19 @@ export default function NewInHandStock() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Confirm Sale</button>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  disabled={sellForm.unit > Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0))}
+                  style={{ 
+                    padding: '10px 24px', 
+                    fontWeight: 800,
+                    opacity: sellForm.unit > Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0)) ? 0.5 : 1,
+                    cursor: sellForm.unit > Math.max(0, (selectedStockItem.totalUnits || 1) - (selectedStockItem.soldUnits || 0)) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Confirm Sale ({sellForm.unit} Unit)
+                </button>
               </div>
             </form>
           </div>
@@ -468,59 +655,13 @@ export default function NewInHandStock() {
           <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Edit In-hand Device</h2>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Update stock specifications and purchasing details.</p>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Edit Stock Quantity & Details</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Update stock unit count and specifications.</p>
               </div>
               <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
             </div>
 
             <form onSubmit={handleEditSubmit}>
-              {/* Device Photo / Image Edit Section */}
-              <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#0284c7', margin: 0 }}>
-                    📸 Device Photo / Image
-                  </label>
-                  <button 
-                    type="button"
-                    onClick={() => setIsCameraOpen(true)}
-                    style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <Camera size={13} /> Take Photo via Camera
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                  {editForm.image_url ? (
-                    <img 
-                      src={editForm.image_url} 
-                      alt="Preview" 
-                      style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1' }} 
-                    />
-                  ) : (
-                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#64748b' }}>
-                      No Image
-                    </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Upload New Photo</label>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageFileChange} 
-                      style={{ fontSize: '12px', marginBottom: '6px', width: '100%' }}
-                    />
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      placeholder="Or paste Image URL (e.g. https://...)" 
-                      value={editForm.image_url} 
-                      onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} 
-                      style={{ padding: '6px 10px', fontSize: '12px' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Brand Name *</label>
@@ -529,6 +670,14 @@ export default function NewInHandStock() {
                 <div>
                   <label className="form-label">Model *</label>
                   <input type="text" className="form-control" value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="form-label">Total Stock Quantity Units *</label>
+                  <input type="number" className="form-control" value={editForm.totalUnits} onChange={(e) => setEditForm({ ...editForm, totalUnits: e.target.value })} min="1" required />
+                </div>
+                <div>
+                  <label className="form-label">Purchased Amount (₹) *</label>
+                  <input type="number" className="form-control" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} required />
                 </div>
                 <div>
                   <label className="form-label">Storage (GB) *</label>
@@ -546,11 +695,6 @@ export default function NewInHandStock() {
                   <label className="form-label">Purchased By *</label>
                   <input type="text" className="form-control" value={editForm.purchasedBy} onChange={(e) => setEditForm({ ...editForm, purchasedBy: e.target.value })} required />
                 </div>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label className="form-label">Purchased Amount (₹) *</label>
-                <input type="number" className="form-control" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} required />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -571,13 +715,6 @@ export default function NewInHandStock() {
         rows={exportModalConfig.rows}
         filename={exportModalConfig.filename}
         summaryInfo={exportModalConfig.summaryInfo}
-      />
-
-      {/* Camera Capture Modal */}
-      <CameraCaptureModal
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onCapture={(dataUrl) => setEditForm(prev => ({ ...prev, image_url: dataUrl }))}
       />
     </div>
   );
