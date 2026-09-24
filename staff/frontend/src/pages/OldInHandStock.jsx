@@ -272,7 +272,36 @@ export default function OldInHandStock() {
         payment_type: sellModal.paymentType,
         sold_by: sellModal.soldBy
       });
-      alert('Sale transaction recorded successfully!');
+
+      const totAmt = parseFloat(sellModal.sellingPrice) || 0;
+      const paidAmt = sellModal.paymentType === 'FULL' ? totAmt : 0;
+      const pendAmt = Math.max(0, totAmt - paidAmt);
+
+      const salePaymentRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        customerName: sellModal.customerName || 'Vendor / Customer',
+        orderName: `${sellModal.device?.brand || ''} ${sellModal.device?.model || 'Old Device'}`.trim(),
+        brand: sellModal.device?.brand || 'Mobile',
+        model: sellModal.device?.model || 'Phone',
+        totalAmount: totAmt,
+        paidAmount: paidAmt,
+        pendingAmount: pendAmt,
+        status: pendAmt > 0 ? 'Pending' : 'Received',
+        paymentCategory: 'RECEIVING',
+        mode: sellModal.paymentMethod || 'Cash',
+        remarks: `Old Hand Sale by ${sellModal.soldBy || 'Staff'}`
+      };
+
+      try {
+        const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+        localStorage.setItem('mrx_pending_payments', JSON.stringify([salePaymentRecord, ...existingPending]));
+        window.dispatchEvent(new Event('mrx_payments_updated'));
+      } catch (err) {
+        console.error(err);
+      }
+
+      alert('Sale transaction recorded successfully! Pending receivable added to Receiving Payments.');
       setSellModal({ ...sellModal, isOpen: false });
       fetchOldInHandStock();
     } catch (err) {

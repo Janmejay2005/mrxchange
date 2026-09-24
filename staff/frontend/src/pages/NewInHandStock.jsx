@@ -186,7 +186,35 @@ export default function NewInHandStock() {
 
   const handleSellSubmit = (e) => {
     e.preventDefault();
-    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold / booked successfully! Recorded for ${sellForm.soldTo}.`);
+    const totAmt = Number(sellForm.totalAmount) || (Number(sellForm.soldPrice) * Number(sellForm.unit)) || 0;
+    const paidAmt = Number(sellForm.paidAmount) || 0;
+    const pendAmt = Math.max(0, totAmt - paidAmt);
+
+    const salePaymentRecord = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: sellForm.soldTo || 'Vendor / Customer',
+      orderName: sellForm.model || selectedStockItem?.model || 'Sale Order',
+      brand: selectedStockItem?.brand || 'Mobile',
+      model: sellForm.model || selectedStockItem?.model || 'Phone',
+      totalAmount: totAmt,
+      paidAmount: paidAmt,
+      pendingAmount: pendAmt,
+      status: pendAmt > 0 ? 'Pending' : 'Received',
+      paymentCategory: 'RECEIVING',
+      mode: 'Cash',
+      remarks: `Sale by ${sellForm.soldBy || 'Staff'} - ${sellForm.unit || 1} unit(s)`
+    };
+
+    try {
+      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([salePaymentRecord, ...existingPending]));
+      window.dispatchEvent(new Event('mrx_payments_updated'));
+    } catch (err) {
+      console.error(err);
+    }
+
+    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold successfully! Pending payment recorded in Receiving Payments for ${sellForm.soldTo}.`);
     setIsSellModalOpen(false);
   };
 
