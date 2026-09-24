@@ -227,24 +227,46 @@ export default function OldInventory() {
         console.warn('API update status warning:', apiErr);
       }
       
+      const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+
       if (newStatus === 'OLD_IN_HAND') {
         const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
         const filtered = oldInHandStock.filter(d => String(d.id) !== String(deviceId));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
 
-        // Remove from old inventory local storage
-        const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
         const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
         localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
+      } else if (newStatus === 'IN_REPAIR') {
+        const repairStock = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+        const filtered = repairStock.filter(d => String(d.id) !== String(deviceId));
+        filtered.unshift(updatedDevice);
+        localStorage.setItem('mrx_repair_stock', JSON.stringify(filtered));
 
-        window.dispatchEvent(new Event('mrx_inventory_updated'));
-        window.dispatchEvent(new Event('storage'));
+        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
+      } else if (newStatus === 'REJECTED') {
+        const rejectedStock = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+        const filtered = rejectedStock.filter(d => String(d.id) !== String(deviceId));
+        filtered.unshift(updatedDevice);
+        localStorage.setItem('mrx_rejected_stock', JSON.stringify(filtered));
+
+        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
+      } else if (newStatus === 'OLD_INVENTORY') {
+        const filtered = oldInv.filter(d => String(d.id) !== String(deviceId));
+        filtered.unshift(updatedDevice);
+        localStorage.setItem('mrx_old_inventory', JSON.stringify(filtered));
       }
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
       
-      // Immediately remove device from Add Inventory view if status changed
+      // Immediately update device state in Add Inventory view
       if (newStatus !== 'OLD_INVENTORY') {
         setDevices(prev => prev.filter(d => String(d.id) !== String(deviceId)));
+      } else {
+        setDevices(prev => prev.map(d => String(d.id) === String(deviceId) ? updatedDevice : d));
       }
       
       // Automatic navigation based on new status option selected
@@ -524,7 +546,8 @@ export default function OldInventory() {
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
                     <select
                       value={device.status || 'OLD_INVENTORY'}
-                      onChange={(e) => handleStatusChange(device, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => { e.stopPropagation(); handleStatusChange(device, e.target.value); }}
                       className="form-control"
                       style={{
                         padding: '4px 8px',

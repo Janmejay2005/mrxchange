@@ -79,6 +79,7 @@ export default function BookedAndExchange() {
 
       for (const item of allRaw) {
         if (!item) continue;
+        const itemId = item.id || item.device_code || `dev_${Math.random()}`;
         const brand = item.brand || '';
         const model = item.model || '';
         const storage = item.storage || 128;
@@ -87,12 +88,12 @@ export default function BookedAndExchange() {
         const paidBy = item.paid_by || item.purchasedBy || 'Staff';
         const img = item.image_url || (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200';
 
-        const fingerprint = `${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${storage}|${ram}|${amount}`;
+        const fingerprint = `${itemId}|${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${storage}|${ram}|${amount}`;
 
         if (!seen.has(fingerprint)) {
           seen.add(fingerprint);
           formatted.push({
-            id: item.id || item.device_code || `dev_${Date.now()}_${Math.random()}`,
+            id: itemId,
             brand,
             model,
             storage,
@@ -108,6 +109,12 @@ export default function BookedAndExchange() {
     };
 
     fetchLiveInHandStock();
+    window.addEventListener('storage', fetchLiveInHandStock);
+    window.addEventListener('mrx_inventory_updated', fetchLiveInHandStock);
+    return () => {
+      window.removeEventListener('storage', fetchLiveInHandStock);
+      window.removeEventListener('mrx_inventory_updated', fetchLiveInHandStock);
+    };
   }, [isModalOpen]);
 
   const handleSelectOldInHandDevice = (devId) => {
@@ -278,6 +285,31 @@ export default function BookedAndExchange() {
 
       const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
+
+      // Create Pending Payment entry from Exchange Deliver
+      const totalAmt = Number(itemToDeliver.newAmount || 0);
+      const paidAmt = Number(itemToDeliver.oldAmount || 0);
+      const pendingAmt = Math.max(0, totalAmt - paidAmt);
+
+      const pendingPaymentItem = {
+        id: `EXCH-PAY-${Date.now()}`,
+        date: itemToDeliver.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        customerName: itemToDeliver.newPurchasedBy || 'Customer',
+        brand: itemToDeliver.newBrand,
+        model: itemToDeliver.newModel,
+        imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
+        totalAmount: totalAmt,
+        paidAmount: paidAmt,
+        pendingAmount: pendingAmt,
+        status: pendingAmt === 0 ? 'Received' : 'Pending',
+        mode: 'Exchange Trade-in',
+        remarks: `Delivered from Exchange (Trade-in: ${itemToDeliver.oldBrand} ${itemToDeliver.oldModel})`
+      };
+
+      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingPaymentItem, ...existingPending]));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
     }
 
     const updated = exchanges.filter(item => item.id !== id);
@@ -287,8 +319,8 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! New mobile transferred to New In-hand Stock.`);
-    navigate('/new-in-hand');
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-hand Stock & Pending Payments.`);
+    navigate('/pending-payments');
   };
 
   const handleCancelAction = (id) => {
