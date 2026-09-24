@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function BookedAndExchange() {
-  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'bookings' | 'exchanges'
   const [searchTerm, setSearchTerm] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [purchasedBy, setPurchasedBy] = useState(() => user?.name || 'All');
+  const [purchasedBy, setPurchasedBy] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [expandedImage, setExpandedImage] = useState(null);
@@ -36,7 +34,7 @@ export default function BookedAndExchange() {
     oldStorage: '128',
     oldRam: '8',
     oldAmount: '25000',
-    oldPayBy: user?.name || 'Staff',
+    oldPayBy: 'Staff',
     oldImage: '',
 
     // Booking New Phone
@@ -45,9 +43,8 @@ export default function BookedAndExchange() {
     newModel: 'Pixel 8 Pro',
     newStorage: '256',
     newRam: '12',
-    orderName: '',
-    newColor: '',
-    newPayBy: user?.name || 'Jeet Khubchandani',
+    newColor: 'Bay Blue',
+    newPayBy: 'Jeet Khubchandani',
     platform: 'Offline / Store',
     purchasedAmount: '64000',
     via: 'Cash',
@@ -200,7 +197,7 @@ export default function BookedAndExchange() {
     }
     const q = (searchTerm || globalSearch || '').trim().toLowerCase();
     if (q) {
-      const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.orderName || item.newColor}`.toLowerCase().includes(q);
+      const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.newColor}`.toLowerCase().includes(q);
       const matchOld = `${item.oldBrand} ${item.oldModel} ${item.oldPurchasedBy} ${item.oldColor}`.toLowerCase().includes(q);
       if (!matchNew && !matchOld) return false;
     }
@@ -238,8 +235,7 @@ export default function BookedAndExchange() {
       newModel: bookForm.newModel,
       newStorage: Number(bookForm.newStorage) || 256,
       newRam: Number(bookForm.newRam) || 12,
-      orderName: bookForm.orderName || bookForm.newColor || 'Standard',
-      newColor: bookForm.orderName || bookForm.newColor || 'Standard',
+      newColor: bookForm.newColor || 'Standard',
       newPurchasedBy: bookForm.newPayBy || 'Customer',
       newAmount: newAmt + exVal,
       oldBrand: bookForm.oldBrand,
@@ -258,25 +254,6 @@ export default function BookedAndExchange() {
     try {
       localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
-
-      // Automatically add pending account in Pending and Receiving Payments
-      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-      const pendingRecord = {
-        id: newEntry.id,
-        date: newEntry.date,
-        customerName: newEntry.newPurchasedBy,
-        orderName: newEntry.orderName || 'Standard',
-        brand: newEntry.newBrand,
-        model: newEntry.newModel,
-        totalAmount: newEntry.newAmount,
-        paidAmount: 0,
-        pendingAmount: newEntry.newAmount,
-        status: 'Pending',
-        mode: bookForm.via || 'Cash',
-        remarks: `Booked - Order: ${newEntry.orderName || 'Standard'}`
-      };
-      localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingRecord, ...existingPending]));
-      window.dispatchEvent(new Event('mrx_payments_updated'));
     } catch (err) {
       console.error(err);
     }
@@ -301,36 +278,6 @@ export default function BookedAndExchange() {
 
       const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
-
-      // Update / Add entry in Pending and Receiving Payments upon delivery
-      try {
-        const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-        const foundIdx = existingPending.findIndex(p => p.id === itemToDeliver.id || (p.orderName === itemToDeliver.orderName && p.customerName === itemToDeliver.newPurchasedBy));
-        if (foundIdx >= 0) {
-          existingPending[foundIdx].remarks = `Delivered - Order: ${itemToDeliver.orderName || itemToDeliver.newColor || 'Standard'}`;
-          existingPending[foundIdx].status = existingPending[foundIdx].pendingAmount > 0 ? 'Pending' : 'Received';
-        } else {
-          const deliveredPayment = {
-            id: itemToDeliver.id || Date.now(),
-            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            customerName: itemToDeliver.newPurchasedBy || 'Customer',
-            orderName: itemToDeliver.orderName || itemToDeliver.newColor || 'Standard',
-            brand: itemToDeliver.newBrand,
-            model: itemToDeliver.newModel,
-            totalAmount: itemToDeliver.newAmount,
-            paidAmount: 0,
-            pendingAmount: itemToDeliver.newAmount,
-            status: 'Pending',
-            mode: 'Cash',
-            remarks: `Delivered - Order: ${itemToDeliver.orderName || itemToDeliver.newColor || 'Standard'}`
-          };
-          existingPending.unshift(deliveredPayment);
-        }
-        localStorage.setItem('mrx_pending_payments', JSON.stringify(existingPending));
-        window.dispatchEvent(new Event('mrx_payments_updated'));
-      } catch (err) {
-        console.error(err);
-      }
     }
 
     const updated = exchanges.filter(item => item.id !== id);
@@ -340,7 +287,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-hand Stock & added to Pending Payments.`);
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! New mobile transferred to New In-hand Stock.`);
     navigate('/new-in-hand');
   };
 
@@ -389,14 +336,14 @@ export default function BookedAndExchange() {
 
     if (activeTab === 'bookings') {
       title = 'New Phone Bookings Report';
-      headers = ['#', 'Date', 'Customer Name', 'New Phone Model', 'Specs', 'Order Name', 'Booking Amount (Rs)', 'Status'];
+      headers = ['#', 'Date', 'Customer Name', 'New Phone Model', 'Specs', 'Color', 'Booking Amount (Rs)', 'Status'];
       rows = filteredExchanges.map((item, idx) => [
         idx + 1,
         item.date,
         item.newPurchasedBy || 'Customer',
         `${item.newBrand} ${item.newModel}`,
         `${item.newStorage}GB / ${item.newRam}GB`,
-        item.orderName || item.newColor || '-',
+        item.newColor,
         `Rs. ${item.newAmount.toLocaleString()}`,
         item.status || 'Booked'
       ]);
@@ -651,7 +598,7 @@ export default function BookedAndExchange() {
                 <th style={{ backgroundColor: '#e0f2fe' }}>Model</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Storage (GB)</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
-                <th style={{ backgroundColor: '#e0f2fe' }}>Order Name</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount</th>
 
@@ -683,7 +630,7 @@ export default function BookedAndExchange() {
                     <td data-label="New Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
                     <td data-label="New Storage">{row.newStorage} GB</td>
                     <td data-label="New RAM">{row.newRam} GB</td>
-                    <td data-label="Order Name">{row.orderName || row.newColor}</td>
+                    <td data-label="New Color">{row.newColor}</td>
                     <td data-label="New Purchased By">{row.newPurchasedBy}</td>
                     <td data-label="New Amount" style={{ fontWeight: 700 }}>
                       <CurrencyAmount amount={row.newAmount} />
@@ -741,7 +688,7 @@ export default function BookedAndExchange() {
                 <th>Model</th>
                 <th>Storage</th>
                 <th>RAM</th>
-                <th>Order Name</th>
+                <th>Color</th>
                 <th>Booking Amount</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -764,7 +711,7 @@ export default function BookedAndExchange() {
                     <td data-label="Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
                     <td data-label="Storage">{row.newStorage} GB</td>
                     <td data-label="RAM">{row.newRam} GB</td>
-                    <td data-label="Order Name">{row.orderName || row.newColor}</td>
+                    <td data-label="Color">{row.newColor}</td>
                     <td data-label="Booking Amount" style={{ fontWeight: 800, color: '#0284c7' }}>
                       <CurrencyAmount amount={row.newAmount} />
                     </td>
@@ -1070,8 +1017,8 @@ export default function BookedAndExchange() {
                   </div>
 
                   <div>
-                    <label className="form-label">Order Name *</label>
-                    <input type="text" className="form-control" placeholder="Kapil Verma / Order ID" value={bookForm.orderName} onChange={(e) => setBookForm({ ...bookForm, orderName: e.target.value, newColor: e.target.value })} required />
+                    <label className="form-label">Color *</label>
+                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
                   </div>
                   <div>
                     <label className="form-label">Pay By *</label>

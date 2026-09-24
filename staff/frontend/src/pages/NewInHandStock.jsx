@@ -2,17 +2,14 @@ import React, { useState } from 'react';
 import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function NewInHandStock() {
-  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
-  const [purchasedByFilter, setPurchasedByFilter] = useState(() => user?.name || 'All');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [exportModalConfig, setExportModalConfig] = useState({
@@ -29,7 +26,7 @@ export default function NewInHandStock() {
   const [selectedStockItem, setSelectedStockItem] = useState(null);
   const [sellForm, setSellForm] = useState({
     quantity: 1,
-    soldBy: user?.name || 'Staff',
+    soldBy: 'Staff',
     soldTo: '',
     paymentType: 'installment', // 'installment' | 'complete'
     actualAmount: '',
@@ -86,7 +83,6 @@ export default function NewInHandStock() {
 
   const filteredStock = stock.filter((item) => {
     if (brand !== 'All' && item.brand !== brand) return false;
-    if (purchasedByFilter !== 'All' && !(item.purchasedBy || '').toLowerCase().includes(purchasedByFilter.toLowerCase())) return false;
     if (selectedDate) {
       const itemYMD = toYMD(item.date);
       const selYMD = toYMD(selectedDate);
@@ -186,35 +182,7 @@ export default function NewInHandStock() {
 
   const handleSellSubmit = (e) => {
     e.preventDefault();
-    const totAmt = Number(sellForm.totalAmount) || (Number(sellForm.soldPrice) * Number(sellForm.unit)) || 0;
-    const paidAmt = Number(sellForm.paidAmount) || 0;
-    const pendAmt = Math.max(0, totAmt - paidAmt);
-
-    const salePaymentRecord = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      customerName: sellForm.soldTo || 'Vendor / Customer',
-      orderName: sellForm.model || selectedStockItem?.model || 'Sale Order',
-      brand: selectedStockItem?.brand || 'Mobile',
-      model: sellForm.model || selectedStockItem?.model || 'Phone',
-      totalAmount: totAmt,
-      paidAmount: paidAmt,
-      pendingAmount: pendAmt,
-      status: pendAmt > 0 ? 'Pending' : 'Received',
-      paymentCategory: 'RECEIVING',
-      mode: 'Cash',
-      remarks: `Sale by ${sellForm.soldBy || 'Staff'} - ${sellForm.unit || 1} unit(s)`
-    };
-
-    try {
-      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-      localStorage.setItem('mrx_pending_payments', JSON.stringify([salePaymentRecord, ...existingPending]));
-      window.dispatchEvent(new Event('mrx_payments_updated'));
-    } catch (err) {
-      console.error(err);
-    }
-
-    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold successfully! Pending payment recorded in Receiving Payments for ${sellForm.soldTo}.`);
+    alert(`Device "${selectedStockItem ? selectedStockItem.model : 'Mobile'}" sold / booked successfully! Recorded for ${sellForm.soldTo}.`);
     setIsSellModalOpen(false);
   };
 

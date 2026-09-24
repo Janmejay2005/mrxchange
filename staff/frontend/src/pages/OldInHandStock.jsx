@@ -17,20 +17,17 @@ import {
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function OldInHandStock() {
-  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [devices, setDevices] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
-  const [selectedPurchasedBy, setSelectedPurchasedBy] = useState(() => user?.name || 'All');
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -251,7 +248,6 @@ export default function OldInHandStock() {
 
   const filteredDevices = devices.filter(d => {
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
-    if (selectedPurchasedBy !== 'All' && !(d.paid_by || d.purchasedBy || '').toLowerCase().includes(selectedPurchasedBy.toLowerCase())) return false;
     if (selectedDate) {
       const devYMD = toYMD(d.intake_date || d.created_at || d.date);
       const selYMD = toYMD(selectedDate);
@@ -272,36 +268,7 @@ export default function OldInHandStock() {
         payment_type: sellModal.paymentType,
         sold_by: sellModal.soldBy
       });
-
-      const totAmt = parseFloat(sellModal.sellingPrice) || 0;
-      const paidAmt = sellModal.paymentType === 'FULL' ? totAmt : 0;
-      const pendAmt = Math.max(0, totAmt - paidAmt);
-
-      const salePaymentRecord = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        customerName: sellModal.customerName || 'Vendor / Customer',
-        orderName: `${sellModal.device?.brand || ''} ${sellModal.device?.model || 'Old Device'}`.trim(),
-        brand: sellModal.device?.brand || 'Mobile',
-        model: sellModal.device?.model || 'Phone',
-        totalAmount: totAmt,
-        paidAmount: paidAmt,
-        pendingAmount: pendAmt,
-        status: pendAmt > 0 ? 'Pending' : 'Received',
-        paymentCategory: 'RECEIVING',
-        mode: sellModal.paymentMethod || 'Cash',
-        remarks: `Old Hand Sale by ${sellModal.soldBy || 'Staff'}`
-      };
-
-      try {
-        const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-        localStorage.setItem('mrx_pending_payments', JSON.stringify([salePaymentRecord, ...existingPending]));
-        window.dispatchEvent(new Event('mrx_payments_updated'));
-      } catch (err) {
-        console.error(err);
-      }
-
-      alert('Sale transaction recorded successfully! Pending receivable added to Receiving Payments.');
+      alert('Sale transaction recorded successfully!');
       setSellModal({ ...sellModal, isOpen: false });
       fetchOldInHandStock();
     } catch (err) {

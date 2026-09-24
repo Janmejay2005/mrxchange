@@ -30,7 +30,7 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState(null);
   const [financeStats, setFinanceStats] = useState(null);
-  const [selectedAdmin, setSelectedAdmin] = useState(() => user?.name || 'All Admins');
+  const [selectedAdmin, setSelectedAdmin] = useState('All Admins');
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {

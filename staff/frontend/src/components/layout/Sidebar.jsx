@@ -30,7 +30,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
   // Nav items with dynamic access control
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Add Inventory', path: '/old-inventory', icon: Layers },
+    { label: 'Add Inventory / Old Inventory', path: '/old-inventory', icon: Layers },
     { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },

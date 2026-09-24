@@ -5,13 +5,14 @@ import { deviceService } from '../../services/api';
 
 export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    brand: '',
+    brand: 'Apple',
+    customBrand: '',
     model: '',
     storage: '128',
     ram: '6',
     colour: 'Midnight Black',
     purchase_amount: '',
-    paid_by: '',
+    paid_by: 'Rohit',
     conditionStatus: 'OLD_INVENTORY',
     remarks: '',
     date: new Date().toISOString().split('T')[0]
@@ -86,10 +87,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     if (e && e.preventDefault) e.preventDefault();
     setError('');
 
-    const effectiveBrand = formData.brand === 'Other' ? (formData.customBrand || 'Other') : formData.brand;
+    const effectiveBrand = (formData.brand === 'Other' ? formData.customBrand : formData.brand) || 'Apple';
+    const effectiveModel = formData.model ? formData.model.trim() : '';
 
-    if (!effectiveBrand || !formData.model || !formData.purchase_amount) {
-      setError('Please select/enter Mobile Brand, Model Name, and Purchased Amount');
+    if (!effectiveModel || !formData.purchase_amount) {
+      setError('Please enter Mobile Model Name and Purchased Amount');
       return;
     }
 
@@ -100,10 +102,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       id: `dev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       device_code: `MRX-${Date.now().toString().slice(-5)}`,
       brand: effectiveBrand,
-      model: formData.model,
+      model: effectiveModel,
       storage: Number(formData.storage) || 128,
       ram: Number(formData.ram) || 6,
       colour: formData.colour || 'Midnight Black',
+      condition: 'Good',
       purchase_amount: parseFloat(formData.purchase_amount) || 0,
       paid_by: formData.paid_by || 'Staff',
       intake_date: formData.date || new Date().toISOString().split('T')[0],
@@ -121,6 +124,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       const apiCreated = await deviceService.createDevice({
         ...formData,
         brand: effectiveBrand,
+        model: effectiveModel,
         status: 'OLD_INVENTORY',
         purchase_amount: parseFloat(formData.purchase_amount) || 0,
         image_url: mainImageUrl,
@@ -131,26 +135,29 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
         targetObj = { ...localDeviceObj, ...apiCreated, status: 'OLD_INVENTORY' };
       }
     } catch (err) {
-      console.warn('API device creation failed/offline, using local storage fallback:', err);
+      console.warn('Backend API creation offline/failed, using local storage fallback:', err);
     }
 
-    // Always save to mrx_old_inventory as default status
+    // Always save to mrx_old_inventory & mrx_old_in_hand_stock
     try {
       const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      const isPresentInv = oldInventoryStock.some(d => String(d.id) === String(targetObj.id) || (d.brand === targetObj.brand && d.model === targetObj.model && d.purchase_amount === targetObj.purchase_amount));
-      if (!isPresentInv) {
-        localStorage.setItem('mrx_old_inventory', JSON.stringify([targetObj, ...oldInventoryStock]));
-      }
+      const filteredInv = oldInventoryStock.filter(d => String(d.id) !== String(targetObj.id));
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([targetObj, ...filteredInv]));
+
+      const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const filteredHand = oldInHandStock.filter(d => String(d.id) !== String(targetObj.id));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([{ ...targetObj, status: 'OLD_IN_HAND' }, ...filteredHand]));
     } catch (e) {
       console.error('Error writing to localStorage:', e);
     }
 
     // Trigger update event across tabs & components
     window.dispatchEvent(new Event('mrx_inventory_updated'));
+    window.dispatchEvent(new Event('storage'));
 
     setLoading(false);
     setFormData({
-      brand: '',
+      brand: 'Apple',
       customBrand: '',
       model: '',
       storage: '128',
@@ -163,8 +170,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       date: new Date().toISOString().split('T')[0]
     });
     setImages({ image1: null, image2: null, additional: [] });
-    onSuccess && onSuccess();
-    onClose();
+
+    alert(`Mobile "${targetObj.brand} ${targetObj.model}" added successfully to Inventory!`);
+
+    if (onSuccess) onSuccess();
+    if (onClose) onClose();
   };
 
   if (!isOpen) return null;

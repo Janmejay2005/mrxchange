@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { BookmarkCheck, Plus, Home, Search, FileText, X, CheckCircle, XCircle, Calendar, Filter } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function Booked() {
-  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [bookedByFilter, setBookedByFilter] = useState(() => user?.name ? (user.name.toLowerCase().includes('jeet') ? 'Jeet' : user.name.toLowerCase().includes('sonal') ? 'Sonal' : user.name) : 'All');
+  const [bookedByFilter, setBookedByFilter] = useState('All');
   const [brandFilter, setBrandFilter] = useState('All');
   const [calendarFilter, setCalendarFilter] = useState('');
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
@@ -31,7 +29,7 @@ export default function Booked() {
     model: '', // Mob model (R)
     storage: '128', // Storage (dd)
     ram: '6', // RAM (dd)
-    bookedBy: user?.name || 'Jeet Khubchandani', // Booked by (dd)
+    bookedBy: 'Jeet Patel', // Booked by (dd)
     bookedAmount: '', // Booked Amt (R)
     bookingId: `BK-${Math.floor(1000 + Math.random() * 9000)}`, // Booking I-d (R)
     platform: 'Store', // Platform (ddR)

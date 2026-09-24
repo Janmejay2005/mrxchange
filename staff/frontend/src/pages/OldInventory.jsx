@@ -180,11 +180,11 @@ export default function OldInventory() {
         const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
         const date = item.intake_date || item.created_at || item.date || '';
 
-        const fingerprint = `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+        const fingerprint = `${item.id || ''}|${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);
-          if (!item.status || item.status === 'OLD_INVENTORY') {
+          if (!item.status || item.status === 'OLD_INVENTORY' || item.status === 'OLD_IN_HAND') {
             inventoryDevices.push(item);
           }
         }
@@ -320,7 +320,7 @@ export default function OldInventory() {
       {/* Header section with Listed Devices Card */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Old Inventory</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Add Inventory / Old Inventory</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
             Master device intake register • {selectedDate ? `Filtered for ${selectedDate}` : 'All Intake History'}
           </p>
@@ -624,7 +624,10 @@ export default function OldInventory() {
       <AddMobileModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchInventory}
+        onSuccess={() => {
+          setSelectedBrand('All Brands');
+          fetchInventory();
+        }}
       />
 
       {/* Edit Device Modal */}
