@@ -138,15 +138,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       console.warn('Backend API creation offline/failed, using local storage fallback:', err);
     }
 
-    // Always save to mrx_old_inventory & mrx_old_in_hand_stock
+    // Save strictly to mrx_old_inventory with status OLD_INVENTORY by default
     try {
       const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
       const filteredInv = oldInventoryStock.filter(d => String(d.id) !== String(targetObj.id));
-      localStorage.setItem('mrx_old_inventory', JSON.stringify([targetObj, ...filteredInv]));
-
-      const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const filteredHand = oldInHandStock.filter(d => String(d.id) !== String(targetObj.id));
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([{ ...targetObj, status: 'OLD_IN_HAND' }, ...filteredHand]));
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([{ ...targetObj, status: 'OLD_INVENTORY' }, ...filteredInv]));
     } catch (e) {
       console.error('Error writing to localStorage:', e);
     }
