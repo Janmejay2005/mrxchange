@@ -83,7 +83,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
 
     const effectiveBrand = formData.brand === 'Other' ? (formData.customBrand || 'Other') : formData.brand;
@@ -96,9 +96,29 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     const allImagesList = [images.image1, images.image2, ...images.additional].filter(Boolean);
     const mainImageUrl = images.image1 || images.image2 || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100';
 
+    const localDeviceObj = {
+      id: `dev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      device_code: `MRX-${Date.now().toString().slice(-5)}`,
+      brand: effectiveBrand,
+      model: formData.model,
+      storage: Number(formData.storage) || 128,
+      ram: Number(formData.ram) || 6,
+      colour: formData.colour || 'Midnight Black',
+      purchase_amount: parseFloat(formData.purchase_amount) || 0,
+      paid_by: formData.paid_by || 'Staff',
+      intake_date: formData.date || new Date().toISOString().split('T')[0],
+      status: 'OLD_INVENTORY',
+      remarks: formData.remarks || '',
+      image_url: mainImageUrl,
+      image_data: mainImageUrl,
+      images: allImagesList.length > 0 ? allImagesList : [mainImageUrl]
+    };
+
+    let targetObj = localDeviceObj;
+
     try {
       setLoading(true);
-      const created = await deviceService.createDevice({
+      const apiCreated = await deviceService.createDevice({
         ...formData,
         brand: effectiveBrand,
         status: 'OLD_INVENTORY',
@@ -107,19 +127,25 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
         image_data: mainImageUrl,
         images: allImagesList
       });
+      if (apiCreated && (apiCreated.id || apiCreated.brand)) {
+        targetObj = { ...localDeviceObj, ...apiCreated, status: 'OLD_INVENTORY' };
+      }
+    } catch (err) {
+      console.warn('API device creation failed/offline, using local storage fallback:', err);
+    }
 
-      // Save exclusively to mrx_old_inventory as default status
+    // Always save to mrx_old_inventory as default status
+    try {
       const oldInventoryStock = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      const targetObj = { ...created, status: 'OLD_INVENTORY' };
       const isPresentInv = oldInventoryStock.some(d => String(d.id) === String(targetObj.id) || (d.brand === targetObj.brand && d.model === targetObj.model && d.purchase_amount === targetObj.purchase_amount));
       if (!isPresentInv) {
         localStorage.setItem('mrx_old_inventory', JSON.stringify([targetObj, ...oldInventoryStock]));
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error('Error writing to localStorage:', e);
     }
 
-    // Trigger update event across tabs
+    // Trigger update event across tabs & components
     window.dispatchEvent(new Event('mrx_inventory_updated'));
 
     setLoading(false);
@@ -132,7 +158,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       colour: 'Midnight Black',
       purchase_amount: '',
       paid_by: 'Rohit',
-      conditionStatus: 'OLD_IN_HAND',
+      conditionStatus: 'OLD_INVENTORY',
       remarks: '',
       date: new Date().toISOString().split('T')[0]
     });
@@ -521,8 +547,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               Cancel
             </button>
             <button 
-              type="button"
-              onClick={handleSubmit} 
+              type="submit"
               disabled={loading} 
               className="btn-primary" 
               style={{ minWidth: '160px', justifyContent: 'center' }}
