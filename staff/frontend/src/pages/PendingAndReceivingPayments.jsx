@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function PendingAndReceivingPayments() {
+  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('All');
-  const [personCustomer, setPersonCustomer] = useState('All');
+  const [personCustomer, setPersonCustomer] = useState(() => user?.name || 'All');
   const [mobileBrand, setMobileBrand] = useState('All');
 
   const [exportModalConfig, setExportModalConfig] = useState({
@@ -26,7 +28,7 @@ export default function PendingAndReceivingPayments() {
   const [isEquateModalOpen, setIsEquateModalOpen] = useState(false);
   const [equateForm, setEquateForm] = useState({
     pendingPayment: '',
-    equatedBy: 'Jeet',
+    equatedBy: user?.name ? (user.name.toLowerCase().includes('jeet') ? 'Jeet' : user.name) : 'Jeet',
     customerName: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
     newPay: '',

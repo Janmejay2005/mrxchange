@@ -17,17 +17,20 @@ import {
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function OldInHandStock() {
+  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [devices, setDevices] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
+  const [selectedPurchasedBy, setSelectedPurchasedBy] = useState(() => user?.name || 'All');
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -248,6 +251,7 @@ export default function OldInHandStock() {
 
   const filteredDevices = devices.filter(d => {
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
+    if (selectedPurchasedBy !== 'All' && !(d.paid_by || d.purchasedBy || '').toLowerCase().includes(selectedPurchasedBy.toLowerCase())) return false;
     if (selectedDate) {
       const devYMD = toYMD(d.intake_date || d.created_at || d.date);
       const selYMD = toYMD(selectedDate);

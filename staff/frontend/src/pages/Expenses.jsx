@@ -17,14 +17,14 @@ import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 
 export default function Expenses() {
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { selectedDate } = useOutletContext() || {};
   const [expenses, setExpenses] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [breakdown, setBreakdown] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedAdmin, setSelectedAdmin] = useState('All Admins');
+  const [selectedAdmin, setSelectedAdmin] = useState(() => user?.name || 'All Admins');
 
   // Add Expense Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,7 +32,7 @@ export default function Expenses() {
     category: 'SALARY',
     amount: '',
     recipient: '',
-    admin_name: 'Jeet Khubchandani',
+    admin_name: user?.name || 'Jeet Khubchandani',
     expense_date: new Date().toISOString().split('T')[0],
     remarks: ''
   });

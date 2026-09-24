@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function NewInHandStock() {
+  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
+  const [purchasedByFilter, setPurchasedByFilter] = useState(() => user?.name || 'All');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [exportModalConfig, setExportModalConfig] = useState({
@@ -26,7 +29,7 @@ export default function NewInHandStock() {
   const [selectedStockItem, setSelectedStockItem] = useState(null);
   const [sellForm, setSellForm] = useState({
     quantity: 1,
-    soldBy: 'Staff',
+    soldBy: user?.name || 'Staff',
     soldTo: '',
     paymentType: 'installment', // 'installment' | 'complete'
     actualAmount: '',
@@ -83,6 +86,7 @@ export default function NewInHandStock() {
 
   const filteredStock = stock.filter((item) => {
     if (brand !== 'All' && item.brand !== brand) return false;
+    if (purchasedByFilter !== 'All' && !(item.purchasedBy || '').toLowerCase().includes(purchasedByFilter.toLowerCase())) return false;
     if (selectedDate) {
       const itemYMD = toYMD(item.date);
       const selYMD = toYMD(selectedDate);

@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 export default function BookedAndExchange() {
+  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'bookings' | 'exchanges'
   const [searchTerm, setSearchTerm] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [purchasedBy, setPurchasedBy] = useState('All');
+  const [purchasedBy, setPurchasedBy] = useState(() => user?.name || 'All');
   const [mobileBrand, setMobileBrand] = useState('All');
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [expandedImage, setExpandedImage] = useState(null);
@@ -34,7 +36,7 @@ export default function BookedAndExchange() {
     oldStorage: '128',
     oldRam: '8',
     oldAmount: '25000',
-    oldPayBy: 'Staff',
+    oldPayBy: user?.name || 'Staff',
     oldImage: '',
 
     // Booking New Phone
@@ -44,7 +46,7 @@ export default function BookedAndExchange() {
     newStorage: '256',
     newRam: '12',
     newColor: 'Bay Blue',
-    newPayBy: 'Jeet Khubchandani',
+    newPayBy: user?.name || 'Jeet Khubchandani',
     platform: 'Offline / Store',
     purchasedAmount: '64000',
     via: 'Cash',

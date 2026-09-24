@@ -17,12 +17,12 @@ import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 
 export default function CentralLedger() {
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState({ totalCredits: 0, totalDebits: 0, netBalance: 0 });
   const [loading, setLoading] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState('All Admins');
+  const [selectedAdmin, setSelectedAdmin] = useState(() => user?.name || 'All Admins');
   const [selectedType, setSelectedType] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 

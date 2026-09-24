@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 
 export default function Investments() {
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { selectedDate } = useOutletContext() || {};
   const [investments, setInvestments] = useState([]);
   const [totalInvestment, setTotalInvestment] = useState(0);
@@ -25,14 +25,14 @@ export default function Investments() {
   const [breakdown, setBreakdown] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState('ALL');
-  const [selectedInvestor, setSelectedInvestor] = useState('All Admins');
+  const [selectedInvestor, setSelectedInvestor] = useState(() => user?.name || 'All Admins');
 
   // Add Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newInvestment, setNewInvestment] = useState({
     investment_type: 'INVENTORY',
     amount: '',
-    investor_name: 'Jeet Khubchandani',
+    investor_name: user?.name || 'Jeet Khubchandani',
     investment_date: new Date().toISOString().split('T')[0],
     remarks: ''
   });
