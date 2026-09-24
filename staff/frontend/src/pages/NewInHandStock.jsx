@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera, ShoppingBag, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera, ShoppingBag, AlertTriangle, CheckCircle, UserCheck, Users } from 'lucide-react';
 import { CurrencyAmount, KPICard } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function NewInHandStock() {
+  const { user, isSuperAdmin } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Account Bifurcation State
+  const loggedInAccountName = user?.name || user?.username || 'Jeet Khubchandani';
+  const [accountFilter, setAccountFilter] = useState(isSuperAdmin ? 'All Accounts' : loggedInAccountName);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -28,9 +34,9 @@ export default function NewInHandStock() {
   const [sellForm, setSellForm] = useState({
     model: '',
     unit: 1,
-    soldBy: 'Staff',
+    soldBy: loggedInAccountName,
     soldTo: '',
-    paymentType: 'COMPLETE', // 'INSTALLMENT' | 'COMPLETE'
+    paymentType: 'COMPLETE',
     soldPrice: '',
     totalAmount: '',
     paidAmount: '',
@@ -54,16 +60,16 @@ export default function NewInHandStock() {
   });
 
   const getInitialSampleStock = () => [
-    { sno: 'sample_1', date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet', amount: 89000, totalUnits: 15, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_2', date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal', amount: 132000, totalUnits: 24, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_3', date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit', amount: 114000, totalUnits: 10, soldUnits: 0, procedure: 'Hold' },
-    { sno: 'sample_4', date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha', amount: 64999, totalUnits: 8, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_5', date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman', amount: 89999, totalUnits: 12, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_6', date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan', amount: 27999, totalUnits: 5, soldUnits: 0, procedure: 'Check' },
-    { sno: 'sample_7', date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram', amount: 99999, totalUnits: 6, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_8', date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal', amount: 42000, totalUnits: 7, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_9', date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya', amount: 59999, totalUnits: 9, soldUnits: 0, procedure: 'Hold' },
-    { sno: 'sample_10', date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet', amount: 84999, totalUnits: 4, soldUnits: 0, procedure: 'Sell' }
+    { sno: 'sample_1', date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet Khubchandani', amount: 89000, totalUnits: 15, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_2', date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal Wadwani', amount: 132000, totalUnits: 24, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_3', date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit Kumar', amount: 114000, totalUnits: 10, soldUnits: 0, procedure: 'Hold' },
+    { sno: 'sample_4', date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha Gupta', amount: 64999, totalUnits: 8, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_5', date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman Verma', amount: 89999, totalUnits: 12, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_6', date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan Malhotra', amount: 27999, totalUnits: 5, soldUnits: 0, procedure: 'Check' },
+    { sno: 'sample_7', date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram Singh', amount: 99999, totalUnits: 6, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_8', date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal Rao', amount: 42000, totalUnits: 7, soldUnits: 0, procedure: 'Sell' },
+    { sno: 'sample_9', date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya Roy', amount: 59999, totalUnits: 9, soldUnits: 0, procedure: 'Hold' },
+    { sno: 'sample_10', date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet Khubchandani', amount: 84999, totalUnits: 4, soldUnits: 0, procedure: 'Sell' }
   ];
 
   const fetchCombinedStock = () => {
@@ -125,7 +131,27 @@ export default function NewInHandStock() {
     return `${y}-${m}-${day}`;
   };
 
+  // BIFURCATION FILTERING LOGIC BY LOGGED-IN ACCOUNT
   const filteredStock = stock.filter((item) => {
+    // Account Bifurcation Check
+    if (!isSuperAdmin) {
+      // Non-superadmin staff see ONLY stock attributed to their logged-in account
+      const itemOwner = (item.purchasedBy || '').toLowerCase();
+      const userOwner = (loggedInAccountName || '').toLowerCase();
+      if (!itemOwner.includes(userOwner) && !userOwner.includes(itemOwner)) {
+        return false;
+      }
+    } else {
+      // Superadmin can filter by account or view All Accounts
+      if (accountFilter !== 'All Accounts') {
+        const itemOwner = (item.purchasedBy || '').toLowerCase();
+        const selectedOwner = accountFilter.toLowerCase();
+        if (!itemOwner.includes(selectedOwner) && !selectedOwner.includes(itemOwner)) {
+          return false;
+        }
+      }
+    }
+
     if (brand !== 'All' && item.brand !== brand) return false;
     if (selectedDate) {
       const itemYMD = toYMD(item.date);
@@ -153,7 +179,7 @@ export default function NewInHandStock() {
     return true;
   });
 
-  // Calculate Total Available Stock Units across all brands
+  // Calculate Total Available Stock Units across all brands in current account scope
   const totalAvailableUnits = filteredStock.reduce((sum, item) => {
     const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
     return sum + avail;
@@ -170,7 +196,7 @@ export default function NewInHandStock() {
     
     setSellForm({
       model: fetchedModel,
-      soldBy: 'Staff',
+      soldBy: loggedInAccountName,
       unit: avail > 0 ? 1 : 0,
       soldTo: item.purchasedBy || 'Customer',
       soldPrice: initialPrice,
@@ -213,7 +239,7 @@ export default function NewInHandStock() {
     });
 
     saveStockToStorage(updatedStock);
-    alert(`Successfully sold ${requestedUnits} unit(s) of "${selectedStockItem.brand} ${selectedStockItem.model}" to ${sellForm.soldTo}! ${availableUnits - requestedUnits} unit(s) remaining in stock.`);
+    alert(`Successfully sold ${requestedUnits} unit(s) of "${selectedStockItem.brand} ${selectedStockItem.model}" under account "${loggedInAccountName}"! ${availableUnits - requestedUnits} unit(s) remaining in stock.`);
     setIsSellModalOpen(false);
   };
 
@@ -273,7 +299,7 @@ export default function NewInHandStock() {
   };
 
   const handleExportPdf = () => {
-    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Available Units', 'Purchased By', 'Amount (Rs)'];
+    const headers = ['Sno', 'Date', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Available Units', 'Purchased By (Account)', 'Amount (Rs)'];
     const rows = filteredStock.map((item, idx) => {
       const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
       return [
@@ -291,11 +317,12 @@ export default function NewInHandStock() {
     });
     setExportModalConfig({
       isOpen: true,
-      title: 'New In-hand Stock Inventory Report',
+      title: `New In-hand Stock Report (${isSuperAdmin ? accountFilter : loggedInAccountName})`,
       headers,
       rows,
       filename: `New_In_Hand_Stock_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
+        { label: 'Account Scope', value: isSuperAdmin ? accountFilter : loggedInAccountName, color: '#7c3aed' },
         { label: 'Total Available Units', value: `${totalAvailableUnits} Units`, color: '#0284c7' },
         { label: 'Total Valuation', value: `Rs. ${totalDeliveredValuation.toLocaleString()}`, color: '#059669' }
       ]
@@ -307,9 +334,24 @@ export default function NewInHandStock() {
       {/* Header & Breadcrumbs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>New In-hand Stock</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>New In-hand Stock</h1>
+            <span style={{ 
+              background: '#f3e8ff', 
+              color: '#7c3aed', 
+              padding: '4px 12px', 
+              borderRadius: '12px', 
+              fontSize: '12px', 
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <UserCheck size={14} /> Account Bifurcated
+            </span>
+          </div>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-            Available stock units fetched from exchange deliveries • Strict quantity-based sales control.
+            Stock inventory bifurcated by logged-in user account ({isSuperAdmin ? accountFilter : loggedInAccountName}).
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -322,41 +364,72 @@ export default function NewInHandStock() {
       {/* KPI Cards Summary */}
       <div className="kpi-grid" style={{ marginBottom: '24px' }}>
         <KPICard 
-          title="Total Available New Stock Units" 
+          title="Account Scope" 
+          value={isSuperAdmin ? accountFilter : loggedInAccountName} 
+          icon={Users}
+          iconBg="#f3e8ff"
+          iconColor="#7c3aed"
+        />
+        <KPICard 
+          title="Available Stock Units (Account)" 
           value={`${totalAvailableUnits} Units`} 
           icon={Package}
           iconBg="#e0f2fe"
           iconColor="#0284c7"
         />
         <KPICard 
-          title="Listed Device Models" 
-          value={`${filteredStock.length} Models`} 
+          title="Stock Valuation (Account)" 
+          value={`₹${totalDeliveredValuation.toLocaleString('en-IN')}`} 
           icon={ShoppingBag}
           iconBg="#ecfdf5"
           iconColor="#059669"
         />
-        <KPICard 
-          title="Total Inventory Valuation" 
-          value={`₹${totalDeliveredValuation.toLocaleString('en-IN')}`} 
-          icon={FileText}
-          iconBg="#f5f3ff"
-          iconColor="#7c3aed"
-        />
       </div>
 
-      {/* Top Filter Bar */}
+      {/* Top Filter Bar with Account Bifurcation Dropdown */}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
+        
+        {/* Account Bifurcation Selector */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 800, color: '#7c3aed', display: 'block', marginBottom: '4px' }}>
+            👤 Account Scope Bifurcation
+          </label>
+          {isSuperAdmin ? (
+            <select 
+              className="form-control" 
+              value={accountFilter} 
+              onChange={(e) => setAccountFilter(e.target.value)} 
+              style={{ width: '180px', padding: '7px 12px', borderColor: '#a855f7', fontWeight: 700, color: '#7c3aed' }}
+            >
+              <option value="All Accounts">All Accounts</option>
+              <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+              <option value="Sonal Wadwani">Sonal Wadwani</option>
+              <option value="Rohit Kumar">Rohit Kumar</option>
+              <option value="Neha Gupta">Neha Gupta</option>
+              <option value="Aman Verma">Aman Verma</option>
+              <option value="Karan Malhotra">Karan Malhotra</option>
+              <option value="Vikram Singh">Vikram Singh</option>
+              <option value="Sunal Rao">Sunal Rao</option>
+              <option value="Ananya Roy">Ananya Roy</option>
+            </select>
+          ) : (
+            <div style={{ padding: '7px 12px', background: '#f3e8ff', color: '#7c3aed', borderRadius: '6px', fontWeight: 800, fontSize: '13px', border: '1px solid #d8b4fe' }}>
+              🔒 {loggedInAccountName}
+            </div>
+          )}
+        </div>
+
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>From Date</label>
-          <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+          <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ width: '150px', padding: '7px 12px' }} />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>To Date</label>
-          <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+          <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '150px', padding: '7px 12px' }} />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Brand</label>
-          <select className="form-control" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
+          <select className="form-control" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '140px', padding: '7px 12px' }}>
             <option>All</option>
             <option>Google Pixel</option>
             <option>Apple</option>
@@ -371,13 +444,13 @@ export default function NewInHandStock() {
           </select>
         </div>
 
-        <div style={{ flex: 1, minWidth: '220px', marginTop: '18px' }}>
+        <div style={{ flex: 1, minWidth: '200px', marginTop: '18px' }}>
           <div style={{ position: 'relative' }}>
             <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
               className="form-control" 
-              placeholder="Search by model, brand, color, or person..."
+              placeholder="Search by model, brand, color..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ paddingLeft: '36px' }}
@@ -386,7 +459,7 @@ export default function NewInHandStock() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
-          <button onClick={() => { setFromDate(''); setToDate(''); setBrand('All'); setSearchQuery(''); }} className="btn-secondary">Clear</button>
+          <button onClick={() => { setFromDate(''); setToDate(''); setBrand('All'); setSearchQuery(''); if (isSuperAdmin) setAccountFilter('All Accounts'); }} className="btn-secondary">Clear</button>
         </div>
       </div>
 
@@ -402,7 +475,7 @@ export default function NewInHandStock() {
               <th>Specs (Storage / RAM)</th>
               <th>Color</th>
               <th>Available Stock Units</th>
-              <th>Purchased By</th>
+              <th>Account Owner</th>
               <th>Purchased Amount (₹)</th>
               <th>Action</th>
             </tr>
@@ -411,7 +484,7 @@ export default function NewInHandStock() {
             {filteredStock.length === 0 ? (
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                  No new in-hand stock items match the specified filters.
+                  No new in-hand stock items match the selected account scope ({isSuperAdmin ? accountFilter : loggedInAccountName}).
                 </td>
               </tr>
             ) : (
@@ -440,7 +513,11 @@ export default function NewInHandStock() {
                         {isOutOfStock ? '❌ Out of Stock (0 Units)' : `📦 ${availUnits} / ${item.totalUnits || 1} Units Available`}
                       </span>
                     </td>
-                    <td data-label="Purchased By" style={{ fontWeight: 600 }}>{item.purchasedBy}</td>
+                    <td data-label="Account Owner">
+                      <span style={{ padding: '3px 8px', borderRadius: '10px', background: '#f3e8ff', color: '#7c3aed', fontSize: '12px', fontWeight: 800 }}>
+                        👤 {item.purchasedBy}
+                      </span>
+                    </td>
                     <td data-label="Purchased Amount" style={{ fontWeight: 700 }}>
                       <CurrencyAmount amount={item.amount} />
                     </td>
@@ -493,7 +570,7 @@ export default function NewInHandStock() {
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Sell New Mobile</h2>
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
-                  Quantities strictly limited to available stock units fetched from exchange deliveries.
+                  Account Scope: <strong>{selectedStockItem.purchasedBy}</strong> (Sold by: {loggedInAccountName})
                 </p>
               </div>
               <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
@@ -538,7 +615,6 @@ export default function NewInHandStock() {
                   <input 
                     type="text" 
                     className="form-control" 
-                    placeholder="e.g. Staff" 
                     value={sellForm.soldBy} 
                     onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
                     required 
@@ -692,7 +768,7 @@ export default function NewInHandStock() {
                   <input type="text" className="form-control" value={editForm.color} onChange={(e) => setEditForm({ ...editForm, color: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="form-label">Purchased By *</label>
+                  <label className="form-label">Account Owner / Purchased By *</label>
                   <input type="text" className="form-control" value={editForm.purchasedBy} onChange={(e) => setEditForm({ ...editForm, purchasedBy: e.target.value })} required />
                 </div>
               </div>
