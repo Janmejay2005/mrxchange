@@ -139,11 +139,9 @@ export default function BookedAndExchange() {
 
   const getStoredExchanges = () => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
-      if (stored && stored.length > 0) {
-        const storedIds = new Set(stored.map(i => String(i.id)));
-        const remainingDefaults = defaultExchanges.filter(d => !storedIds.has(String(d.id)));
-        return [...stored, ...remainingDefaults];
+      const storedStr = localStorage.getItem('mrx_exchanges');
+      if (storedStr !== null) {
+        return JSON.parse(storedStr);
       }
     } catch (e) {}
     return defaultExchanges;
@@ -954,17 +952,6 @@ export default function BookedAndExchange() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="form-label">Old Phone Amount (Valuation ₹) *</label>
-                    <input 
-                      type="number" 
-                      className="form-control" 
-                      placeholder="₹ Valuation amount" 
-                      value={bookForm.oldAmount} 
-                      onChange={(e) => setBookForm({ ...bookForm, oldAmount: e.target.value })} 
-                      required 
-                    />
-                  </div>
                   <div>
                     <label className="form-label">Pay By *</label>
                     <input 
