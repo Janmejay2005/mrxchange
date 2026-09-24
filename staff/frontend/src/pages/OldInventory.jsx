@@ -221,17 +221,31 @@ export default function OldInventory() {
         status: newStatus
       };
 
-      await deviceService.updateStatus(deviceId, updatedDevice, updatedDevice);
+      try {
+        await deviceService.updateStatus(deviceId, updatedDevice, updatedDevice);
+      } catch (apiErr) {
+        console.warn('API update status warning:', apiErr);
+      }
       
       if (newStatus === 'OLD_IN_HAND') {
         const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
         const filtered = oldInHandStock.filter(d => String(d.id) !== String(deviceId));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
+
+        // Remove from old inventory local storage
+        const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
+
+        window.dispatchEvent(new Event('mrx_inventory_updated'));
+        window.dispatchEvent(new Event('storage'));
       }
       
-      // Immediately remove device from Old Inventory view
-      setDevices(prev => prev.filter(d => String(d.id) !== String(deviceId)));
+      // Immediately remove device from Add Inventory view if status changed
+      if (newStatus !== 'OLD_INVENTORY') {
+        setDevices(prev => prev.filter(d => String(d.id) !== String(deviceId)));
+      }
       
       // Automatic navigation based on new status option selected
       if (newStatus === 'IN_REPAIR') {
@@ -243,6 +257,9 @@ export default function OldInventory() {
       }
     } catch (err) {
       console.error(err);
+      if (newStatus === 'OLD_IN_HAND') {
+        navigate('/old-in-hand');
+      }
     }
   };
 
@@ -320,7 +337,7 @@ export default function OldInventory() {
       {/* Header section with Listed Devices Card */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Add Inventory / Old Inventory</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Add Inventory</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
             Master device intake register • {selectedDate ? `Filtered for ${selectedDate}` : 'All Intake History'}
           </p>
@@ -525,7 +542,7 @@ export default function OldInventory() {
                         border: '1px solid #cbd5e1'
                       }}
                     >
-                      <option value="OLD_INVENTORY">Old Inventory</option>
+                      <option value="OLD_INVENTORY">Add Inventory</option>
                       <option value="OLD_IN_HAND">Old In-Hand</option>
                       <option value="IN_REPAIR">Repair</option>
                       <option value="REJECTED">Rejected Stock</option>
@@ -602,7 +619,7 @@ export default function OldInventory() {
                   color: '#0f172a'
                 }}
               >
-                <option value="OLD_INVENTORY">Old Inventory</option>
+                <option value="OLD_INVENTORY">Add Inventory</option>
                 <option value="OLD_IN_HAND">Old In-Hand</option>
                 <option value="IN_REPAIR">Repair</option>
                 <option value="REJECTED">Rejected Stock</option>
@@ -724,7 +741,7 @@ export default function OldInventory() {
               <div style={{ marginBottom: '20px' }}>
                 <label className="form-label">Status *</label>
                 <select className="form-control" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
-                  <option value="OLD_INVENTORY">Old Inventory</option>
+                  <option value="OLD_INVENTORY">Add Inventory</option>
                   <option value="OLD_IN_HAND">Old In-Hand</option>
                   <option value="IN_REPAIR">Repair</option>
                   <option value="REJECTED">Rejected Stock</option>
