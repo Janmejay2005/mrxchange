@@ -69,11 +69,12 @@ export default function BookedAndExchange() {
         apiDevices = Array.isArray(res) ? res : (res?.data || []);
       } catch (e) {}
 
+      const exchangePool = JSON.parse(localStorage.getItem('mrx_exchange_pool') || '[]');
       const localInHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'OLD_IN_HAND');
       const localInventoryInHand = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
 
-      const allRaw = [...localInHand, ...localDevices, ...localInventoryInHand, ...apiDevices, ...sampleOldInHand];
+      const allRaw = [...exchangePool, ...localInHand, ...localDevices, ...localInventoryInHand, ...apiDevices, ...sampleOldInHand];
       const seen = new Set();
       const formatted = [];
 
@@ -111,9 +112,11 @@ export default function BookedAndExchange() {
     fetchLiveInHandStock();
     window.addEventListener('storage', fetchLiveInHandStock);
     window.addEventListener('mrx_inventory_updated', fetchLiveInHandStock);
+    window.addEventListener('mrx_exchange_pool_updated', fetchLiveInHandStock);
     return () => {
       window.removeEventListener('storage', fetchLiveInHandStock);
       window.removeEventListener('mrx_inventory_updated', fetchLiveInHandStock);
+      window.removeEventListener('mrx_exchange_pool_updated', fetchLiveInHandStock);
     };
   }, [isModalOpen]);
 

@@ -125,37 +125,42 @@ export default function OldInHandStock() {
   };
 
   const handleExchangeAction = (device) => {
-    setDevices(prev => prev.map(item => String(item.id) === String(device.id) ? { ...item, isExchanged: true, status: 'Exchanged' } : item));
+    // 1. Remove device immediately from Old In-hand Inventory view
+    setDevices(prev => prev.filter(item => String(item.id) !== String(device.id)));
 
-    const exchangeItem = {
-      id: Date.now(),
-      date: device.intake_date ? String(device.intake_date).slice(0, 10) : new Date().toISOString().split('T')[0],
-      newBrand: device.brand || 'Apple',
-      newModel: device.model || '',
-      newStorage: Number(device.storage) || 128,
-      newRam: Number(device.ram) || 6,
-      newColor: device.colour || 'Standard',
-      newPurchasedBy: device.paid_by || 'Staff',
-      newAmount: Number(device.purchase_amount) || 0,
-      oldBrand: device.brand || '',
-      oldModel: device.model || '',
-      oldStorage: Number(device.storage) || 128,
-      oldRam: Number(device.ram) || 6,
-      oldColor: device.colour || 'Default',
-      oldPurchasedBy: device.paid_by || 'Staff',
-      oldAmount: Number(device.purchase_amount) || 0,
-      oldImage: device.image_url || (device.images && device.images[0]) || '',
-      status: 'Exchanged'
+    // 2. Remove device from mrx_old_in_hand_stock local storage
+    try {
+      const storedInHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const updatedInHand = storedInHand.filter(item => String(item.id) !== String(device.id));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedInHand));
+    } catch (e) {}
+
+    // 3. Save device into mrx_exchange_pool so it is available in the Exchange tab drop-down
+    const poolItem = {
+      id: device.id || `exch_${Date.now()}`,
+      brand: device.brand || '',
+      model: device.model || '',
+      storage: Number(device.storage) || 128,
+      ram: Number(device.ram) || 6,
+      colour: device.colour || 'Default',
+      amount: Number(device.purchase_amount || device.amount) || 0,
+      purchase_amount: Number(device.purchase_amount || device.amount) || 0,
+      paid_by: device.paid_by || 'Staff',
+      image_url: device.image_url || (device.images && device.images[0]) || ''
     };
 
     try {
-      const stored = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
-      localStorage.setItem('mrx_exchanges', JSON.stringify([exchangeItem, ...stored]));
-      window.dispatchEvent(new Event('mrx_exchanges_updated'));
-    } catch (e) {
-      console.error(e);
-    }
-    alert(`Device "${device.brand} ${device.model}" transferred to Exchange tab!`);
+      const exchangePool = JSON.parse(localStorage.getItem('mrx_exchange_pool') || '[]');
+      const filteredPool = exchangePool.filter(item => String(item.id) !== String(poolItem.id));
+      localStorage.setItem('mrx_exchange_pool', JSON.stringify([poolItem, ...filteredPool]));
+    } catch (e) {}
+
+    // 4. Trigger real-time sync events across tabs & components
+    window.dispatchEvent(new Event('mrx_inventory_updated'));
+    window.dispatchEvent(new Event('mrx_exchange_pool_updated'));
+    window.dispatchEvent(new Event('storage'));
+
+    alert(`Device "${device.brand} ${device.model}" transferred to Exchange tab! You can now select it in Book New Mobile.`);
   };
 
   // Sell Modal State
