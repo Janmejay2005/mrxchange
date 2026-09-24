@@ -33,15 +33,15 @@ export default function PendingAndReceivingPayments() {
   });
 
   const samplePayments = [
-    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
-    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
-    { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card', remarks: 'Installment 2 pending' },
-    { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid via GPay' },
-    { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI', remarks: 'Remaining next month' },
-    { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Full payment' },
-    { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card', remarks: 'Post-dated cheque' },
-    { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid' },
-    { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash', remarks: 'Balance due 25 Sep' }
+    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI' },
+    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash' },
+    { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card' },
+    { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI' },
+    { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI' },
+    { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash' },
+    { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card' },
+    { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI' },
+    { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash' }
   ];
 
   const getStoredPayments = () => {
@@ -179,8 +179,7 @@ export default function PendingAndReceivingPayments() {
         paidAmount: newPayAmt,
         pendingAmount: Math.max(0, (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt),
         status: (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt <= 0 ? 'Received' : 'Pending',
-        mode: 'Cash',
-        remarks: `Equated by ${equateForm.equatedBy}`
+        mode: 'Cash'
       };
       savePaymentsToStorage([newPayEntry, ...payments]);
       alert(`Payment added successfully for ${equateForm.customerName}!`);
@@ -190,7 +189,7 @@ export default function PendingAndReceivingPayments() {
 
   const handleExportPdf = () => {
     const headers = ['#', 'Date', 'Customer', 'Device Model', 'Total (Rs)', 'Paid (Rs)', 'Pending (Rs)', 'Status', 'Mode'];
-    const allFiltered = [...pendingList, ...receivingList];
+    const allFiltered = [...receivingList, ...pendingList];
     const rows = allFiltered.map((item, idx) => [
       idx + 1,
       item.date,
@@ -209,8 +208,8 @@ export default function PendingAndReceivingPayments() {
       rows,
       filename: `Payments_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Pending', value: `Rs. ${totalPendingVal.toLocaleString()}`, color: '#dc2626' },
-        { label: 'Total Received', value: `Rs. ${totalReceivedVal.toLocaleString()}`, color: '#059669' }
+        { label: 'Total Received', value: `Rs. ${totalReceivedVal.toLocaleString()}`, color: '#059669' },
+        { label: 'Total Pending', value: `Rs. ${totalPendingVal.toLocaleString()}`, color: '#dc2626' }
       ]
     });
   };
@@ -221,7 +220,7 @@ export default function PendingAndReceivingPayments() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Pending and Receiving Payments</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Dual-column breakdown for pending receivables and completed received payments.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Dual-column breakdown for received payments and pending customer receivables.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
@@ -275,89 +274,10 @@ export default function PendingAndReceivingPayments() {
         </div>
       </div>
 
-      {/* DUAL COLUMNS SECTION: PENDING (LEFT COLUMN) & RECEIVING (RIGHT COLUMN) */}
+      {/* DUAL COLUMNS SECTION: RECEIVED PAYMENTS (LEFT COLUMN) & PENDING PAYMENTS (RIGHT COLUMN) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
         
-        {/* COLUMN 1: PENDING PAYMENTS COLUMN */}
-        <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Clock size={20} />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>⏳ Pending Payments Column</h2>
-                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Uncollected customer receivables ({pendingList.length} items)</span>
-              </div>
-            </div>
-
-            <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Balance:</span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
-                <CurrencyAmount amount={totalPendingVal} />
-              </span>
-            </div>
-          </div>
-
-          <div className="table-responsive">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>#</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Date</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Customer Name</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Brand</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Model</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Total Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Paid Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Pending Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Payment Status</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Mode of Payment</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Remarks</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingList.length === 0 ? (
-                  <tr>
-                    <td colSpan="12" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                      No pending payments in this column.
-                    </td>
-                  </tr>
-                ) : (
-                  pendingList.map((row, idx) => (
-                    <tr key={row.id}>
-                      <td data-label="#">{idx + 1}</td>
-                      <td data-label="Date">{row.date}</td>
-                      <td data-label="Customer" style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</td>
-                      <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                      <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                      <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                      <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                      <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#ea580c' }}>
-                        <CurrencyAmount amount={row.pendingAmount} />
-                      </td>
-                      <td data-label="Status">
-                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
-                          Pending
-                        </span>
-                      </td>
-                      <td data-label="Payment Mode">{row.mode}</td>
-                      <td data-label="Remarks" style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
-                      <td data-label="Action">
-                        <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
-                          Equate
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* COLUMN 2: RECEIVING PAYMENTS COLUMN */}
+        {/* COLUMN 1: RECEIVED PAYMENTS COLUMN */}
         <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #a7f3d0', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -365,7 +285,7 @@ export default function PendingAndReceivingPayments() {
                 <CheckCircle size={20} />
               </div>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>✅ Receiving / Received Payments Column</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Received Payments Column</h2>
                 <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Completed customer collections ({receivingList.length} items)</span>
               </div>
             </div>
@@ -392,14 +312,13 @@ export default function PendingAndReceivingPayments() {
                   <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Pending Amount (₹)</th>
                   <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Payment Status</th>
                   <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Mode of Payment</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Remarks</th>
                   <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {receivingList.length === 0 ? (
                   <tr>
-                    <td colSpan="12" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
                       No received payments in this column.
                     </td>
                   </tr>
@@ -422,9 +341,85 @@ export default function PendingAndReceivingPayments() {
                         </span>
                       </td>
                       <td data-label="Payment Mode">{row.mode}</td>
-                      <td data-label="Remarks" style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
                       <td data-label="Action">
                         <button onClick={() => handleOpenEquateModal(row)} className="btn-secondary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
+                          Equate
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* COLUMN 2: PENDING PAYMENTS COLUMN */}
+        <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={20} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column</h2>
+                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Uncollected customer receivables ({pendingList.length} items)</span>
+              </div>
+            </div>
+
+            <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Balance:</span>
+              <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
+                <CurrencyAmount amount={totalPendingVal} />
+              </span>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>#</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Date</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Customer Name</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Brand</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Model</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Total Amount (₹)</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Paid Amount (₹)</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Pending Amount (₹)</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Payment Status</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Mode of Payment</th>
+                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingList.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      No pending payments in this column.
+                    </td>
+                  </tr>
+                ) : (
+                  pendingList.map((row, idx) => (
+                    <tr key={row.id}>
+                      <td data-label="#">{idx + 1}</td>
+                      <td data-label="Date">{row.date}</td>
+                      <td data-label="Customer" style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</td>
+                      <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
+                      <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
+                      <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                      <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                      <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#ea580c' }}>
+                        <CurrencyAmount amount={row.pendingAmount} />
+                      </td>
+                      <td data-label="Status">
+                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
+                          Pending
+                        </span>
+                      </td>
+                      <td data-label="Payment Mode">{row.mode}</td>
+                      <td data-label="Action">
+                        <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
                           Equate
                         </button>
                       </td>
