@@ -12,7 +12,11 @@ import {
   Edit,
   Trash2,
   X,
-  Camera
+  Camera,
+  CheckCircle,
+  XCircle,
+  ShoppingBag,
+  AlertTriangle
 } from 'lucide-react';
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
@@ -51,6 +55,46 @@ export default function OldInHandStock() {
     purchase_amount: '',
     paid_by: '',
     image_url: ''
+  });
+
+  // Book New Device Modal State (opened via Exchange button)
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [selectedDeviceForExchange, setSelectedDeviceForExchange] = useState(null);
+  const [bookForm, setBookForm] = useState({
+    oldBrand: '',
+    oldModel: '',
+    oldStorage: '128',
+    oldRam: '8',
+    oldAmount: '0',
+    oldPayBy: 'Staff',
+    oldImage: '',
+    exchangeValue: '0',
+    newBrand: 'Apple',
+    newModel: '',
+    newStorage: '256',
+    newRam: '8',
+    newColor: '',
+    newPayBy: '',
+    platform: 'Offline / Store',
+    purchasedAmount: '',
+    via: 'Cash',
+    accountId: ''
+  });
+
+  // Sell Modal State
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [selectedSellDevice, setSelectedSellDevice] = useState(null);
+  const [sellError, setSellError] = useState('');
+  const [sellForm, setSellForm] = useState({
+    model: '',
+    unit: 1,
+    soldBy: 'Jeet Khubchandani',
+    soldTo: '',
+    paymentType: 'COMPLETE',
+    soldPrice: '',
+    totalAmount: '',
+    paidAmount: '',
+    date: new Date().toISOString().split('T')[0]
   });
 
   const openEditModal = (device) => {
@@ -124,56 +168,313 @@ export default function OldInHandStock() {
     }
   };
 
-  const handleExchangeAction = (device) => {
-    // 1. Remove device immediately from Old In-hand Inventory view
-    setDevices(prev => prev.filter(item => String(item.id) !== String(device.id)));
+  const handleOpenBookModal = (device) => {
+    setSelectedDeviceForExchange(device);
+    const amt = String(device.purchase_amount || device.amount || 0);
+    setBookForm({
+      oldBrand: device.brand || 'Samsung',
+      oldModel: device.model || '',
+      oldStorage: String(device.storage || 128),
+      oldRam: String(device.ram || 8),
+      oldAmount: amt,
+      oldPayBy: device.paid_by || 'Staff',
+      oldImage: device.image_url || (device.images && device.images[0]) || '',
+      exchangeValue: amt,
+      newBrand: 'Apple',
+      newModel: '',
+      newStorage: '256',
+      newRam: '8',
+      newColor: '',
+      newPayBy: '',
+      platform: 'Offline / Store',
+      purchasedAmount: '',
+      via: 'Cash',
+      accountId: ''
+    });
+    setIsBookModalOpen(true);
+  };
 
-    // 2. Remove device from mrx_old_in_hand_stock local storage
-    try {
-      const storedInHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const updatedInHand = storedInHand.filter(item => String(item.id) !== String(device.id));
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedInHand));
-    } catch (e) {}
+  const handleBookSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedDeviceForExchange) return;
 
-    // 3. Save device into mrx_exchange_pool so it is available in the Exchange tab drop-down
-    const poolItem = {
-      id: device.id || `exch_${Date.now()}`,
-      brand: device.brand || '',
-      model: device.model || '',
-      storage: Number(device.storage) || 128,
-      ram: Number(device.ram) || 6,
-      colour: device.colour || 'Default',
-      amount: Number(device.purchase_amount || device.amount) || 0,
-      purchase_amount: Number(device.purchase_amount || device.amount) || 0,
-      paid_by: device.paid_by || 'Staff',
-      image_url: device.image_url || (device.images && device.images[0]) || ''
+    const oldAmt = Number(bookForm.oldAmount) || 0;
+    const newAmt = Number(bookForm.purchasedAmount) || 0;
+    const exVal = Number(bookForm.exchangeValue) || oldAmt;
+    const exchangeId = `EXCH-${Date.now()}`;
+
+    // 1. Add entry into mrx_exchanges so it's in sync with Exchange page
+    const newExchangeEntry = {
+      id: exchangeId,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      newBrand: bookForm.newBrand,
+      newModel: bookForm.newModel,
+      newStorage: Number(bookForm.newStorage) || 256,
+      newRam: Number(bookForm.newRam) || 12,
+      newColor: bookForm.newColor || 'Standard',
+      newPurchasedBy: bookForm.newPayBy || 'Customer',
+      newAmount: newAmt + exVal,
+      oldBrand: bookForm.oldBrand,
+      oldModel: bookForm.oldModel,
+      oldStorage: Number(bookForm.oldStorage) || 128,
+      oldRam: Number(bookForm.oldRam) || 8,
+      oldColor: selectedDeviceForExchange.colour || 'Default',
+      oldPurchasedBy: bookForm.oldPayBy || 'Staff',
+      oldAmount: oldAmt,
+      oldImage: bookForm.oldImage || '',
+      status: 'Booked'
     };
 
     try {
-      const exchangePool = JSON.parse(localStorage.getItem('mrx_exchange_pool') || '[]');
-      const filteredPool = exchangePool.filter(item => String(item.id) !== String(poolItem.id));
-      localStorage.setItem('mrx_exchange_pool', JSON.stringify([poolItem, ...filteredPool]));
-    } catch (e) {}
+      const existingExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+      localStorage.setItem('mrx_exchanges', JSON.stringify([newExchangeEntry, ...existingExchanges]));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    } catch (err) {
+      console.error(err);
+    }
 
-    // 4. Trigger real-time sync events across tabs & components
-    window.dispatchEvent(new Event('mrx_inventory_updated'));
-    window.dispatchEvent(new Event('mrx_exchange_pool_updated'));
-    window.dispatchEvent(new Event('storage'));
+    // 2. Update device in OldInHandStock with New Mobile data and status = 'Booked'
+    const updatedDevices = devices.map(d => {
+      if (String(d.id) === String(selectedDeviceForExchange.id)) {
+        return {
+          ...d,
+          status: 'Booked',
+          exchangeId: exchangeId,
+          newBrand: bookForm.newBrand,
+          newModel: bookForm.newModel,
+          newStorage: Number(bookForm.newStorage) || 256,
+          newRam: Number(bookForm.newRam) || 12,
+          newColor: bookForm.newColor || 'Standard',
+          newPurchasedBy: bookForm.newPayBy || 'Customer',
+          newAmount: newAmt + exVal,
+          exchangeValue: exVal
+        };
+      }
+      return d;
+    });
 
-    alert(`Device "${device.brand} ${device.model}" transferred to Exchange tab! You can now select it in Book New Mobile.`);
+    setDevices(updatedDevices);
+    try {
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error(err);
+    }
+
+    setIsBookModalOpen(false);
+    alert(`New device "${bookForm.newBrand} ${bookForm.newModel}" booked! Row updated with Deliver and Rejected options.`);
   };
 
-  // Sell Modal State
-  const [sellModal, setSellModal] = useState({
-    isOpen: false,
-    device: null,
-    sellingPrice: '',
-    customerName: '',
-    customerPhone: '',
-    paymentMethod: 'UPI',
-    paymentType: 'COMPLETE',
-    soldBy: 'Rohit'
-  });
+  const handleDeliverAction = (d) => {
+    // Add item to mrx_new_in_hand_stock & mrx_pending_payments
+    const newStockItem = {
+      sno: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      brand: d.newBrand || d.brand,
+      model: d.newModel || d.model,
+      storage: d.newStorage || d.storage,
+      ram: d.newRam || d.ram,
+      color: d.newColor || d.colour,
+      purchasedBy: d.newPurchasedBy || d.paid_by,
+      amount: d.newAmount || d.purchase_amount,
+      procedure: 'Sell'
+    };
+
+    const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+    localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
+
+    // Pending payment entry
+    const totalAmt = Number(d.newAmount || 0);
+    const paidAmt = Number(d.purchase_amount || 0);
+    const pendingAmt = Math.max(0, totalAmt - paidAmt);
+
+    const pendingPaymentItem = {
+      id: `EXCH-PAY-${Date.now()}`,
+      date: d.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: d.newPurchasedBy || 'Customer',
+      brand: d.newBrand || d.brand,
+      model: d.newModel || d.model,
+      imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
+      totalAmount: totalAmt,
+      paidAmount: paidAmt,
+      pendingAmount: pendingAmt,
+      status: pendingAmt === 0 ? 'Received' : 'Pending',
+      mode: 'Exchange Trade-in',
+      remarks: `Delivered from Old In-hand Stock`
+    };
+
+    const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+    localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingPaymentItem, ...existingPending]));
+    window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+
+    // Clear old mobile details and set status to 'Delivered'
+    const updatedDevices = devices.map(item => {
+      if (String(item.id) === String(d.id)) {
+        return {
+          ...item,
+          status: 'Delivered',
+          oldRemoved: true
+        };
+      }
+      return item;
+    });
+
+    setDevices(updatedDevices);
+    try {
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
+    // Update mrx_exchanges if exchangeId exists
+    if (d.exchangeId) {
+      try {
+        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+        const updatedExchanges = storedExchanges.map(ex => {
+          if (String(ex.id) === String(d.exchangeId)) {
+            return {
+              ...ex,
+              status: 'Delivered',
+              oldBrand: '-',
+              oldModel: '-',
+              oldStorage: '-',
+              oldRam: '-',
+              oldColor: '-',
+              oldPurchasedBy: '-',
+              oldAmount: 0
+            };
+          }
+          return ex;
+        });
+        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      } catch (e) {}
+    }
+
+    alert(`Device "${d.newBrand || d.brand} ${d.newModel || d.model}" marked as Delivered! Old mobile details removed and Sell button activated.`);
+  };
+
+  const handleRejectAction = (d) => {
+    // Revert row back to original old mobile phone data
+    const updatedDevices = devices.map(item => {
+      if (String(item.id) === String(d.id)) {
+        const { status, exchangeId, newBrand, newModel, newStorage, newRam, newColor, newPurchasedBy, newAmount, exchangeValue, oldRemoved, ...rest } = item;
+        return {
+          ...rest,
+          status: 'OLD_IN_HAND'
+        };
+      }
+      return item;
+    });
+
+    setDevices(updatedDevices);
+    try {
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
+    // Remove from mrx_exchanges if exchangeId exists
+    if (d.exchangeId) {
+      try {
+        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+        const updatedExchanges = storedExchanges.filter(ex => String(ex.id) !== String(d.exchangeId));
+        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      } catch (e) {}
+    }
+
+    alert(`Booking Rejected! Old mobile device restored with Exchange and Delete options.`);
+  };
+
+  const openSellModal = (device) => {
+    setSelectedSellDevice(device);
+    setSellError('');
+    const fullModelName = `${device.newBrand || device.brand} ${device.newModel || device.model}`;
+    const initialPrice = device.newAmount || device.purchase_amount || 0;
+
+    setSellForm({
+      model: fullModelName,
+      unit: 1,
+      soldBy: device.newPurchasedBy || device.paid_by || 'Jeet Khubchandani',
+      soldTo: device.newPurchasedBy || 'Customer',
+      paymentType: 'COMPLETE',
+      soldPrice: initialPrice,
+      totalAmount: initialPrice,
+      paidAmount: initialPrice,
+      date: new Date().toISOString().split('T')[0]
+    });
+    setIsSellModalOpen(true);
+  };
+
+  const handleSellSubmit = (e) => {
+    e.preventDefault();
+    setSellError('');
+
+    if (!selectedSellDevice) return;
+
+    const requestedUnits = Number(sellForm.unit) || 1;
+
+    // Record sale in mrx_sales
+    const newSale = {
+      id: `SALE-${Date.now()}`,
+      date: sellForm.date,
+      brand: selectedSellDevice.newBrand || selectedSellDevice.brand,
+      model: selectedSellDevice.newModel || selectedSellDevice.model,
+      customerName: sellForm.soldTo,
+      soldBy: sellForm.soldBy,
+      quantity: requestedUnits,
+      unitPrice: Number(sellForm.soldPrice) || 0,
+      totalAmount: Number(sellForm.totalAmount) || 0,
+      paidAmount: Number(sellForm.paidAmount) || 0,
+      paymentMode: sellForm.paymentType || 'Cash',
+      status: 'Sold'
+    };
+
+    const existingSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    localStorage.setItem('mrx_sales', JSON.stringify([newSale, ...existingSales]));
+
+    // Mark row as Sold in OldInHandStock
+    const updatedDevices = devices.map(item => {
+      if (String(item.id) === String(selectedSellDevice.id)) {
+        return {
+          ...item,
+          status: 'Sold'
+        };
+      }
+      return item;
+    });
+
+    setDevices(updatedDevices);
+    try {
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_sales_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
+    // Update mrx_exchanges if exchangeId exists
+    if (selectedSellDevice.exchangeId) {
+      try {
+        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+        const updatedExchanges = storedExchanges.map(ex => {
+          if (String(ex.id) === String(selectedSellDevice.exchangeId)) {
+            return {
+              ...ex,
+              status: 'Sold'
+            };
+          }
+          return ex;
+        });
+        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      } catch (e) {}
+    }
+
+    setIsSellModalOpen(false);
+    alert(`Successfully sold "${selectedSellDevice.newBrand || selectedSellDevice.brand} ${selectedSellDevice.newModel || selectedSellDevice.model}"! Status updated to Sold ✔️.`);
+  };
 
   const fetchOldInHandStock = async () => {
     try {
@@ -207,7 +508,7 @@ export default function OldInHandStock() {
         const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
         const date = item.intake_date || item.created_at || item.date || '';
 
-        const fingerprint = `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+        const fingerprint = `${item.id || ''}|${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);
@@ -215,7 +516,7 @@ export default function OldInHandStock() {
         }
       }
 
-      setDevices(allInHand.filter(d => d.status === 'OLD_IN_HAND' || !d.status));
+      setDevices(allInHand.filter(d => d.status === 'OLD_IN_HAND' || !d.status || d.status === 'Booked' || d.status === 'BOOKED' || d.status === 'Delivered' || d.status === 'Sold'));
 
       const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
       setStats(statsRes.data);
@@ -260,27 +561,6 @@ export default function OldInHandStock() {
     }
     return true;
   });
-
-  const handleSellSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await saleService.createSale({
-        device_id: sellModal.device.id,
-        selling_price: parseFloat(sellModal.sellingPrice),
-        customer_name: sellModal.customerName,
-        customer_phone: sellModal.customerPhone,
-        payment_method: sellModal.paymentMethod,
-        payment_type: sellModal.paymentType,
-        sold_by: sellModal.soldBy
-      });
-      alert('Sale transaction recorded successfully!');
-      setSellModal({ ...sellModal, isOpen: false });
-      fetchOldInHandStock();
-    } catch (err) {
-      alert(err.message || 'Failed to record sale');
-    }
-  };
-
   const handleExportXls = () => {
     const headers = ['#', 'Device Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchase Amount (Rs)', 'Intake Date', 'Status'];
     const rows = filteredDevices.map((d, idx) => [
@@ -433,176 +713,115 @@ export default function OldInHandStock() {
                 </td>
               </tr>
             ) : (
-              filteredDevices.map((d) => (
-                <tr key={d.id}>
-                  <td data-label="Image">
-                    {d.images && d.images.length > 1 ? (
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <img 
-                          src={d.images[0]} 
-                          alt="Front" 
-                          className="device-thumb" 
-                          title="Front View"
-                        />
-                        <img 
-                          src={d.images[1]} 
-                          alt="Back" 
-                          className="device-thumb" 
-                          title="Back View"
-                        />
-                      </div>
-                    ) : (
-                      <img 
-                        src={d.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
-                        alt={d.model} 
-                        className="device-thumb" 
-                      />
-                    )}
-                  </td>
+              filteredDevices.map((d) => {
+                const isBooked = d.status === 'Booked' || d.status === 'BOOKED';
+                const isDelivered = d.status === 'Delivered';
+                const isSold = d.status === 'Sold';
+                const showNewDetails = isBooked || isDelivered || isSold;
 
-                  <td data-label="Brand" style={{ fontWeight: 700 }}>{d.brand}</td>
-                  <td data-label="Model">{d.model}</td>
-                  <td data-label="Storage">{d.storage} GB</td>
-                  <td data-label="RAM">{d.ram} GB</td>
-                  <td data-label="Color Name"><span style={{ fontWeight: 600 }}>{d.colour}</span></td>
-                  <td data-label="Purchase Price"><CurrencyAmount amount={d.purchase_amount} /></td>
-                  <td data-label="Purchased By"><span style={{ color: '#0284c7', fontWeight: 600 }}>{d.paid_by || 'Rohit'}</span></td>
-                  <td data-label="Date Added">{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
-                  <td data-label="Action" style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                      {d.isExchanged ? (
-                        <span style={{ 
-                          background: '#fef9c3', 
-                          color: '#854d0e', 
-                          border: '1px solid #fef08a', 
-                          padding: '6px 12px', 
-                          borderRadius: '6px', 
-                          fontSize: '12px', 
-                          fontWeight: 800 
-                        }}>
-                          Exchange ✔️
-                        </span>
+                const displayBrand = showNewDetails ? (d.newBrand || d.brand) : d.brand;
+                const displayModel = showNewDetails ? (d.newModel || d.model) : d.model;
+                const displayStorage = showNewDetails ? (d.newStorage || d.storage) : d.storage;
+                const displayRam = showNewDetails ? (d.newRam || d.ram) : d.ram;
+                const displayColor = showNewDetails ? (d.newColor || d.colour) : d.colour;
+                const displayAmount = showNewDetails ? (d.newAmount || d.purchase_amount) : d.purchase_amount;
+                const displayPurchasedBy = showNewDetails ? (d.newPurchasedBy || d.paid_by) : d.paid_by;
+
+                return (
+                  <tr key={d.id}>
+                    <td data-label="Image">
+                      {d.images && d.images.length > 1 ? (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <img 
+                            src={d.images[0]} 
+                            alt="Front" 
+                            className="device-thumb" 
+                            title="Front View"
+                          />
+                          <img 
+                            src={d.images[1]} 
+                            alt="Back" 
+                            className="device-thumb" 
+                            title="Back View"
+                          />
+                        </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleExchangeAction(d)}
-                          style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
-                          title="Transfer device data to Exchange tab"
-                        >
-                          Exchange
-                        </button>
+                        <img 
+                          src={d.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
+                          alt={displayModel} 
+                          className="device-thumb" 
+                        />
                       )}
+                    </td>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteDevice(d.id)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    <td data-label="Brand" style={{ fontWeight: 700 }}>{displayBrand}</td>
+                    <td data-label="Model">{displayModel}</td>
+                    <td data-label="Storage">{displayStorage} GB</td>
+                    <td data-label="RAM">{displayRam} GB</td>
+                    <td data-label="Color Name"><span style={{ fontWeight: 600 }}>{displayColor || '-'}</span></td>
+                    <td data-label="Purchase Price">
+                      <CurrencyAmount amount={displayAmount} />
+                      {showNewDetails && <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>}
+                    </td>
+                    <td data-label="Purchased By"><span style={{ color: '#0284c7', fontWeight: 600 }}>{displayPurchasedBy || 'Rohit'}</span></td>
+                    <td data-label="Date Added">{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
+                    <td data-label="Action" style={{ textAlign: 'center' }}>
+                      {isSold ? (
+                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Sold ✔️
+                        </span>
+                      ) : isDelivered ? (
+                        <button 
+                          onClick={() => openSellModal(d)}
+                          className="btn-primary"
+                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <ShoppingBag size={14} /> Sell
+                        </button>
+                      ) : isBooked ? (
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                          <button 
+                            onClick={() => handleDeliverAction(d)}
+                            style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Deliver new phone -> Remove old phone details & enable Sell button"
+                          >
+                            <CheckCircle size={14} /> Deliver
+                          </button>
+                          <button 
+                            onClick={() => handleRejectAction(d)}
+                            style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Reject booking -> Restore old phone details with Exchange and Delete options"
+                          >
+                            <XCircle size={14} /> Rejected
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBookModal(d)}
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                            title="Book New Device for exchange"
+                          >
+                            Exchange
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDevice(d.id)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
-
-      {/* Sell Modal */}
-      {sellModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3 style={{ fontSize: '18px', fontWeight: 800 }}>
-                Sell {sellModal.device?.brand} {sellModal.device?.model}
-              </h3>
-              <button onClick={() => setSellModal({ ...sellModal, isOpen: false })}>
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSellSubmit}>
-              <div className="modal-body">
-                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
-                  <div><strong>Purchase Price:</strong> ₹{parseFloat(sellModal.device?.purchase_amount || 0).toLocaleString('en-IN')}</div>
-                  <div><strong>Purchased By:</strong> {sellModal.device?.paid_by}</div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Selling Price (₹ INR) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="Enter selling price"
-                    value={sellModal.sellingPrice}
-                    onChange={(e) => setSellModal({ ...sellModal, sellingPrice: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Customer Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Customer name"
-                      value={sellModal.customerName}
-                      onChange={(e) => setSellModal({ ...sellModal, customerName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Customer Phone</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="10-digit number"
-                      value={sellModal.customerPhone}
-                      onChange={(e) => setSellModal({ ...sellModal, customerPhone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentMethod}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentMethod: e.target.value })}
-                    >
-                      <option value="UPI">UPI</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Card">Credit/Debit Card</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Payment Type</label>
-                    <select
-                      className="form-control"
-                      value={sellModal.paymentType}
-                      onChange={(e) => setSellModal({ ...sellModal, paymentType: e.target.value })}
-                    >
-                      <option value="COMPLETE">Complete Payment</option>
-                      <option value="INSTALLMENT">Installment</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" onClick={() => setSellModal({ ...sellModal, isOpen: false })} className="btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" style={{ background: '#059669' }}>
-                  Complete Sale & Record in Ledger
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Edit Device Modal */}
       {isEditModalOpen && (
@@ -698,6 +917,272 @@ export default function OldInHandStock() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Book New Device Modal (Triggered by clicking Exchange on an Old In-hand item) */}
+      {isBookModalOpen && selectedDeviceForExchange && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Book New Device for Exchange</h2>
+                <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px', margin: 0 }}>Enter booking details for the new device to complete the exchange transaction.</p>
+              </div>
+              <button onClick={() => setIsBookModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleBookSubmit}>
+              {/* SECTION 1: Exchange Old Phone (Pre-filled from selected old in-hand device) */}
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#334155', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  🔄 Selected Old Phone Details
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                  <div><strong>Old Brand:</strong> {bookForm.oldBrand}</div>
+                  <div><strong>Old Model:</strong> {bookForm.oldModel}</div>
+                  <div><strong>Storage / RAM:</strong> {bookForm.oldStorage} GB / {bookForm.oldRam} GB</div>
+                  <div><strong>Trade Valuation:</strong> ₹{Number(bookForm.oldAmount).toLocaleString()}</div>
+                  <div><strong>Evaluated By:</strong> {bookForm.oldPayBy}</div>
+                </div>
+              </div>
+
+              {/* SECTION 2: Booking New Phone */}
+              <div style={{ background: '#f0f9ff', padding: '16px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '20px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0369a1', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📱 Booking New Phone Details
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label className="form-label">Exchange Value (₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">New Phone Brand *</label>
+                    <select className="form-control" value={bookForm.newBrand} onChange={(e) => setBookForm({ ...bookForm, newBrand: e.target.value })}>
+                      <option value="Apple">Apple</option>
+                      <option value="Samsung">Samsung</option>
+                      <option value="Google Pixel">Google Pixel</option>
+                      <option value="OnePlus">OnePlus</option>
+                      <option value="Vivo">Vivo</option>
+                      <option value="Oppo">Oppo</option>
+                      <option value="Xiaomi">Xiaomi</option>
+                      <option value="Nothing">Nothing</option>
+                      <option value="Motorola">Motorola</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">New Phone Model *</label>
+                    <input type="text" className="form-control" placeholder="e.g. Pixel 8 Pro / iPhone 15 Pro" value={bookForm.newModel} onChange={(e) => setBookForm({ ...bookForm, newModel: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Storage (GB) *</label>
+                    <select className="form-control" value={bookForm.newStorage} onChange={(e) => setBookForm({ ...bookForm, newStorage: e.target.value })}>
+                      <option value="128">128 GB</option>
+                      <option value="256">256 GB</option>
+                      <option value="512">512 GB</option>
+                      <option value="1024">1 TB</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">RAM (GB) *</label>
+                    <select className="form-control" value={bookForm.newRam} onChange={(e) => setBookForm({ ...bookForm, newRam: e.target.value })}>
+                      <option value="6">6 GB</option>
+                      <option value="8">8 GB</option>
+                      <option value="12">12 GB</option>
+                      <option value="16">16 GB</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Color *</label>
+                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
+                  </div>
+                  <div>
+                    <label className="form-label">Customer Name / Pay By *</label>
+                    <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Platform *</label>
+                    <select className="form-control" value={bookForm.platform} onChange={(e) => setBookForm({ ...bookForm, platform: e.target.value })}>
+                      <option value="Offline / Store">Offline / Store</option>
+                      <option value="Website">Website</option>
+                      <option value="Amazon">Amazon</option>
+                      <option value="Flipkart">Flipkart</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Purchased Amount (Paid ₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Amount paid" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Via (Cash/Card/UPI) *</label>
+                    <select className="form-control" value={bookForm.via} onChange={(e) => setBookForm({ ...bookForm, via: e.target.value })}>
+                      <option value="Cash">Cash</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Card">Card</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Account ID / UTR</label>
+                    <input type="text" className="form-control" placeholder="Enter account ID / Transaction ref" value={bookForm.accountId} onChange={(e) => setBookForm({ ...bookForm, accountId: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button type="button" onClick={() => setIsBookModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Submit Booking</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Mobile Modal */}
+      {isSellModalOpen && selectedSellDevice && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#059669', margin: 0 }}>Sell Mobile</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Complete sales transaction for delivered exchange device.</p>
+              </div>
+              <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {sellError && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={16} />
+                <span>{sellError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSellSubmit}>
+              {/* Device Model */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Device Model *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={sellForm.model} 
+                  onChange={(e) => setSellForm({ ...sellForm, model: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* Sold by */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Sold by *</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={sellForm.soldBy} 
+                    onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
+                    required 
+                  />
+                </div>
+
+                {/* Unit */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#dc2626' }}>
+                    Sell Quantity *
+                  </label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.unit} 
+                    onChange={(e) => {
+                      const u = parseInt(e.target.value) || 0;
+                      const sp = Number(sellForm.soldPrice) || 0;
+                      setSellForm({ ...sellForm, unit: u, totalAmount: u * sp });
+                    }} 
+                    min="1"
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Customer Name */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Customer Name *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="Enter customer or party name" 
+                  value={sellForm.soldTo} 
+                  onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* Price Per Unit */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Price Per Unit (₹) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.soldPrice} 
+                    onChange={(e) => {
+                      const sp = e.target.value;
+                      const u = Number(sellForm.unit) || 1;
+                      setSellForm({ ...sellForm, soldPrice: sp, totalAmount: Number(sp) * u });
+                    }} 
+                    required 
+                  />
+                </div>
+
+                {/* Total Selling Price */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Selling Price (₹) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.totalAmount} 
+                    onChange={(e) => setSellForm({ ...sellForm, totalAmount: e.target.value })} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Paid Amount */}
+              <div style={{ marginBottom: '18px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Paid Amount (₹) *</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="₹ Amount paid so far" 
+                  value={sellForm.paidAmount} 
+                  onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ 
+                    padding: '10px 24px', 
+                    fontWeight: 800,
+                    background: '#059669'
+                  }}
+                >
+                  Confirm Sale ({sellForm.unit} Unit)
+                </button>
               </div>
             </form>
           </div>
