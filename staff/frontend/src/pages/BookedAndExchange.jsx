@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText } from 'lucide-react';
+import { RefreshCw, Plus, Home, Search, X, CheckCircle, XCircle, MoreHorizontal, FileText, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
@@ -15,6 +15,22 @@ export default function BookedAndExchange() {
   const [mobileBrand, setMobileBrand] = useState('All');
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [expandedImage, setExpandedImage] = useState(null);
+
+  // Sell Mobile Modal State
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [selectedSellRow, setSelectedSellRow] = useState(null);
+  const [sellError, setSellError] = useState('');
+  const [sellForm, setSellForm] = useState({
+    model: '',
+    unit: 1,
+    soldBy: 'Jeet Khubchandani',
+    soldTo: '',
+    paymentType: 'COMPLETE',
+    soldPrice: '',
+    totalAmount: '',
+    paidAmount: '',
+    date: new Date().toISOString().split('T')[0]
+  });
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -306,7 +322,7 @@ export default function BookedAndExchange() {
         pendingAmount: pendingAmt,
         status: pendingAmt === 0 ? 'Received' : 'Pending',
         mode: 'Exchange Trade-in',
-        remarks: `Delivered from Exchange (Trade-in: ${itemToDeliver.oldBrand} ${itemToDeliver.oldModel})`
+        remarks: `Delivered from Exchange`
       };
 
       const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
@@ -315,15 +331,102 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('storage'));
     }
 
-    const updated = exchanges.filter(item => item.id !== id);
+    // Update status to Delivered and clear old mobile details
+    const updated = exchanges.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status: 'Delivered',
+          oldBrand: '-',
+          oldModel: '-',
+          oldStorage: '-',
+          oldRam: '-',
+          oldColor: '-',
+          oldPurchasedBy: '-',
+          oldAmount: 0,
+          oldImage: ''
+        };
+      }
+      return item;
+    });
+
     setExchanges(updated);
     try {
       localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-hand Stock & Pending Payments.`);
-    navigate('/pending-payments');
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Old mobile details removed and Sell option activated.`);
+  };
+
+  const openSellModal = (row) => {
+    setSelectedSellRow(row);
+    setSellError('');
+    const fullModelName = `${row.newBrand} ${row.newModel}`;
+    const initialPrice = row.newAmount || 0;
+
+    setSellForm({
+      model: fullModelName,
+      unit: 1,
+      soldBy: row.newPurchasedBy || 'Jeet Khubchandani',
+      soldTo: row.newPurchasedBy || 'Customer',
+      paymentType: 'COMPLETE',
+      soldPrice: initialPrice,
+      totalAmount: initialPrice,
+      paidAmount: initialPrice,
+      date: new Date().toISOString().split('T')[0]
+    });
+    setIsSellModalOpen(true);
+  };
+
+  const handleSellSubmit = (e) => {
+    e.preventDefault();
+    setSellError('');
+
+    if (!selectedSellRow) return;
+
+    const requestedUnits = Number(sellForm.unit) || 1;
+
+    // Record sale in mrx_sales
+    const newSale = {
+      id: `SALE-${Date.now()}`,
+      date: sellForm.date,
+      brand: selectedSellRow.newBrand,
+      model: selectedSellRow.newModel,
+      customerName: sellForm.soldTo,
+      soldBy: sellForm.soldBy,
+      quantity: requestedUnits,
+      unitPrice: Number(sellForm.soldPrice) || 0,
+      totalAmount: Number(sellForm.totalAmount) || 0,
+      paidAmount: Number(sellForm.paidAmount) || 0,
+      paymentMode: sellForm.paymentType || 'Cash',
+      status: 'Sold'
+    };
+
+    const existingSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    localStorage.setItem('mrx_sales', JSON.stringify([newSale, ...existingSales]));
+
+    // Mark row as Sold in exchanges
+    const updated = exchanges.map(item => {
+      if (item.id === selectedSellRow.id) {
+        return {
+          ...item,
+          status: 'Sold'
+        };
+      }
+      return item;
+    });
+
+    setExchanges(updated);
+    try {
+      localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      window.dispatchEvent(new Event('mrx_sales_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
+    setIsSellModalOpen(false);
+    alert(`Successfully sold "${selectedSellRow.newBrand} ${selectedSellRow.newModel}"! Status updated to Sold ✔️.`);
   };
 
   const handleCancelAction = (id) => {
@@ -685,22 +788,36 @@ export default function BookedAndExchange() {
                     </td>
 
                     <td data-label="Action">
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      {row.status === 'Sold' ? (
+                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Sold ✔️
+                        </span>
+                      ) : row.status === 'Delivered' ? (
                         <button 
-                          onClick={() => handleDeliverAction(row.id)}
-                          style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Deliver new phone -> Move to New In-hand Inventory"
+                          onClick={() => openSellModal(row)}
+                          className="btn-primary"
+                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
-                          <CheckCircle size={14} /> Deliver
+                          <ShoppingBag size={14} /> Sell
                         </button>
-                        <button 
-                          onClick={() => handleCancelAction(row.id)}
-                          style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Rejected exchange -> Move old device to Old In-hand Inventory"
-                        >
-                          <XCircle size={14} /> Rejected
-                        </button>
-                      </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button 
+                            onClick={() => handleDeliverAction(row.id)}
+                            style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Deliver new phone -> Remove old phone details & enable Sell button"
+                          >
+                            <CheckCircle size={14} /> Deliver
+                          </button>
+                          <button 
+                            onClick={() => handleCancelAction(row.id)}
+                            style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Rejected exchange -> Move old device to Old In-hand Inventory"
+                          >
+                            <XCircle size={14} /> Rejected
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -751,45 +868,61 @@ export default function BookedAndExchange() {
                       <CurrencyAmount amount={row.newAmount} />
                     </td>
                     <td data-label="Status">
-                      <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                      <span style={{ background: row.status === 'Sold' ? '#dcfce7' : row.status === 'Delivered' ? '#dbeafe' : '#e0f2fe', color: row.status === 'Sold' ? '#15803d' : row.status === 'Delivered' ? '#1e40af' : '#0369a1', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
                         {row.status || 'Booked'}
                       </span>
                     </td>
                     <td data-label="Action" style={{ position: 'relative' }}>
-                      <button
-                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                        className="btn-secondary"
-                        style={{ padding: '6px' }}
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
+                      {row.status === 'Sold' ? (
+                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Sold ✔️
+                        </span>
+                      ) : row.status === 'Delivered' ? (
+                        <button 
+                          onClick={() => openSellModal(row)}
+                          className="btn-primary"
+                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <ShoppingBag size={14} /> Sell
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                            className="btn-secondary"
+                            style={{ padding: '6px' }}
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
 
-                      {activeMenuId === row.id && (
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: '100%',
-                          zIndex: 50,
-                          background: '#ffffff',
-                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                          borderRadius: '8px',
-                          padding: '6px',
-                          minWidth: '180px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <button
-                            onClick={() => handleDeliverAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                          >
-                            <CheckCircle size={14} /> Delivered (New In-hand)
-                          </button>
-                          <button
-                            onClick={() => handleCancelAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                          >
-                            <XCircle size={14} /> Cancel (Old In-hand)
-                          </button>
-                        </div>
+                          {activeMenuId === row.id && (
+                            <div style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: '100%',
+                              zIndex: 50,
+                              background: '#ffffff',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                              borderRadius: '8px',
+                              padding: '6px',
+                              minWidth: '180px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              <button
+                                onClick={() => handleDeliverAction(row.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                              >
+                                <CheckCircle size={14} /> Delivered (New In-hand)
+                              </button>
+                              <button
+                                onClick={() => handleCancelAction(row.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                              >
+                                <XCircle size={14} /> Cancel (Old In-hand)
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>
@@ -841,45 +974,61 @@ export default function BookedAndExchange() {
                       <CurrencyAmount amount={row.oldAmount} />
                     </td>
                     <td data-label="Trade Status">
-                      <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
-                        Trade-in Received
+                      <span style={{ background: row.status === 'Sold' ? '#dcfce7' : row.status === 'Delivered' ? '#dbeafe' : '#dcfce7', color: row.status === 'Sold' ? '#15803d' : row.status === 'Delivered' ? '#1e40af' : '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                        {row.status === 'Delivered' ? 'Delivered' : row.status === 'Sold' ? 'Sold' : 'Trade-in Received'}
                       </span>
                     </td>
                     <td data-label="Action" style={{ position: 'relative' }}>
-                      <button
-                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                        className="btn-secondary"
-                        style={{ padding: '6px' }}
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
+                      {row.status === 'Sold' ? (
+                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Sold ✔️
+                        </span>
+                      ) : row.status === 'Delivered' ? (
+                        <button 
+                          onClick={() => openSellModal(row)}
+                          className="btn-primary"
+                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <ShoppingBag size={14} /> Sell
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                            className="btn-secondary"
+                            style={{ padding: '6px' }}
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
 
-                      {activeMenuId === row.id && (
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: '100%',
-                          zIndex: 50,
-                          background: '#ffffff',
-                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                          borderRadius: '8px',
-                          padding: '6px',
-                          minWidth: '180px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <button
-                            onClick={() => handleDeliverAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                          >
-                            <CheckCircle size={14} /> Delivered (New In-hand)
-                          </button>
-                          <button
-                            onClick={() => handleCancelAction(row.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
-                          >
-                            <XCircle size={14} /> Cancel (Old In-hand)
-                          </button>
-                        </div>
+                          {activeMenuId === row.id && (
+                            <div style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: '100%',
+                              zIndex: 50,
+                              background: '#ffffff',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                              borderRadius: '8px',
+                              padding: '6px',
+                              minWidth: '180px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              <button
+                                onClick={() => handleDeliverAction(row.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                              >
+                                <CheckCircle size={14} /> Delivered (New In-hand)
+                              </button>
+                              <button
+                                onClick={() => handleCancelAction(row.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '4px' }}
+                              >
+                                <XCircle size={14} /> Cancel (Old In-hand)
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>
@@ -1112,6 +1261,146 @@ export default function BookedAndExchange() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Submit Booking</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Mobile Modal (Identical to New In-Hand Sell Modal with all features) */}
+      {isSellModalOpen && selectedSellRow && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#059669', margin: 0 }}>Sell Mobile</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Complete sales transaction for delivered exchange device.</p>
+              </div>
+              <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {sellError && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={16} />
+                <span>{sellError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSellSubmit}>
+              {/* Device Model */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Device Model *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={sellForm.model} 
+                  onChange={(e) => setSellForm({ ...sellForm, model: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* Sold by */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Sold by *</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={sellForm.soldBy} 
+                    onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
+                    required 
+                  />
+                </div>
+
+                {/* Unit */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#dc2626' }}>
+                    Sell Quantity *
+                  </label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.unit} 
+                    onChange={(e) => {
+                      const u = parseInt(e.target.value) || 0;
+                      const sp = Number(sellForm.soldPrice) || 0;
+                      setSellForm({ ...sellForm, unit: u, totalAmount: u * sp });
+                    }} 
+                    min="1"
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Customer Name */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Customer Name *</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="Enter customer or party name" 
+                  value={sellForm.soldTo} 
+                  onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* Price Per Unit */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Price Per Unit (₹) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.soldPrice} 
+                    onChange={(e) => {
+                      const sp = e.target.value;
+                      const u = Number(sellForm.unit) || 1;
+                      setSellForm({ ...sellForm, soldPrice: sp, totalAmount: Number(sp) * u });
+                    }} 
+                    required 
+                  />
+                </div>
+
+                {/* Total Selling Price */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Selling Price (₹) *</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={sellForm.totalAmount} 
+                    onChange={(e) => setSellForm({ ...sellForm, totalAmount: e.target.value })} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Paid Amount */}
+              <div style={{ marginBottom: '18px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Paid Amount (₹) *</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="₹ Amount paid so far" 
+                  value={sellForm.paidAmount} 
+                  onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ 
+                    padding: '10px 24px', 
+                    fontWeight: 800,
+                    background: '#059669'
+                  }}
+                >
+                  Confirm Sale ({sellForm.unit} Unit)
+                </button>
               </div>
             </form>
           </div>
