@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CircleDollarSign, Plus, Home, ShoppingCart, X, CreditCard, CheckCircle, Clock, FileText, ArrowUpRight } from 'lucide-react';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -30,22 +30,62 @@ export default function PendingAndReceivingPayments() {
     pendingPayment: '',
     equatedBy: user?.name ? (user.name.toLowerCase().includes('jeet') ? 'Jeet' : user.name) : 'Jeet',
     customerName: '',
+    orderName: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
     newPay: '',
     date: new Date().toISOString().split('T')[0]
   });
 
-  const [payments, setPayments] = useState([
-    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
-    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
-    { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card', remarks: 'Installment 2 pending' },
-    { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid via GPay' },
-    { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI', remarks: 'Remaining next month' },
-    { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Full payment' },
-    { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card', remarks: 'Post-dated cheque' },
-    { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid' },
-    { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash', remarks: 'Balance due 25 Sep' }
-  ]);
+  const [payments, setPayments] = useState(() => {
+    const stored = localStorage.getItem('mrx_pending_payments');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', orderName: 'Jeet / Ord-8891', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI', remarks: 'Balance in 2 weeks' },
+      { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', orderName: 'Sonal / Ord-9012', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Paid in full' },
+      { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', orderName: 'Rohit / Ord-4431', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card', remarks: 'Installment 2 pending' },
+      { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', orderName: 'Neha / Ord-1029', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid via GPay' },
+      { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', orderName: 'Aman / Ord-7720', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI', remarks: 'Remaining next month' },
+      { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', orderName: 'Karan / Ord-3321', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash', remarks: 'Full payment' },
+      { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', orderName: 'Vikram / Ord-6671', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card', remarks: 'Post-dated cheque' },
+      { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', orderName: 'Sunal / Ord-2290', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI', remarks: 'Paid' },
+      { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', orderName: 'Ananya / Ord-5512', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash', remarks: 'Balance due 25 Sep' }
+    ];
+  });
+
+  // Sync payments from localStorage & external update events
+  useEffect(() => {
+    const syncPayments = () => {
+      const stored = localStorage.getItem('mrx_pending_payments');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) setPayments(parsed);
+        } catch (e) {}
+      }
+    };
+    syncPayments();
+    window.addEventListener('mrx_payments_updated', syncPayments);
+    window.addEventListener('mrx_exchanges_updated', syncPayments);
+    return () => {
+      window.removeEventListener('mrx_payments_updated', syncPayments);
+      window.removeEventListener('mrx_exchanges_updated', syncPayments);
+    };
+  }, []);
+
+  const savePaymentsToStorage = (updatedList) => {
+    setPayments(updatedList);
+    try {
+      localStorage.setItem('mrx_pending_payments', JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('mrx_payments_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const toYMD = (val) => {
     if (!val) return '';
@@ -63,8 +103,9 @@ export default function PendingAndReceivingPayments() {
     const pending = row ? row.pendingAmount : '';
     setEquateForm({
       pendingPayment: String(pending),
-      equatedBy: 'Jeet',
+      equatedBy: user?.name ? (user.name.toLowerCase().includes('jeet') ? 'Jeet' : user.name) : 'Jeet',
       customerName: row ? row.customerName : '',
+      orderName: row ? (row.orderName || row.newColor || '') : '',
       paymentType: row && row.pendingAmount === 0 ? 'COMPLETE' : 'INSTALLMENT',
       newPay: '',
       date: row ? (toYMD(row.date) || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
@@ -94,60 +135,86 @@ export default function PendingAndReceivingPayments() {
     const q = (globalSearch || '').trim().toLowerCase();
     if (q) {
       const matchCustomer = item.customerName.toLowerCase().includes(q);
+      const matchOrder = (item.orderName || '').toLowerCase().includes(q);
       const matchBrand = item.brand.toLowerCase().includes(q);
       const matchModel = item.model.toLowerCase().includes(q);
-      if (!matchCustomer && !matchBrand && !matchModel) return false;
+      if (!matchCustomer && !matchOrder && !matchBrand && !matchModel) return false;
     }
     return true;
   });
+
+  // Split into Pending and Receiving Payments
+  const pendingPayments = filteredPayments.filter(p => p.status === 'Pending' || p.pendingAmount > 0);
+  const receivingPayments = filteredPayments.filter(p => p.status === 'Received' || p.pendingAmount === 0);
+
+  const totalPendingAmount = pendingPayments.reduce((sum, item) => sum + item.pendingAmount, 0);
+  const totalReceivedAmount = receivingPayments.reduce((sum, item) => sum + (item.paidAmount || item.totalAmount), 0);
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
     const newPayAmt = Number(equateForm.newPay) || 0;
     if (selectedPayment) {
-      setPayments(prev => prev.map(p => {
+      const updated = payments.map(p => {
         if (p.id === selectedPayment.id) {
           const newPaidAmount = p.paidAmount + newPayAmt;
           const newPendingAmount = Math.max(0, p.pendingAmount - newPayAmt);
           return {
             ...p,
             customerName: equateForm.customerName || p.customerName,
+            orderName: equateForm.orderName || p.orderName,
             paidAmount: newPaidAmount,
             pendingAmount: newPendingAmount,
             status: newPendingAmount === 0 ? 'Received' : 'Pending'
           };
         }
         return p;
-      }));
+      });
+      savePaymentsToStorage(updated);
       alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! New pay of ₹${newPayAmt.toLocaleString()} recorded. Equated by: ${equateForm.equatedBy}`);
     } else {
-      alert(`Equated successfully for ${equateForm.customerName || 'Customer'}! Equated by: ${equateForm.equatedBy}`);
+      const newRec = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        customerName: equateForm.customerName || 'Customer',
+        orderName: equateForm.orderName || 'Manual Entry',
+        brand: 'Other',
+        model: 'Device',
+        totalAmount: Number(equateForm.pendingPayment) || newPayAmt,
+        paidAmount: newPayAmt,
+        pendingAmount: Math.max(0, (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt),
+        status: (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt === 0 ? 'Received' : 'Pending',
+        mode: 'Cash',
+        remarks: `Equated by ${equateForm.equatedBy}`
+      };
+      savePaymentsToStorage([newRec, ...payments]);
+      alert(`Payment added successfully for ${equateForm.customerName || 'Customer'}! Equated by: ${equateForm.equatedBy}`);
     }
     setIsEquateModalOpen(false);
   };
 
   const handleExportPdf = () => {
-    const headers = ['#', 'Date', 'Customer', 'Device Model', 'Total (Rs)', 'Paid (Rs)', 'Pending (Rs)', 'Status', 'Mode'];
+    const headers = ['#', 'Type', 'Date', 'Customer', 'Order Name', 'Device Model', 'Total (Rs)', 'Paid (Rs)', 'Pending (Rs)', 'Status'];
     const rows = filteredPayments.map((item, idx) => [
       idx + 1,
+      item.pendingAmount > 0 ? 'Pending' : 'Received',
       item.date,
       item.customerName,
+      item.orderName || '-',
       `${item.brand} ${item.model}`,
       `Rs. ${item.totalAmount.toLocaleString()}`,
       `Rs. ${item.paidAmount.toLocaleString()}`,
       `Rs. ${item.pendingAmount.toLocaleString()}`,
-      item.status,
-      item.mode
+      item.status
     ]);
-    const totalPending = filteredPayments.reduce((sum, item) => sum + item.pendingAmount, 0);
     setExportModalConfig({
       isOpen: true,
-      title: 'Payments & Receivables Report',
+      title: 'Pending and Receiving Payments Report',
       headers,
       rows,
       filename: `Payments_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Pending', value: `Rs. ${totalPending.toLocaleString()}`, color: '#dc2626' }
+        { label: 'Total Pending', value: `Rs. ${totalPendingAmount.toLocaleString()}`, color: '#ea580c' },
+        { label: 'Total Received', value: `Rs. ${totalReceivedAmount.toLocaleString()}`, color: '#059669' }
       ]
     });
   };
@@ -158,11 +225,11 @@ export default function PendingAndReceivingPayments() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Pending and Receiving Payments</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Track pending payments and received payments for purchased and exchanged devices.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Two distinct columns tracking Pending and Receiving payments for booked & exchanged devices.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Pending and Receiving Payments</span>
+            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Pending & Receiving</span>
           </div>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
@@ -177,116 +244,203 @@ export default function PendingAndReceivingPayments() {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>From Date</label>
-          <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+          <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ width: '150px', padding: '7px 12px' }} />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>To Date</label>
-          <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
+          <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '150px', padding: '7px 12px' }} />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Payment Status</label>
-          <select className="form-control" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
-            <option>All</option>
-            <option>Pending</option>
-            <option>Received</option>
+          <select className="form-control" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} style={{ width: '140px', padding: '7px 12px' }}>
+            <option value="All">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Received">Received</option>
           </select>
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Person / Customer</label>
           <select className="form-control" value={personCustomer} onChange={(e) => setPersonCustomer(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
-            <option>All</option>
-            <option>Jeet Khubchandani</option>
-            <option>Sonal Wadwani</option>
-            <option>Rohit Kumar</option>
-            <option>Neha Gupta</option>
-            <option>Aman Verma</option>
+            <option value="All">All</option>
+            <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+            <option value="Sonal Wadwani">Sonal Wadwani</option>
+            <option value="Rohit Kumar">Rohit Kumar</option>
+            <option value="Neha Gupta">Neha Gupta</option>
+            <option value="Aman Verma">Aman Verma</option>
           </select>
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Mobile Brand</label>
-          <select className="form-control" value={mobileBrand} onChange={(e) => setMobileBrand(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
-            <option>All</option>
-            <option>Google Pixel</option>
-            <option>Apple</option>
-            <option>Samsung</option>
-            <option>OnePlus</option>
-            <option>Vivo</option>
-            <option>Xiaomi</option>
-            <option>Nothing</option>
-            <option>Realme</option>
-            <option>Motorola</option>
+          <select className="form-control" value={mobileBrand} onChange={(e) => setMobileBrand(e.target.value)} style={{ width: '140px', padding: '7px 12px' }}>
+            <option value="All">All</option>
+            <option value="Google Pixel">Google Pixel</option>
+            <option value="Apple">Apple</option>
+            <option value="Samsung">Samsung</option>
+            <option value="OnePlus">OnePlus</option>
+            <option value="Vivo">Vivo</option>
+            <option value="Xiaomi">Xiaomi</option>
+            <option value="Nothing">Nothing</option>
+            <option value="Realme">Realme</option>
+            <option value="Motorola">Motorola</option>
           </select>
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
           <button onClick={() => { setFromDate(''); setToDate(''); setPaymentStatus('All'); setPersonCustomer('All'); setMobileBrand('All'); }} className="btn-secondary">Clear</button>
-          <button className="btn-primary">Apply</button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-responsive">
-        <table className="custom-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Date</th>
-              <th>Customer Name</th>
-              <th>Brand</th>
-              <th>Model</th>
-              <th>Total Amount (₹)</th>
-              <th>Paid Amount (₹)</th>
-              <th>Pending Amount (₹)</th>
-              <th>Payment Status</th>
-              <th>Mode of Payment</th>
-              <th>Remarks</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPayments.length === 0 ? (
-              <tr>
-                <td colSpan="12" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                  No payment records match the specified filter criteria.
-                </td>
-              </tr>
-            ) : (
-              filteredPayments.map((row, idx) => (
-                <tr key={row.id}>
-                  <td data-label="#">{idx + 1}</td>
-                  <td data-label="Date">{row.date}</td>
-                  <td data-label="Customer" style={{ fontWeight: 600 }}>{row.customerName}</td>
-                  <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                  <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                  <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                  <td data-label="Paid Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.paidAmount} /></td>
-                  <td data-label="Pending Amount" style={{ fontWeight: 700, color: row.pendingAmount > 0 ? '#ea580c' : '#059669' }}>
-                    <CurrencyAmount amount={row.pendingAmount} />
-                  </td>
-                  <td data-label="Status">
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      background: row.status === 'Pending' ? '#fff7ed' : '#ecfdf5',
-                      color: row.status === 'Pending' ? '#ea580c' : '#047857'
-                    }}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td data-label="Payment Mode">{row.mode}</td>
-                  <td data-label="Remarks" style={{ fontSize: '12px', color: '#64748b' }}>{row.remarks}</td>
-                  <td data-label="Action">
-                    <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '4px 14px', fontSize: '12px', borderRadius: '6px' }}>
-                      Equate
-                    </button>
-                  </td>
+      {/* Summary Banner */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', padding: '16px 20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '13px', color: '#c2410c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={16} /> Total Pending ({pendingPayments.length} Accounts)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#ea580c', marginTop: '4px' }}>
+              <CurrencyAmount amount={totalPendingAmount} />
+            </div>
+          </div>
+          <span style={{ fontSize: '11px', background: '#ffedd5', color: '#ea580c', padding: '4px 10px', borderRadius: '20px', fontWeight: 800 }}>PENDING</span>
+        </div>
+
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '16px 20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '13px', color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle size={16} /> Total Receiving / Received ({receivingPayments.length} Accounts)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#059669', marginTop: '4px' }}>
+              <CurrencyAmount amount={totalReceivedAmount} />
+            </div>
+          </div>
+          <span style={{ fontSize: '11px', background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px', fontWeight: 800 }}>RECEIVING / SETTLED</span>
+        </div>
+      </div>
+
+      {/* TWO COLUMNS LAYOUT: PENDING vs RECEIVING PAYMENTS */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
+        
+        {/* COLUMN 1: PENDING PAYMENTS */}
+        <div style={{ background: '#ffffff', borderRadius: '16px', border: '2px solid #ffedd5', overflow: 'hidden', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.05)' }}>
+          <div style={{ background: '#fff7ed', padding: '14px 18px', borderBottom: '1px solid #ffedd5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={18} color="#ea580c" />
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments</h2>
+            </div>
+            <span style={{ background: '#ea580c', color: '#ffffff', fontSize: '12px', padding: '2px 10px', borderRadius: '12px', fontWeight: 800 }}>
+              {pendingPayments.length} Pending
+            </span>
+          </div>
+
+          <div className="table-responsive" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            <table className="custom-table" style={{ fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#fffbeb' }}>
+                  <th style={{ width: '30px' }}>#</th>
+                  <th>Date</th>
+                  <th>Person / Order Name</th>
+                  <th>Device Model</th>
+                  <th>Pending Amt</th>
+                  <th style={{ textAlign: 'center' }}>Action</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {pendingPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      No pending payments found.
+                    </td>
+                  </tr>
+                ) : (
+                  pendingPayments.map((row, idx) => (
+                    <tr key={row.id || idx}>
+                      <td data-label="#">{idx + 1}</td>
+                      <td data-label="Date" style={{ fontSize: '11px', color: '#64748b' }}>{row.date}</td>
+                      <td data-label="Person / Order">
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</div>
+                        <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>Order: {row.orderName || row.newColor || '-'}</div>
+                      </td>
+                      <td data-label="Device">
+                        <span style={{ fontWeight: 600 }}>{row.brand}</span> <span style={{ fontWeight: 700 }}>{row.model}</span>
+                      </td>
+                      <td data-label="Pending Amt" style={{ fontWeight: 800, color: '#ea580c' }}>
+                        <CurrencyAmount amount={row.pendingAmount} />
+                        {row.totalAmount > row.pendingAmount && (
+                          <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total: ₹{row.totalAmount.toLocaleString()}</div>
+                        )}
+                      </td>
+                      <td data-label="Action" style={{ textAlign: 'center' }}>
+                        <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 12px', fontSize: '11px', borderRadius: '6px', backgroundColor: '#ea580c', borderColor: '#ea580c' }}>
+                          Equate
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* COLUMN 2: RECEIVING PAYMENTS */}
+        <div style={{ background: '#ffffff', borderRadius: '16px', border: '2px solid #a7f3d0', overflow: 'hidden', boxShadow: '0 4px 12px rgba(5, 150, 105, 0.05)' }}>
+          <div style={{ background: '#ecfdf5', padding: '14px 18px', borderBottom: '1px solid #a7f3d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle size={18} color="#059669" />
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payments</h2>
+            </div>
+            <span style={{ background: '#059669', color: '#ffffff', fontSize: '12px', padding: '2px 10px', borderRadius: '12px', fontWeight: 800 }}>
+              {receivingPayments.length} Settled
+            </span>
+          </div>
+
+          <div className="table-responsive" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            <table className="custom-table" style={{ fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#f0fdf4' }}>
+                  <th style={{ width: '30px' }}>#</th>
+                  <th>Date</th>
+                  <th>Person / Order Name</th>
+                  <th>Device Model</th>
+                  <th>Received Amt</th>
+                  <th>Mode / Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receivingPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      No received payments recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  receivingPayments.map((row, idx) => (
+                    <tr key={row.id || idx}>
+                      <td data-label="#">{idx + 1}</td>
+                      <td data-label="Date" style={{ fontSize: '11px', color: '#64748b' }}>{row.date}</td>
+                      <td data-label="Person / Order">
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</div>
+                        <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>Order: {row.orderName || row.newColor || '-'}</div>
+                      </td>
+                      <td data-label="Device">
+                        <span style={{ fontWeight: 600 }}>{row.brand}</span> <span style={{ fontWeight: 700 }}>{row.model}</span>
+                      </td>
+                      <td data-label="Received Amt" style={{ fontWeight: 800, color: '#059669' }}>
+                        <CurrencyAmount amount={row.paidAmount || row.totalAmount} />
+                      </td>
+                      <td data-label="Mode">
+                        <span style={{ background: '#d1fae5', color: '#047857', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+                          {row.mode || 'Cash'} • Received ✔
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
       {/* Equate Mobile Modal */}
@@ -307,9 +461,21 @@ export default function PendingAndReceivingPayments() {
             </div>
 
             <form onSubmit={handleEquateSubmit}>
+              {/* Person / Customer Name */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label">Person / Customer Name *</label>
+                <input type="text" className="form-control" placeholder="Enter customer name" value={equateForm.customerName} onChange={(e) => setEquateForm({ ...equateForm, customerName: e.target.value })} required />
+              </div>
+
+              {/* Order Name */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label">Order Name *</label>
+                <input type="text" className="form-control" placeholder="Order Name / ID" value={equateForm.orderName} onChange={(e) => setEquateForm({ ...equateForm, orderName: e.target.value })} required />
+              </div>
+
               {/* Pending Payment Field */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Pending Payment (₹) *</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>Pending Amount (₹) *</label>
                 <input 
                   type="number" 
                   className="form-control" 
@@ -325,18 +491,13 @@ export default function PendingAndReceivingPayments() {
                 <label className="form-label">Equated by</label>
                 <select className="form-control" value={equateForm.equatedBy} onChange={(e) => setEquateForm({ ...equateForm, equatedBy: e.target.value })}>
                   <option value="Jeet">Jeet</option>
+                  <option value="Sonal">Sonal</option>
                 </select>
-              </div>
-
-              {/* Customer Name */}
-              <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Customer Name</label>
-                <input type="text" className="form-control" placeholder="Enter customer name" value={equateForm.customerName} onChange={(e) => setEquateForm({ ...equateForm, customerName: e.target.value })} required />
               </div>
 
               {/* Installment vs Complete Mode Toggle */}
               <div style={{ marginBottom: '16px' }}>
-                <label className="form-label">Payment Mode</label>
+                <label className="form-label">Payment Type</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
                     type="button"
@@ -382,7 +543,7 @@ export default function PendingAndReceivingPayments() {
               {/* New Pay & Date */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                  <label className="form-label">New Pay</label>
+                  <label className="form-label">New Pay (₹) *</label>
                   <input type="number" className="form-control" placeholder="₹ Enter new pay" value={equateForm.newPay} onChange={(e) => setEquateForm({ ...equateForm, newPay: e.target.value })} required />
                 </div>
                 <div>

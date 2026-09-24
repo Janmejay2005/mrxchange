@@ -258,6 +258,25 @@ export default function BookedAndExchange() {
     try {
       localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
+
+      // Automatically add pending account in Pending and Receiving Payments
+      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      const pendingRecord = {
+        id: newEntry.id,
+        date: newEntry.date,
+        customerName: newEntry.newPurchasedBy,
+        orderName: newEntry.orderName || 'Standard',
+        brand: newEntry.newBrand,
+        model: newEntry.newModel,
+        totalAmount: newEntry.newAmount,
+        paidAmount: 0,
+        pendingAmount: newEntry.newAmount,
+        status: 'Pending',
+        mode: bookForm.via || 'Cash',
+        remarks: `Booked - Order: ${newEntry.orderName || 'Standard'}`
+      };
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingRecord, ...existingPending]));
+      window.dispatchEvent(new Event('mrx_payments_updated'));
     } catch (err) {
       console.error(err);
     }
@@ -282,6 +301,36 @@ export default function BookedAndExchange() {
 
       const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
+
+      // Update / Add entry in Pending and Receiving Payments upon delivery
+      try {
+        const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+        const foundIdx = existingPending.findIndex(p => p.id === itemToDeliver.id || (p.orderName === itemToDeliver.orderName && p.customerName === itemToDeliver.newPurchasedBy));
+        if (foundIdx >= 0) {
+          existingPending[foundIdx].remarks = `Delivered - Order: ${itemToDeliver.orderName || itemToDeliver.newColor || 'Standard'}`;
+          existingPending[foundIdx].status = existingPending[foundIdx].pendingAmount > 0 ? 'Pending' : 'Received';
+        } else {
+          const deliveredPayment = {
+            id: itemToDeliver.id || Date.now(),
+            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            customerName: itemToDeliver.newPurchasedBy || 'Customer',
+            orderName: itemToDeliver.orderName || itemToDeliver.newColor || 'Standard',
+            brand: itemToDeliver.newBrand,
+            model: itemToDeliver.newModel,
+            totalAmount: itemToDeliver.newAmount,
+            paidAmount: 0,
+            pendingAmount: itemToDeliver.newAmount,
+            status: 'Pending',
+            mode: 'Cash',
+            remarks: `Delivered - Order: ${itemToDeliver.orderName || itemToDeliver.newColor || 'Standard'}`
+          };
+          existingPending.unshift(deliveredPayment);
+        }
+        localStorage.setItem('mrx_pending_payments', JSON.stringify(existingPending));
+        window.dispatchEvent(new Event('mrx_payments_updated'));
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     const updated = exchanges.filter(item => item.id !== id);
@@ -291,7 +340,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! New mobile transferred to New In-hand Stock.`);
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-hand Stock & added to Pending Payments.`);
     navigate('/new-in-hand');
   };
 
