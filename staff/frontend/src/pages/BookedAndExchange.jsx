@@ -45,7 +45,8 @@ export default function BookedAndExchange() {
     newModel: 'Pixel 8 Pro',
     newStorage: '256',
     newRam: '12',
-    newColor: 'Bay Blue',
+    orderName: '',
+    newColor: '',
     newPayBy: user?.name || 'Jeet Khubchandani',
     platform: 'Offline / Store',
     purchasedAmount: '64000',
@@ -199,7 +200,7 @@ export default function BookedAndExchange() {
     }
     const q = (searchTerm || globalSearch || '').trim().toLowerCase();
     if (q) {
-      const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.newColor}`.toLowerCase().includes(q);
+      const matchNew = `${item.newBrand} ${item.newModel} ${item.newPurchasedBy} ${item.orderName || item.newColor}`.toLowerCase().includes(q);
       const matchOld = `${item.oldBrand} ${item.oldModel} ${item.oldPurchasedBy} ${item.oldColor}`.toLowerCase().includes(q);
       if (!matchNew && !matchOld) return false;
     }
@@ -237,7 +238,8 @@ export default function BookedAndExchange() {
       newModel: bookForm.newModel,
       newStorage: Number(bookForm.newStorage) || 256,
       newRam: Number(bookForm.newRam) || 12,
-      newColor: bookForm.newColor || 'Standard',
+      orderName: bookForm.orderName || bookForm.newColor || 'Standard',
+      newColor: bookForm.orderName || bookForm.newColor || 'Standard',
       newPurchasedBy: bookForm.newPayBy || 'Customer',
       newAmount: newAmt + exVal,
       oldBrand: bookForm.oldBrand,
@@ -338,14 +340,14 @@ export default function BookedAndExchange() {
 
     if (activeTab === 'bookings') {
       title = 'New Phone Bookings Report';
-      headers = ['#', 'Date', 'Customer Name', 'New Phone Model', 'Specs', 'Color', 'Booking Amount (Rs)', 'Status'];
+      headers = ['#', 'Date', 'Customer Name', 'New Phone Model', 'Specs', 'Order Name', 'Booking Amount (Rs)', 'Status'];
       rows = filteredExchanges.map((item, idx) => [
         idx + 1,
         item.date,
         item.newPurchasedBy || 'Customer',
         `${item.newBrand} ${item.newModel}`,
         `${item.newStorage}GB / ${item.newRam}GB`,
-        item.newColor,
+        item.orderName || item.newColor || '-',
         `Rs. ${item.newAmount.toLocaleString()}`,
         item.status || 'Booked'
       ]);
@@ -600,7 +602,7 @@ export default function BookedAndExchange() {
                 <th style={{ backgroundColor: '#e0f2fe' }}>Model</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Storage (GB)</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>RAM (GB)</th>
-                <th style={{ backgroundColor: '#e0f2fe' }}>Color</th>
+                <th style={{ backgroundColor: '#e0f2fe' }}>Order Name</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Purchased By</th>
                 <th style={{ backgroundColor: '#e0f2fe' }}>Purchased Amount</th>
 
@@ -632,7 +634,7 @@ export default function BookedAndExchange() {
                     <td data-label="New Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
                     <td data-label="New Storage">{row.newStorage} GB</td>
                     <td data-label="New RAM">{row.newRam} GB</td>
-                    <td data-label="New Color">{row.newColor}</td>
+                    <td data-label="Order Name">{row.orderName || row.newColor}</td>
                     <td data-label="New Purchased By">{row.newPurchasedBy}</td>
                     <td data-label="New Amount" style={{ fontWeight: 700 }}>
                       <CurrencyAmount amount={row.newAmount} />
@@ -690,7 +692,7 @@ export default function BookedAndExchange() {
                 <th>Model</th>
                 <th>Storage</th>
                 <th>RAM</th>
-                <th>Color</th>
+                <th>Order Name</th>
                 <th>Booking Amount</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -713,7 +715,7 @@ export default function BookedAndExchange() {
                     <td data-label="Model" style={{ fontWeight: 700 }}>{row.newModel}</td>
                     <td data-label="Storage">{row.newStorage} GB</td>
                     <td data-label="RAM">{row.newRam} GB</td>
-                    <td data-label="Color">{row.newColor}</td>
+                    <td data-label="Order Name">{row.orderName || row.newColor}</td>
                     <td data-label="Booking Amount" style={{ fontWeight: 800, color: '#0284c7' }}>
                       <CurrencyAmount amount={row.newAmount} />
                     </td>
@@ -1019,8 +1021,8 @@ export default function BookedAndExchange() {
                   </div>
 
                   <div>
-                    <label className="form-label">Color *</label>
-                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
+                    <label className="form-label">Order Name *</label>
+                    <input type="text" className="form-control" placeholder="Kapil Verma / Order ID" value={bookForm.orderName} onChange={(e) => setBookForm({ ...bookForm, orderName: e.target.value, newColor: e.target.value })} required />
                   </div>
                   <div>
                     <label className="form-label">Pay By *</label>
