@@ -155,6 +155,7 @@ export default function OldInventory() {
       let dataList = [];
       try {
         const res = await deviceService.getDevices({
+          status: 'OLD_INVENTORY',
           q: globalSearch || '',
           brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
           from: selectedDate || '',
@@ -165,7 +166,7 @@ export default function OldInventory() {
         console.error(e);
       }
 
-      const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => !d.status || d.status === 'OLD_INVENTORY');
 
       const rawCombined = [...localInventory, ...dataList];
       const seenFingerprints = new Set();
@@ -185,7 +186,7 @@ export default function OldInventory() {
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);
-          if (!item.status || item.status === 'OLD_INVENTORY' || item.status === 'OLD_IN_HAND') {
+          if (!item.status || item.status === 'OLD_INVENTORY') {
             inventoryDevices.push(item);
           }
         }
