@@ -66,21 +66,6 @@ export default function Reports() {
         rawDevices = [];
       }
 
-      if (rawDevices.length === 0) {
-        // Fallback rich dataset if backend offline or empty
-        rawDevices = [
-          { id: 1, brand: 'Google Pixel', model: 'Pixel 8 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '2026-09-15' },
-          { id: 2, brand: 'Apple', model: 'iPhone 15 Pro Max', purchase_amount: 105000, status: 'OLD_IN_HAND', intake_date: '2026-09-14' },
-          { id: 3, brand: 'Samsung', model: 'Galaxy S24 Ultra', purchase_amount: 88000, status: 'IN_REPAIR', intake_date: '2026-09-14' },
-          { id: 4, brand: 'OnePlus', model: 'OnePlus 12', purchase_amount: 49000, status: 'REJECTED', intake_date: '2026-09-13' },
-          { id: 5, brand: 'Vivo', model: 'X100 Pro', purchase_amount: 68000, status: 'OLD_INVENTORY', intake_date: '2026-09-13' },
-          { id: 6, brand: 'Nothing', model: 'Phone (2a)', purchase_amount: 19000, status: 'OLD_IN_HAND', intake_date: '2026-09-12' },
-          { id: 7, brand: 'Xiaomi', model: '14 Ultra', purchase_amount: 74000, status: 'OLD_INVENTORY', intake_date: '2026-09-11' },
-          { id: 8, brand: 'Realme', model: 'GT 5 Pro', purchase_amount: 31000, status: 'IN_REPAIR', intake_date: '2026-09-10' },
-          { id: 9, brand: 'Motorola', model: 'Edge 50 Ultra', purchase_amount: 43000, status: 'OLD_IN_HAND', intake_date: '2026-09-09' }
-        ];
-      }
-
       // Apply local filters (Brand, Status, Date Range)
       if (selectedBrand !== 'All Brands') {
         rawDevices = rawDevices.filter(d => d.brand === selectedBrand);
@@ -100,7 +85,9 @@ export default function Reports() {
       // Compute Brand distribution dynamically
       const brandCounts = {};
       rawDevices.forEach(d => {
-        brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1;
+        if (d.brand) {
+          brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1;
+        }
       });
       const brandDist = Object.keys(brandCounts).map(b => ({ brand: b, count: brandCounts[b] }));
 
@@ -115,14 +102,14 @@ export default function Reports() {
       setReportData({
         kpis: {
           total_mobiles: rawDevices.length,
-          in_hand_count: rawDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'IN_HAND').length,
+          in_hand_count: rawDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'IN_HAND' || d.status === 'NEW_IN_HAND').length,
           repair_count: rawDevices.filter(d => d.status === 'IN_REPAIR').length,
           rejected_count: rawDevices.filter(d => d.status === 'REJECTED').length,
           old_inventory_count: rawDevices.filter(d => d.status === 'OLD_INVENTORY').length,
           total_valuation: totalVal
         },
-        brand_distribution: brandDist.length > 0 ? brandDist : [{ brand: 'Google Pixel', count: 1 }],
-        date_distribution: dateDist.length > 0 ? dateDist : [{ date: 'Today', count: 1 }]
+        brand_distribution: brandDist,
+        date_distribution: dateDist
       });
       setLoading(false);
     } catch (err) {
@@ -133,6 +120,14 @@ export default function Reports() {
 
   useEffect(() => {
     fetchReports();
+
+    const handleSync = () => fetchReports();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
+    };
   }, [fromDate, toDate, selectedBrand, selectedStatus]);
 
   const handleExport = async () => {
