@@ -33,6 +33,8 @@ export async function fetchApi(endpoint, options = {}) {
     } catch (_) {
       data = null;
     }
+  } else if (contentType.includes('text/html')) {
+    throw new Error('API endpoint returned HTML instead of JSON. Ensure backend proxy or VITE_API_URL is correctly configured.');
   }
 
   if (!response.ok) {
