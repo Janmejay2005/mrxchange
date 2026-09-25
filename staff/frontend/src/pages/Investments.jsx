@@ -59,20 +59,11 @@ export default function Investments() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Fallback demo investments
-      setInvestments([
-        { id: '1', investment_code: 'INV-001', investment_type: 'INVENTORY', amount: 500000, investor_name: 'Jeet Khubchandani', investment_date: '2026-09-01', remarks: 'Mobile inventory bulk capital' },
-        { id: '2', investment_code: 'INV-002', investment_type: 'EQUIPMENT', amount: 150000, investor_name: 'Sunal', investment_date: '2026-09-05', remarks: 'Screen separators & testing kits' },
-        { id: '3', investment_code: 'INV-003', investment_type: 'WORKING_CAPITAL', amount: 200000, investor_name: 'Jeet Khubchandani', investment_date: '2026-09-08', remarks: 'Working capital reserve' }
-      ]);
-      setTotalInvestment(850000);
-      setNetProfit(102000);
-      setRoi(12.0);
-      setBreakdown([
-        { type: 'INVENTORY', amount: 500000, count: 1 },
-        { type: 'EQUIPMENT', amount: 150000, count: 1 },
-        { type: 'WORKING_CAPITAL', amount: 200000, count: 1 }
-      ]);
+      setInvestments([]);
+      setTotalInvestment(0);
+      setNetProfit(0);
+      setRoi(0);
+      setBreakdown([]);
       setLoading(false);
     }
   };

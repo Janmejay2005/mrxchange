@@ -235,10 +235,10 @@ export default function Dashboard() {
               <div className="kpi-info">
                 <span className="kpi-title">Gross Profit</span>
                 <span className="kpi-value" style={{ color: '#059669' }}>
-                  ₹{(financeStats?.kpis?.gross_profit || 50500).toLocaleString('en-IN')}
+                  ₹{(financeStats?.kpis?.gross_profit ?? 0).toLocaleString('en-IN')}
                 </span>
                 <span className="kpi-subtext" style={{ color: '#64748b' }}>
-                  Sales: ₹{(financeStats?.kpis?.total_sales || 182500).toLocaleString('en-IN')}
+                  Sales: ₹{(financeStats?.kpis?.total_sales ?? 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -250,10 +250,10 @@ export default function Dashboard() {
               <div className="kpi-info">
                 <span className="kpi-title">Total Expenses</span>
                 <span className="kpi-value" style={{ color: '#dc2626' }}>
-                  ₹{(financeStats?.kpis?.total_expenses || 40500).toLocaleString('en-IN')}
+                  ₹{(financeStats?.kpis?.total_expenses ?? 0).toLocaleString('en-IN')}
                 </span>
                 <span className="kpi-subtext" style={{ color: '#64748b' }}>
-                  Ratio: {financeStats?.kpis?.expense_ratio || 22.2}%
+                  Ratio: {financeStats?.kpis?.expense_ratio ?? 0}%
                 </span>
               </div>
             </div>
@@ -265,10 +265,10 @@ export default function Dashboard() {
               <div className="kpi-info">
                 <span className="kpi-title">Net Profit</span>
                 <span className="kpi-value" style={{ color: '#0284c7' }}>
-                  ₹{(financeStats?.kpis?.net_profit || 10000).toLocaleString('en-IN')}
+                  ₹{(financeStats?.kpis?.net_profit ?? 0).toLocaleString('en-IN')}
                 </span>
                 <span className="kpi-subtext" style={{ color: '#10b981', fontWeight: 'bold' }}>
-                  Margin: {financeStats?.kpis?.profit_margin || 5.5}%
+                  Margin: {financeStats?.kpis?.profit_margin ?? 0}%
                 </span>
               </div>
             </div>
@@ -280,10 +280,10 @@ export default function Dashboard() {
               <div className="kpi-info">
                 <span className="kpi-title">Capital ROI</span>
                 <span className="kpi-value" style={{ color: '#7c3aed' }}>
-                  +{financeStats?.kpis?.roi || 12.0}%
+                  +{financeStats?.kpis?.roi ?? 0}%
                 </span>
                 <span className="kpi-subtext" style={{ color: '#64748b' }}>
-                  Invested: ₹{(financeStats?.kpis?.total_investment || 850000).toLocaleString('en-IN')}
+                  Invested: ₹{(financeStats?.kpis?.total_investment ?? 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-info">
             <span className="kpi-title">Total Mobiles</span>
-            <span className="kpi-value">{stats?.kpis?.total_mobiles?.toLocaleString() || '5,248'}</span>
+            <span className="kpi-value">{(stats?.kpis?.total_mobiles ?? 0).toLocaleString()}</span>
             <span className="kpi-subtext" style={{ color: '#0284c7', fontWeight: 600 }}>Click to View Master</span>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-info">
             <span className="kpi-title">Old Inventory</span>
-            <span className="kpi-value">{stats?.kpis?.old_inventory?.toLocaleString() || '3,786'}</span>
+            <span className="kpi-value">{(stats?.kpis?.old_inventory ?? 0).toLocaleString()}</span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Pending processing</span>
           </div>
         </div>
@@ -326,7 +326,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-info">
             <span className="kpi-title">Old In-hand</span>
-            <span className="kpi-value" style={{ color: '#059669' }}>{stats?.kpis?.old_in_hand?.toLocaleString() || '420'}</span>
+            <span className="kpi-value" style={{ color: '#059669' }}>{(stats?.kpis?.old_in_hand ?? 0).toLocaleString()}</span>
             <span className="kpi-subtext" style={{ color: '#059669', fontWeight: 600 }}>Ready for sale</span>
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function Dashboard() {
             </div>
             <div className="kpi-info">
               <span className="kpi-title">New In-hand</span>
-              <span className="kpi-value" style={{ color: '#7c3aed' }}>{stats?.kpis?.new_in_hand?.toLocaleString() || '200'}</span>
+              <span className="kpi-value" style={{ color: '#7c3aed' }}>{(stats?.kpis?.new_in_hand ?? 0).toLocaleString()}</span>
               <span className="kpi-subtext" style={{ color: '#7c3aed', fontWeight: 600 }}>Fresh arrivals</span>
             </div>
           </div>
@@ -350,7 +350,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-info">
             <span className="kpi-title">Repair Stock</span>
-            <span className="kpi-value" style={{ color: '#d97706' }}>{stats?.kpis?.repair_stock?.toLocaleString() || '842'}</span>
+            <span className="kpi-value" style={{ color: '#d97706' }}>{(stats?.kpis?.repair_stock ?? 0).toLocaleString()}</span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Under technician care</span>
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-info">
             <span className="kpi-title">Rejected Stock</span>
-            <span className="kpi-value" style={{ color: '#dc2626' }}>{stats?.kpis?.rejected_stock?.toLocaleString() || '0'}</span>
+            <span className="kpi-value" style={{ color: '#dc2626' }}>{(stats?.kpis?.rejected_stock ?? 0).toLocaleString()}</span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Defects with reason</span>
           </div>
         </div>
@@ -383,28 +383,28 @@ export default function Dashboard() {
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#0284c7' }} />
                   Old Inventory
                 </span>
-                <span>{stats?.distribution?.old_inventory?.count?.toLocaleString() || '3,786'} ({stats?.distribution?.old_inventory?.percentage || 72}%)</span>
+                <span>{(stats?.distribution?.old_inventory?.count ?? 0).toLocaleString()} ({(stats?.distribution?.old_inventory?.percentage ?? 0)}%)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10b981' }} />
                   In-hand Stock
                 </span>
-                <span>{stats?.distribution?.in_hand?.count?.toLocaleString() || '620'} ({stats?.distribution?.in_hand?.percentage || 12}%)</span>
+                <span>{(stats?.distribution?.in_hand?.count ?? 0).toLocaleString()} ({(stats?.distribution?.in_hand?.percentage ?? 0)}%)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
                   Repair Stock
                 </span>
-                <span>{stats?.distribution?.repair?.count?.toLocaleString() || '842'} ({stats?.distribution?.repair?.percentage || 16}%)</span>
+                <span>{(stats?.distribution?.repair?.count ?? 0).toLocaleString()} ({(stats?.distribution?.repair?.percentage ?? 0)}%)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#ef4444' }} />
                   Rejected Stock
                 </span>
-                <span>{stats?.distribution?.rejected?.count || '0'} ({stats?.distribution?.rejected?.percentage || 0}%)</span>
+                <span>{stats?.distribution?.rejected?.count ?? 0} ({stats?.distribution?.rejected?.percentage ?? 0}%)</span>
               </div>
             </div>
           </div>

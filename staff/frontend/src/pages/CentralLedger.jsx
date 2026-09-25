@@ -46,17 +46,8 @@ export default function CentralLedger() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Fallback demo ledger data
-      setTransactions([
-        { id: '1', transaction_code: 'TX-SL-005', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 65000, admin_name: 'Jeet', transaction_date: '2026-09-18', description: 'Sold iPhone 14 Pro 256GB' },
-        { id: '2', transaction_code: 'TX-SL-001', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 38000, admin_name: 'Jeet', transaction_date: '2026-09-17', description: 'Sold iPhone 13 128GB Midnight' },
-        { id: '3', transaction_code: 'TX-SL-002', transaction_type: 'SALE', flow_type: 'CREDIT', amount: 33000, admin_name: 'Sunal', transaction_date: '2026-09-16', description: 'Sold Galaxy S22 256GB' },
-        { id: '4', transaction_code: 'TX-EXP-003', transaction_type: 'EXPENSE', flow_type: 'DEBIT', amount: 4500, admin_name: 'Jeet', transaction_date: '2026-09-14', description: 'Shop Electricity & Fiber Internet' },
-        { id: '5', transaction_code: 'TX-EXP-001', transaction_type: 'EXPENSE', flow_type: 'DEBIT', amount: 25000, admin_name: 'Jeet', transaction_date: '2026-09-10', description: 'Monthly Technician Salaries' },
-        { id: '6', transaction_code: 'TX-INV-001', transaction_type: 'INVESTMENT', flow_type: 'CREDIT', amount: 500000, admin_name: 'Jeet', transaction_date: '2026-09-01', description: 'Initial Mobile Inventory Capital - Jeet' },
-        { id: '7', transaction_code: 'TX-INV-002', transaction_type: 'INVESTMENT', flow_type: 'CREDIT', amount: 150000, admin_name: 'Sunal', transaction_date: '2026-09-05', description: 'Diagnostic & Repair Equipment - Sunal' }
-      ]);
-      setSummary({ totalCredits: 786000, totalDebits: 29500, netBalance: 756500 });
+      setTransactions([]);
+      setSummary({ totalCredits: 0, totalDebits: 0, netBalance: 0 });
       setLoading(false);
     }
   };
