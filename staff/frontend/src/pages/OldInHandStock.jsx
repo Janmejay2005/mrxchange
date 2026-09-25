@@ -435,6 +435,32 @@ export default function OldInHandStock() {
     const existingSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
     localStorage.setItem('mrx_sales', JSON.stringify([newSale, ...existingSales]));
 
+    // Record Payment entry (Received if fully paid, Pending if partial)
+    const totAmt = Number(sellForm.totalAmount) || 0;
+    const pdAmt = Number(sellForm.paidAmount) || 0;
+    const pendAmt = Math.max(0, totAmt - pdAmt);
+    const payStatus = pendAmt === 0 ? 'Received' : 'Pending';
+
+    const newPaymentObj = {
+      id: `PAY-${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: sellForm.date || new Date().toISOString().split('T')[0],
+      customerName: sellForm.soldTo || 'Customer',
+      brand: selectedSellDevice.newBrand || selectedSellDevice.brand || 'Apple',
+      model: selectedSellDevice.newModel || selectedSellDevice.model || 'Device',
+      imei: selectedSellDevice.imei || selectedSellDevice.device_code || 'N/A',
+      totalAmount: totAmt,
+      paidAmount: pdAmt,
+      pendingAmount: pendAmt,
+      status: payStatus,
+      mode: sellForm.paymentType || 'Cash'
+    };
+
+    try {
+      const existingPayments = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([newPaymentObj, ...existingPayments]));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+    } catch (e) {}
+
     // Mark row as Sold in OldInHandStock
     const updatedDevices = devices.map(item => {
       if (String(item.id) === String(selectedSellDevice.id)) {

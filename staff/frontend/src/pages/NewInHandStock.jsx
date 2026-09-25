@@ -238,6 +238,34 @@ export default function NewInHandStock() {
     });
 
     saveStockToStorage(updatedStock);
+
+    // Record Payment entry (Received if fully paid, Pending if partial)
+    const totAmt = Number(sellForm.totalAmount) || (Number(sellForm.soldPrice) * requestedUnits) || 0;
+    const pdAmt = Number(sellForm.paidAmount) || totAmt;
+    const pendAmt = Math.max(0, totAmt - pdAmt);
+    const payStatus = pendAmt === 0 ? 'Received' : 'Pending';
+
+    const newPaymentObj = {
+      id: `PAY-${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: sellForm.date || new Date().toISOString().split('T')[0],
+      customerName: sellForm.soldTo || 'Customer',
+      brand: selectedStockItem.brand || 'Apple',
+      model: selectedStockItem.model || 'Device',
+      imei: selectedStockItem.imei || selectedStockItem.sno || 'N/A',
+      totalAmount: totAmt,
+      paidAmount: pdAmt,
+      pendingAmount: pendAmt,
+      status: payStatus,
+      mode: sellForm.paymentType || 'Cash'
+    };
+
+    try {
+      const existingPayments = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([newPaymentObj, ...existingPayments]));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
     alert(`Successfully sold ${requestedUnits} unit(s) of "${selectedStockItem.brand} ${selectedStockItem.model}" under account "${loggedInAccountName}"! ${availableUnits - requestedUnits} unit(s) remaining in stock.`);
     setIsSellModalOpen(false);
   };
