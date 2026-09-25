@@ -7,16 +7,56 @@ const isCloudDb = !!process.env.DATABASE_URL || process.env.NODE_ENV === 'produc
 
 let pool = null;
 
+async function createPgPool(connectionString) {
+  const { default: pg } = await import('pg');
+  const pgPool = new pg.Pool({
+    connectionString,
+    ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
+  });
+
+  const queryPg = async (executor, sql, params = []) => {
+    let paramIdx = 1;
+    let pgSql = sql.replace(/`condition`/gi, '"condition"').replace(/`/g, '');
+    pgSql = pgSql.replace(/\?/g, () => `$${paramIdx++}`);
+    const res = await executor.query(pgSql, params);
+    return [res.rows || [], []];
+  };
+
+  return {
+    isPg: true,
+    async getConnection() {
+      const client = await pgPool.connect();
+      return {
+        async query(sql, params = []) {
+          return queryPg(client, sql, params);
+        },
+        async beginTransaction() { await client.query('BEGIN'); },
+        async commit() { await client.query('COMMIT'); },
+        async rollback() { await client.query('ROLLBACK'); },
+        release() { client.release(); }
+      };
+    },
+    async query(sql, params = []) {
+      return queryPg(pgPool, sql, params);
+    }
+  };
+}
+
 export async function initDatabase() {
   try {
-    if (process.env.DATABASE_URL) {
+    const dbUrl = process.env.DATABASE_URL || '';
+    if (dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://')) {
+      pool = await createPgPool(dbUrl);
+      console.log('✅ Render PostgreSQL Database connected successfully');
+    } else if (dbUrl) {
       pool = mysql.createPool({
-        uri: process.env.DATABASE_URL,
+        uri: dbUrl,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
         ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
       });
+      console.log('✅ MySQL Cloud Database connected successfully');
     } else {
       const dbConfig = {
         host: process.env.DB_HOST || 'localhost',
@@ -55,10 +95,10 @@ export async function initDatabase() {
     // Create tables if not exist
     await createTables();
 
-    console.log('✅ MySQL Database initialized successfully');
+    console.log('✅ Central Database initialized successfully');
     return pool;
   } catch (error) {
-    console.warn('⚠️ MySQL connection not available. Switching to in-memory fallback store:', error.message);
+    console.warn('⚠️ Database connection falling back to persistent file store:', error.message);
     pool = createMockPool();
     return pool;
   }
