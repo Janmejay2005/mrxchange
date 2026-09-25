@@ -179,7 +179,9 @@ export default function OldInventory() {
         const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
         const date = item.intake_date || item.created_at || item.date || '';
 
-        const fingerprint = `${item.id || ''}|${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+        const fingerprint = item.device_code
+          ? `code_${item.device_code}`
+          : `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);

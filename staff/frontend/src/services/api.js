@@ -65,23 +65,37 @@ export const deviceService = {
     }
     const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
     
-    // Deduplicate: localDevices override remoteDevices for the same id or device_code
-    const localIds = new Set(localDevices.map(d => String(d.id)));
-    const localCodes = new Set(localDevices.map(d => d.device_code).filter(Boolean));
+    // Deduplicate: remote devices (server DB) take precedence, matching by device_code or physical specs
+    const seenKeys = new Set();
+    const combined = [];
 
-    const uniqueRemote = remoteDevices.filter(d => 
-      !localIds.has(String(d.id)) && (!d.device_code || !localCodes.has(d.device_code))
-    );
+    for (const d of [...remoteDevices, ...localDevices]) {
+      if (!d) continue;
+      const brand = (d.brand || '').trim().toLowerCase();
+      const model = (d.model || '').trim().toLowerCase();
+      const amount = Number(d.purchase_amount || d.amount || 0);
+      const paidBy = (d.paid_by || d.purchasedBy || '').trim().toLowerCase();
+      const date = d.intake_date || d.created_at || d.date || '';
 
-    let combined = [...localDevices, ...uniqueRemote];
+      const key = d.device_code
+        ? `code_${d.device_code}`
+        : `${brand}|${model}|${d.storage || ''}|${d.ram || ''}|${amount}|${paidBy}|${date}`;
+
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        combined.push(d);
+      }
+    }
+
+    let result = combined;
 
     if (params.status) {
-      combined = combined.filter(d => d.status === params.status);
+      result = result.filter(d => d.status === params.status);
     }
     if (params.brand && params.brand !== 'All Brands') {
-      combined = combined.filter(d => d.brand === params.brand);
+      result = result.filter(d => d.brand === params.brand);
     }
-    return combined;
+    return result;
   },
   getDeviceById: (id) => fetchApi(`/devices/${id}`),
   cleanDatabase: async () => {
@@ -99,26 +113,36 @@ export const deviceService = {
   },
   createDevice: async (formData) => {
     localStorage.removeItem('mrx_inventory_cleared');
-    const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
-    const newDevice = {
-      id: `dev_${Date.now()}`,
-      device_code: `MRX-${String(existing.length + 10).padStart(5, '0')}`,
-      ...formData,
-      status: formData.status || 'OLD_INVENTORY',
-      intake_date: formData.date || new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString()
-    };
-    existing.unshift(newDevice);
-    localStorage.setItem('mrx_devices', JSON.stringify(existing));
-
+    let createdObj = {};
     try {
-      await fetchApi('/devices', {
+      const res = await fetchApi('/devices', {
         method: 'POST',
         body: formData instanceof FormData ? formData : JSON.stringify(formData),
       });
+      createdObj = res?.data || res || {};
     } catch (err) {
-      console.warn("Backend API device creation endpoint returned error/405, saved locally:", err.message);
+      console.warn("Backend API device creation offline fallback:", err.message);
     }
+
+    const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+    const newDevice = {
+      id: createdObj.id || createdObj.deviceId || formData.id || `dev_${Date.now()}`,
+      device_code: createdObj.device_code || createdObj.deviceCode || `MRX-${String(existing.length + 10).padStart(5, '0')}`,
+      ...formData,
+      ...createdObj,
+      status: formData.status || createdObj.status || 'OLD_INVENTORY',
+      intake_date: formData.date || createdObj.intake_date || new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString()
+    };
+
+    // Filter out previous drafts of the same device before adding
+    const filteredExisting = existing.filter(d => 
+      String(d.id) !== String(newDevice.id) &&
+      (!newDevice.device_code || d.device_code !== newDevice.device_code) &&
+      !(d.brand === newDevice.brand && d.model === newDevice.model && Number(d.purchase_amount) === Number(newDevice.purchase_amount))
+    );
+
+    localStorage.setItem('mrx_devices', JSON.stringify([newDevice, ...filteredExisting]));
     return newDevice;
   },
   updateStatus: async (id, payload, deviceObj = null) => {
