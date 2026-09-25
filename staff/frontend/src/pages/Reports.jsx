@@ -184,10 +184,10 @@ export default function Reports() {
     datasets: [
       {
         data: [
-          reportData?.kpis?.in_hand_count || 682,
-          reportData?.kpis?.repair_count || 156,
-          reportData?.kpis?.rejected_count || 94,
-          reportData?.kpis?.old_inventory_count || 316
+          reportData?.kpis?.in_hand_count ?? 0,
+          reportData?.kpis?.repair_count ?? 0,
+          reportData?.kpis?.rejected_count ?? 0,
+          reportData?.kpis?.old_inventory_count ?? 0
         ],
         backgroundColor: ['#0284c7', '#f59e0b', '#ef4444', '#8b5cf6'],
         borderWidth: 0,
@@ -197,14 +197,14 @@ export default function Reports() {
 
   const barChartData = {
     labels: chartView === 'date' 
-      ? (reportData?.date_distribution?.map(d => d.date) || ['10 Sep', '11 Sep', '12 Sep', '13 Sep', '14 Sep', '15 Sep'])
-      : (reportData?.brand_distribution?.map(b => b.brand) || ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Nothing', 'Others']),
+      ? (reportData?.date_distribution?.map(d => d.date) || [])
+      : (reportData?.brand_distribution?.map(b => b.brand) || []),
     datasets: [
       {
         label: chartView === 'date' ? 'Mobiles Intake (By Date)' : 'Mobiles Count (By Brand)',
         data: chartView === 'date'
-          ? (reportData?.date_distribution?.map(d => d.count) || [45, 62, 78, 95, 110, 140])
-          : (reportData?.brand_distribution?.map(b => b.count) || [220, 180, 140, 120, 100, 90, 70, 50, 40]),
+          ? (reportData?.date_distribution?.map(d => d.count) || [])
+          : (reportData?.brand_distribution?.map(b => b.count) || []),
         backgroundColor: chartView === 'date' ? '#0284c7' : '#3b82f6',
         borderRadius: 6,
       }
@@ -301,28 +301,28 @@ export default function Reports() {
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <KPICard 
           title="Total Mobiles" 
-          value={reportData?.kpis?.total_mobiles?.toLocaleString() || '1,248'} 
+          value={(reportData?.kpis?.total_mobiles ?? 0).toLocaleString()} 
           icon={Smartphone}
           iconBg="#e0f2fe"
           iconColor="#0284c7"
         />
         <KPICard 
           title="In-hand Stock" 
-          value={reportData?.kpis?.in_hand_count?.toLocaleString() || '682'} 
+          value={(reportData?.kpis?.in_hand_count ?? 0).toLocaleString()} 
           icon={ShoppingBag}
           iconBg="#ecfdf5"
           iconColor="#059669"
         />
         <KPICard 
           title="Repair Stock" 
-          value={reportData?.kpis?.repair_count?.toLocaleString() || '156'} 
+          value={(reportData?.kpis?.repair_count ?? 0).toLocaleString()} 
           icon={Wrench}
           iconBg="#fef3c7"
           iconColor="#d97706"
         />
         <KPICard 
           title="Rejected Stock" 
-          value={reportData?.kpis?.rejected_count?.toLocaleString() || '94'} 
+          value={(reportData?.kpis?.rejected_count ?? 0).toLocaleString()} 
           icon={XCircle}
           iconBg="#fee2e2"
           iconColor="#dc2626"
@@ -335,7 +335,7 @@ export default function Reports() {
           <div className="kpi-info" style={{ overflow: 'hidden' }}>
             <span className="kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>Total Value</span>
             <span className="kpi-value" style={{ fontSize: '24px', fontWeight: 800, color: '#16a34a', whiteSpace: 'nowrap' }}>
-              ₹{(reportData?.kpis?.total_valuation || 1842500).toLocaleString('en-IN')}
+              ₹{(reportData?.kpis?.total_valuation ?? 0).toLocaleString('en-IN')}
             </span>
           </div>
         </div>
@@ -357,28 +357,28 @@ export default function Reports() {
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#0284c7' }} />
                   In-hand Stock
                 </span>
-                <span>{reportData?.kpis?.in_hand_count || 682}</span>
+                <span>{reportData?.kpis?.in_hand_count ?? 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
                   Repair Stock
                 </span>
-                <span>{reportData?.kpis?.repair_count || 156}</span>
+                <span>{reportData?.kpis?.repair_count ?? 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#ef4444' }} />
                   Rejected Stock
                 </span>
-                <span>{reportData?.kpis?.rejected_count || 94}</span>
+                <span>{reportData?.kpis?.rejected_count ?? 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#8b5cf6' }} />
                   Old Inventory
                 </span>
-                <span>{reportData?.kpis?.old_inventory_count || 316}</span>
+                <span>{reportData?.kpis?.old_inventory_count ?? 0}</span>
               </div>
             </div>
           </div>
