@@ -169,11 +169,8 @@ export default function BookedAndExchange() {
       if (storedStr !== null) {
         return JSON.parse(storedStr);
       }
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-      if (isCleared) return [];
     } catch (e) {}
-    const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-    return isCleared ? [] : defaultExchanges;
+    return [];
   };
 
   const [exchanges, setExchanges] = useState(getStoredExchanges);

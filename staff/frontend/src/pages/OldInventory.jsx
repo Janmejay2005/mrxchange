@@ -165,11 +165,9 @@ export default function OldInventory() {
         console.error(e);
       }
 
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-      const sampleList = isCleared ? [] : getSampleDevices();
       const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
-      const rawCombined = [...localInventory, ...dataList, ...sampleList];
+      const rawCombined = [...localInventory, ...dataList];
       const seenFingerprints = new Set();
       const inventoryDevices = [];
 
@@ -195,9 +193,8 @@ export default function OldInventory() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
       const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      setDevices([...localInventory, ...(isCleared ? [] : getSampleDevices())]);
+      setDevices(localInventory);
       setLoading(false);
     }
   };

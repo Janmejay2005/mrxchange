@@ -61,13 +61,14 @@ export const deviceService = {
     } catch (err) {
       console.warn("Backend API unavailable for getDevices, using local fallback:", err.message);
     }
+    const isCleared = typeof window !== 'undefined' && localStorage.getItem('mrx_inventory_cleared') === 'true';
     const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
     
     // Deduplicate: localDevices override remoteDevices for the same id or device_code
     const localIds = new Set(localDevices.map(d => String(d.id)));
     const localCodes = new Set(localDevices.map(d => d.device_code).filter(Boolean));
 
-    const uniqueRemote = remoteDevices.filter(d => 
+    const uniqueRemote = isCleared ? [] : remoteDevices.filter(d => 
       !localIds.has(String(d.id)) && (!d.device_code || !localCodes.has(d.device_code))
     );
 

@@ -46,26 +46,21 @@ export default function ProfitExpenseAndStatistic() {
     remarks: ''
   });
 
-  const [phoneProfits] = useState([
-    { id: 1, date: '2026-09-15', admin: 'Aadarsh Sharma', model: 'Pixel 8 Pro', brand: 'Google Pixel', purchase: 68000, selling: 89000, profit: 21000 },
-    { id: 2, date: '2026-09-14', admin: 'Rohit Kumar', model: 'iPhone 15 Pro Max', brand: 'Apple', purchase: 105000, selling: 132000, profit: 27000 },
-    { id: 3, date: '2026-09-14', admin: 'Neha Patel', model: 'Galaxy S24 Ultra', brand: 'Samsung', purchase: 88000, selling: 114000, profit: 26000 },
-    { id: 4, date: '2026-09-13', admin: 'Vikram Singh', model: 'OnePlus 12', brand: 'OnePlus', purchase: 49000, selling: 64999, profit: 15999 },
-    { id: 5, date: '2026-09-12', admin: 'Aadarsh Sharma', model: 'X100 Pro', brand: 'Vivo', purchase: 68000, selling: 89999, profit: 21999 },
-    { id: 6, date: '2026-09-11', admin: 'Rohit Kumar', model: 'Phone (2a)', brand: 'Nothing', purchase: 19000, selling: 27999, profit: 8999 },
-    { id: 7, date: '2026-09-11', admin: 'Neha Patel', model: '14 Ultra', brand: 'Xiaomi', purchase: 74000, selling: 99999, profit: 25999 },
-    { id: 8, date: '2026-09-10', admin: 'Vikram Singh', model: 'GT 5 Pro', brand: 'Realme', purchase: 31000, selling: 42000, profit: 11000 },
-    { id: 9, date: '2026-09-09', admin: 'Aadarsh Sharma', model: 'Edge 50 Ultra', brand: 'Motorola', purchase: 43000, selling: 59999, profit: 16999 },
-    { id: 10, date: '2026-09-08', admin: 'Rohit Kumar', model: 'Find N3 Flip', brand: 'Oppo', purchase: 62000, selling: 84999, profit: 22999 }
-  ]);
+  const [phoneProfits, setPhoneProfits] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    } catch (e) {
+      return [];
+    }
+  });
 
-  const [expenses, setExpenses] = useState([
-    { id: 1, date: '2026-09-01', admin: 'Aadarsh Sharma', type: 'Shop Rent', amount: 15000, remarks: 'Monthly shop rent' },
-    { id: 2, date: '2026-09-05', admin: 'Rohit Kumar', type: 'Staff Salary', amount: 22000, remarks: 'Staff salary payout' },
-    { id: 3, date: '2026-09-08', admin: 'Neha Patel', type: 'Repair Cost', amount: 6500, remarks: 'Parts & display replacement' },
-    { id: 4, date: '2026-09-10', admin: 'Vikram Singh', type: 'Transport', amount: 4200, remarks: 'Courier & inventory logistics' },
-    { id: 5, date: '2026-09-12', admin: 'Aadarsh Sharma', type: 'Utilities', amount: 3500, remarks: 'Electricity & broadband' }
-  ]);
+  const [expenses, setExpenses] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+    } catch (e) {
+      return [];
+    }
+  });
 
   const handleExpenseSubmit = (e) => {
     e.preventDefault();

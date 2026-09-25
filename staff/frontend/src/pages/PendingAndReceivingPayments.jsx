@@ -46,26 +46,12 @@ export default function PendingAndReceivingPayments() {
 
   const getStoredPayments = () => {
     try {
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
       const localStr = localStorage.getItem('mrx_pending_payments');
       if (localStr) {
-        const localItems = JSON.parse(localStr);
-        if (isCleared) return localItems;
-        const seen = new Set();
-        const combined = [];
-        for (const item of [...localItems, ...samplePayments]) {
-          const key = String(item.id);
-          if (!seen.has(key)) {
-            seen.add(key);
-            combined.push(item);
-          }
-        }
-        return combined;
+        return JSON.parse(localStr);
       }
-      if (isCleared) return [];
     } catch (e) {}
-    const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-    return isCleared ? [] : samplePayments;
+    return [];
   };
 
   const [payments, setPayments] = useState(getStoredPayments);

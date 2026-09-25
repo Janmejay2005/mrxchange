@@ -44,20 +44,8 @@ export default function RejectedStock() {
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-      const sampleRejected = isCleared ? [] : [
-        { id: 'rej_1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', last_rejection_reason: 'Display IC fault', status: 'REJECTED' },
-        { id: 'rej_2', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '14 Sep 2026', last_rejection_reason: 'Motherboard short circuit', status: 'REJECTED' },
-        { id: 'rej_3', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '13 Sep 2026', last_rejection_reason: 'Liquid damage', status: 'REJECTED' }
-      ];
-      const dataIds = new Set(dataList.map(d => String(d.id)));
-      const dataCodes = new Set(dataList.map(d => d.device_code).filter(Boolean));
 
-      const filteredSamples = sampleRejected.filter(s =>
-        !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
-      );
-
-      const allRejected = [...localRejected, ...dataList, ...filteredSamples].filter(d => d.status === 'REJECTED' || !d.status);
+      const allRejected = [...localRejected, ...dataList].filter(d => d.status === 'REJECTED' || !d.status);
       setDevices(allRejected);
       setLoading(false);
     } catch (err) {

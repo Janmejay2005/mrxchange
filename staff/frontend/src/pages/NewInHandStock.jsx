@@ -75,12 +75,10 @@ export default function NewInHandStock() {
   const fetchCombinedStock = () => {
     try {
       const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-      const samples = isCleared ? [] : getInitialSampleStock();
       const seenKeys = new Set();
       const combined = [];
 
-      for (const item of [...deliveredItems, ...samples]) {
+      for (const item of deliveredItems) {
         const key = String(item.sno || item.id || `${item.brand}_${item.model}_${item.date}`);
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
@@ -94,8 +92,7 @@ export default function NewInHandStock() {
       }
       return combined;
     } catch (e) {
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
-      return isCleared ? [] : getInitialSampleStock();
+      return [];
     }
   };
 

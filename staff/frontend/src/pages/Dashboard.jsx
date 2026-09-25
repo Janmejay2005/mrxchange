@@ -55,27 +55,20 @@ export default function Dashboard() {
       setLoading(false);
     } catch (err) {
       console.warn('Dashboard stats using dynamic local fallback calculation');
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
       const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
       const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       const localNewHand = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
 
-      const countOldInv = isCleared ? localOldInv.length : (localOldInv.length || 3786);
-      const countOldHand = isCleared ? localOldHand.length : (localOldHand.length || 420);
-      const countNewHand = isCleared ? localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0) : (localNewHand.length || 200);
-      const countRepair = isCleared ? localRepair.length : (localRepair.length || 842);
-      const countRejected = isCleared ? localRejected.length : (localRejected.length || 0);
+      const countOldInv = localOldInv.length;
+      const countOldHand = localOldHand.length;
+      const countNewHand = localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0);
+      const countRepair = localRepair.length;
+      const countRejected = localRejected.length;
 
       const totalMobiles = countOldInv + countOldHand + countNewHand + countRepair + countRejected;
       const inHandTotal = countOldHand + countNewHand;
-
-      const recentlyAddedList = isCleared ? localOldInv.slice(0, 5) : [
-        { id: '1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', intake_date: '2026-09-15', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' }
-      ];
 
       setStats({
         kpis: {
@@ -101,7 +94,7 @@ export default function Dashboard() {
           { date: '14 Sep', count: totalMobiles },
           { date: '15 Sep', count: totalMobiles }
         ],
-        recently_added: localOldInv.length > 0 ? localOldInv.slice(0, 5) : recentlyAddedList
+        recently_added: localOldInv.slice(0, 5)
       });
 
       if (isSuperAdmin) {
@@ -113,52 +106,19 @@ export default function Dashboard() {
         const grossProfitVal = localSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
         const netProfitVal = grossProfitVal - totalExpensesVal;
 
-        if (isCleared && localSales.length === 0 && localExpenses.length === 0) {
-          setFinanceStats({
-            kpis: {
-              total_sales: 0,
-              gross_profit: 0,
-              total_expenses: 0,
-              net_profit: 0,
-              profit_margin: 0,
-              total_investment: 0,
-              roi: 0,
-              expense_ratio: 0
-            },
-            admin_performance: []
-          });
-        } else if (localSales.length > 0 || localExpenses.length > 0) {
-          setFinanceStats({
-            kpis: {
-              total_sales: totalSalesVal,
-              gross_profit: grossProfitVal,
-              total_expenses: totalExpensesVal,
-              net_profit: netProfitVal,
-              profit_margin: totalSalesVal > 0 ? Number(((netProfitVal / totalSalesVal) * 100).toFixed(2)) : 0,
-              total_investment: 0,
-              roi: 0,
-              expense_ratio: totalSalesVal > 0 ? Number(((totalExpensesVal / totalSalesVal) * 100).toFixed(2)) : 0
-            },
-            admin_performance: []
-          });
-        } else {
-          setFinanceStats({
-            kpis: {
-              total_sales: 182500,
-              gross_profit: 50500,
-              total_expenses: 40500,
-              net_profit: 10000,
-              profit_margin: 5.48,
-              total_investment: 850000,
-              roi: 12.0,
-              expense_ratio: 22.19
-            },
-            admin_performance: [
-              { admin: 'Jeet Khubchandani', sales: 127500, expenses: 31300, net_profit: 32500, investment: 700000, roi: '14.6' },
-              { admin: 'Sunal', sales: 55000, expenses: 9200, net_profit: 18000, investment: 150000, roi: '12.0' }
-            ]
-          });
-        }
+        setFinanceStats({
+          kpis: {
+            total_sales: totalSalesVal,
+            gross_profit: grossProfitVal,
+            total_expenses: totalExpensesVal,
+            net_profit: netProfitVal,
+            profit_margin: totalSalesVal > 0 ? Number(((netProfitVal / totalSalesVal) * 100).toFixed(2)) : 0,
+            total_investment: 0,
+            roi: 0,
+            expense_ratio: totalSalesVal > 0 ? Number(((totalExpensesVal / totalSalesVal) * 100).toFixed(2)) : 0
+          },
+          admin_performance: []
+        });
       }
       setLoading(false);
     }

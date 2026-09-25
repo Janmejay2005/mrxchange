@@ -57,27 +57,10 @@ export default function Expenses() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
       const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
-      if (isCleared) {
-        setExpenses(localExpenses);
-        setTotalExpenses(localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
-        setBreakdown([]);
-      } else {
-        setExpenses([
-          { id: '1', expense_code: 'EXP-001', category: 'SALARY', amount: 25000, admin_name: 'Jeet Khubchandani', recipient: 'Technician Staff', expense_date: '2026-09-10', remarks: 'Monthly technician salaries' },
-          { id: '2', expense_code: 'EXP-002', category: 'REPAIRING_COST', amount: 6800, admin_name: 'Sunal', recipient: 'Sunil Electronics Wholesale', expense_date: '2026-09-12', remarks: 'Displays & Batteries batch purchase' },
-          { id: '3', expense_code: 'EXP-003', category: 'OTHER', amount: 4500, admin_name: 'Jeet Khubchandani', recipient: 'Power Corporation', expense_date: '2026-09-14', remarks: 'Shop electricity & internet' },
-          { id: '4', expense_code: 'EXP-004', category: 'REPAIRING_COST', amount: 2400, admin_name: 'Sunal', recipient: 'Aman Tech', expense_date: '2026-09-16', remarks: 'Specialized Motherboard IC soldering' },
-          { id: '5', expense_code: 'EXP-005', category: 'OTHER', amount: 1800, admin_name: 'Jeet Khubchandani', recipient: 'Packaging Supply Co.', expense_date: '2026-09-17', remarks: 'Phone boxes & bubble wraps' }
-        ]);
-        setTotalExpenses(40500);
-        setBreakdown([
-          { category: 'SALARY', amount: 25000, count: 1 },
-          { category: 'REPAIRING_COST', amount: 9200, count: 2 },
-          { category: 'OTHER', amount: 6300, count: 2 }
-        ]);
-      }
+      setExpenses(localExpenses);
+      setTotalExpenses(localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
+      setBreakdown([]);
       setLoading(false);
     }
   };
