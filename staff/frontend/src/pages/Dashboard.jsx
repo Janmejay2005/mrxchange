@@ -105,22 +105,60 @@ export default function Dashboard() {
       });
 
       if (isSuperAdmin) {
-        setFinanceStats({
-          kpis: {
-            total_sales: 182500,
-            gross_profit: 50500,
-            total_expenses: 40500,
-            net_profit: 10000,
-            profit_margin: 5.48,
-            total_investment: 850000,
-            roi: 12.0,
-            expense_ratio: 22.19
-          },
-          admin_performance: [
-            { admin: 'Jeet Khubchandani', sales: 127500, expenses: 31300, net_profit: 32500, investment: 700000, roi: '14.6' },
-            { admin: 'Sunal', sales: 55000, expenses: 9200, net_profit: 18000, investment: 150000, roi: '12.0' }
-          ]
-        });
+        const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+        const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+        
+        const totalSalesVal = localSales.reduce((sum, s) => sum + (Number(s.soldPrice || s.totalAmount || s.amount) || 0), 0);
+        const totalExpensesVal = localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        const grossProfitVal = localSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
+        const netProfitVal = grossProfitVal - totalExpensesVal;
+
+        if (isCleared && localSales.length === 0 && localExpenses.length === 0) {
+          setFinanceStats({
+            kpis: {
+              total_sales: 0,
+              gross_profit: 0,
+              total_expenses: 0,
+              net_profit: 0,
+              profit_margin: 0,
+              total_investment: 0,
+              roi: 0,
+              expense_ratio: 0
+            },
+            admin_performance: []
+          });
+        } else if (localSales.length > 0 || localExpenses.length > 0) {
+          setFinanceStats({
+            kpis: {
+              total_sales: totalSalesVal,
+              gross_profit: grossProfitVal,
+              total_expenses: totalExpensesVal,
+              net_profit: netProfitVal,
+              profit_margin: totalSalesVal > 0 ? Number(((netProfitVal / totalSalesVal) * 100).toFixed(2)) : 0,
+              total_investment: 0,
+              roi: 0,
+              expense_ratio: totalSalesVal > 0 ? Number(((totalExpensesVal / totalSalesVal) * 100).toFixed(2)) : 0
+            },
+            admin_performance: []
+          });
+        } else {
+          setFinanceStats({
+            kpis: {
+              total_sales: 182500,
+              gross_profit: 50500,
+              total_expenses: 40500,
+              net_profit: 10000,
+              profit_margin: 5.48,
+              total_investment: 850000,
+              roi: 12.0,
+              expense_ratio: 22.19
+            },
+            admin_performance: [
+              { admin: 'Jeet Khubchandani', sales: 127500, expenses: 31300, net_profit: 32500, investment: 700000, roi: '14.6' },
+              { admin: 'Sunal', sales: 55000, expenses: 9200, net_profit: 18000, investment: 150000, roi: '12.0' }
+            ]
+          });
+        }
       }
       setLoading(false);
     }
