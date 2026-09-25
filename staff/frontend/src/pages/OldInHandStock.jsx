@@ -489,7 +489,8 @@ export default function OldInHandStock() {
       const dataList = Array.isArray(res) ? res : (res?.data || []);
       const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       
-      const sampleStock = [
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      const sampleStock = isCleared ? [] : [
         { id: 'old_hand_1', device_code: 'MRX-00101', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, paid_by: 'Rohit', intake_date: '2026-09-15', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
         { id: 'old_hand_2', device_code: 'MRX-00102', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, paid_by: 'Aadarsh', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
         { id: 'old_hand_3', device_code: 'MRX-00103', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, paid_by: 'Neha', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },

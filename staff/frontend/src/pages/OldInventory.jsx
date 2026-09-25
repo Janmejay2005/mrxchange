@@ -165,7 +165,8 @@ export default function OldInventory() {
         console.error(e);
       }
 
-      const sampleList = getSampleDevices();
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      const sampleList = isCleared ? [] : getSampleDevices();
       const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
       const rawCombined = [...localInventory, ...dataList, ...sampleList];
@@ -194,9 +195,34 @@ export default function OldInventory() {
       setLoading(false);
     } catch (err) {
       console.error(err);
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
       const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      setDevices([...localInventory, ...getSampleDevices()]);
+      setDevices([...localInventory, ...(isCleared ? [] : getSampleDevices())]);
       setLoading(false);
+    }
+  };
+
+  const handleCleanInventory = () => {
+    if (window.confirm('Are you sure you want to clean/clear all inventory data? This will reset all stock, exchanges, payments, and sales to 0.')) {
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_repair_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_exchanges', JSON.stringify([]));
+      localStorage.setItem('mrx_exchange_pool', JSON.stringify([]));
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
+      localStorage.setItem('mrx_sales', JSON.stringify([]));
+      localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_inventory_cleared', 'true');
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+
+      setDevices([]);
+      alert('All inventory data has been cleared successfully! You can now add new devices using "+ Add Mobile".');
     }
   };
 
@@ -363,9 +389,27 @@ export default function OldInventory() {
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
             Master device intake register • {selectedDate ? `Filtered for ${selectedDate}` : 'All Intake History'}
           </p>
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
               <Plus size={18} /> Add Mobile
+            </button>
+            <button 
+              onClick={handleCleanInventory} 
+              style={{ 
+                padding: '10px 18px', 
+                borderRadius: '8px', 
+                background: '#fef2f2', 
+                color: '#dc2626', 
+                border: '1px solid #fecaca', 
+                fontWeight: 700, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                cursor: 'pointer' 
+              }}
+              title="Clear all local inventory stock, exchanges, payments, and sales to test fresh flow"
+            >
+              <Trash2 size={16} /> Clean Inventory
             </button>
           </div>
         </div>

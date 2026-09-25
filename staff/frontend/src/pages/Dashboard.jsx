@@ -39,7 +39,11 @@ export default function Dashboard() {
       const res = await statsService.getDashboardStats({
         date: selectedDate || ''
       });
-      setStats(res.data);
+      if (res.data && res.data.kpis) {
+        setStats(res.data);
+      } else {
+        throw new Error('Using local fallback calculation');
+      }
 
       if (isSuperAdmin) {
         const finRes = await statsService.getSuperadminAnalytics({
@@ -50,39 +54,54 @@ export default function Dashboard() {
       }
       setLoading(false);
     } catch (err) {
-      console.error(err);
-      // Fallback data
+      console.warn('Dashboard stats using dynamic local fallback calculation');
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const localNewHand = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+      const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+
+      const countOldInv = isCleared ? localOldInv.length : (localOldInv.length || 3786);
+      const countOldHand = isCleared ? localOldHand.length : (localOldHand.length || 420);
+      const countNewHand = isCleared ? localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0) : (localNewHand.length || 200);
+      const countRepair = isCleared ? localRepair.length : (localRepair.length || 842);
+      const countRejected = isCleared ? localRejected.length : (localRejected.length || 0);
+
+      const totalMobiles = countOldInv + countOldHand + countNewHand + countRepair + countRejected;
+      const inHandTotal = countOldHand + countNewHand;
+
+      const recentlyAddedList = isCleared ? localOldInv.slice(0, 5) : [
+        { id: '1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', intake_date: '2026-09-15', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
+        { id: '2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
+        { id: '3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' }
+      ];
+
       setStats({
         kpis: {
-          total_mobiles: 5248,
-          old_inventory: 3786,
-          old_in_hand: 420,
-          new_in_hand: 200,
-          in_hand: 620,
-          repair_stock: 842,
-          rejected_stock: 0
+          total_mobiles: totalMobiles,
+          old_inventory: countOldInv,
+          old_in_hand: countOldHand,
+          new_in_hand: countNewHand,
+          in_hand: inHandTotal,
+          repair_stock: countRepair,
+          rejected_stock: countRejected
         },
         distribution: {
-          old_inventory: { count: 3786, percentage: 72 },
-          in_hand: { count: 620, percentage: 12 },
-          repair: { count: 842, percentage: 16 },
-          rejected: { count: 0, percentage: 0 }
+          old_inventory: { count: countOldInv, percentage: totalMobiles > 0 ? Math.round((countOldInv / totalMobiles) * 100) : 0 },
+          in_hand: { count: inHandTotal, percentage: totalMobiles > 0 ? Math.round((inHandTotal / totalMobiles) * 100) : 0 },
+          repair: { count: countRepair, percentage: totalMobiles > 0 ? Math.round((countRepair / totalMobiles) * 100) : 0 },
+          rejected: { count: countRejected, percentage: totalMobiles > 0 ? Math.round((countRejected / totalMobiles) * 100) : 0 }
         },
         trend: [
-          { date: '10 Sep', count: 4700 },
-          { date: '11 Sep', count: 4900 },
-          { date: '12 Sep', count: 4950 },
-          { date: '13 Sep', count: 5100 },
-          { date: '14 Sep', count: 5200 },
-          { date: '15 Sep', count: 5248 }
+          { date: '10 Sep', count: totalMobiles },
+          { date: '11 Sep', count: totalMobiles },
+          { date: '12 Sep', count: totalMobiles },
+          { date: '13 Sep', count: totalMobiles },
+          { date: '14 Sep', count: totalMobiles },
+          { date: '15 Sep', count: totalMobiles }
         ],
-        recently_added: [
-          { id: '1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, colour: 'Midnight', condition: 'Good', intake_date: '2026-09-15', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-          { id: '2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, colour: 'Phantom Black', condition: 'Good', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-          { id: '3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, colour: 'White', condition: 'Fair', intake_date: '2026-09-14', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-          { id: '4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, colour: 'Sierra Black', condition: 'Good', intake_date: '2026-09-13', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-          { id: '5', brand: 'Xiaomi', model: 'Redmi Note 11', storage: 128, ram: 6, colour: 'Blue', condition: 'Good', intake_date: '2026-09-12', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' }
-        ]
+        recently_added: localOldInv.length > 0 ? localOldInv.slice(0, 5) : recentlyAddedList
       });
 
       if (isSuperAdmin) {
@@ -109,6 +128,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    const handleSync = () => fetchDashboardData();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
+    window.addEventListener('mrx_exchanges_updated', handleSync);
+    window.addEventListener('mrx_pending_payments_updated', handleSync);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
+      window.removeEventListener('mrx_exchanges_updated', handleSync);
+      window.removeEventListener('mrx_pending_payments_updated', handleSync);
+    };
   }, [selectedAdmin, selectedDate, isSuperAdmin]);
 
   const doughnutData = {

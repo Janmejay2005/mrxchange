@@ -45,7 +45,9 @@ export default function RepairStock() {
         q: globalSearch || ''
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
-      const sampleRepairStock = [
+      const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      const sampleRepairStock = isCleared ? [] : [
         { id: 'rep_1', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '15 Sep 2026', status: 'IN_REPAIR' },
         { id: 'rep_2', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', purchase_amount: 88000, paid_by: 'Sonal', intake_date: '14 Sep 2026', status: 'IN_REPAIR' },
         { id: 'rep_3', brand: 'Apple', model: 'iPhone 15 Pro', storage: 256, ram: 8, colour: 'Natural Titanium', purchase_amount: 92000, paid_by: 'Rohit', intake_date: '13 Sep 2026', status: 'IN_REPAIR' }
@@ -58,7 +60,7 @@ export default function RepairStock() {
         !dataIds.has(String(s.id)) && (!s.device_code || !dataCodes.has(s.device_code))
       );
 
-      const allRepair = [...dataList, ...filteredSamples].filter(d => d.status === 'IN_REPAIR');
+      const allRepair = [...localRepair, ...dataList, ...filteredSamples].filter(d => d.status === 'IN_REPAIR' || !d.status);
       setDevices(allRepair);
       setLoading(false);
     } catch (err) {

@@ -75,7 +75,8 @@ export default function NewInHandStock() {
   const fetchCombinedStock = () => {
     try {
       const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      const samples = getInitialSampleStock();
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      const samples = isCleared ? [] : getInitialSampleStock();
       const seenKeys = new Set();
       const combined = [];
 
@@ -93,7 +94,8 @@ export default function NewInHandStock() {
       }
       return combined;
     } catch (e) {
-      return getInitialSampleStock();
+      const isCleared = localStorage.getItem('mrx_inventory_cleared') === 'true';
+      return isCleared ? [] : getInitialSampleStock();
     }
   };
 
