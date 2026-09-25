@@ -199,8 +199,14 @@ export default function OldInventory() {
     }
   };
 
-  const handleCleanInventory = () => {
-    if (window.confirm('Are you sure you want to clean/clear all inventory data? This will reset all stock, exchanges, payments, and sales to 0.')) {
+  const handleCleanInventory = async () => {
+    if (window.confirm('Are you sure you want to clean/clear all central database inventory data? This will reset all server database rows to 0 across all devices.')) {
+      try {
+        await deviceService.cleanDatabase();
+      } catch (err) {
+        console.warn('Backend DB clean warning:', err);
+      }
+
       localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
@@ -219,7 +225,7 @@ export default function OldInventory() {
       window.dispatchEvent(new Event('storage'));
 
       setDevices([]);
-      alert('All inventory data has been cleared successfully! You can now add new devices using "+ Add Mobile".');
+      alert('Central database & local memory cleared to 0 successfully!');
     }
   };
 

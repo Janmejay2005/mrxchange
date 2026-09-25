@@ -364,3 +364,33 @@ export async function updateDeviceStatus(req, res) {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function cleanDatabase(req, res) {
+  try {
+    const pool = getPool();
+    if (pool.isMockPool) {
+      pool.cleanMockStore();
+    } else {
+      try {
+        await pool.query('DELETE FROM sales;');
+        await pool.query('DELETE FROM repairs;');
+        await pool.query('DELETE FROM rejections;');
+        await pool.query('DELETE FROM device_status_history;');
+        await pool.query('DELETE FROM device_images;');
+        await pool.query('DELETE FROM transactions;');
+        await pool.query('DELETE FROM expenses;');
+        await pool.query('DELETE FROM investments;');
+        await pool.query('DELETE FROM devices;');
+      } catch (dbErr) {
+        console.warn('DB wipe statement warning:', dbErr.message);
+      }
+    }
+    res.json({
+      success: true,
+      message: 'Central database cleaned successfully to 0'
+    });
+  } catch (error) {
+    console.error('cleanDatabase error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}

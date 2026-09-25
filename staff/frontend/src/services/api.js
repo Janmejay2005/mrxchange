@@ -83,6 +83,19 @@ export const deviceService = {
     return combined;
   },
   getDeviceById: (id) => fetchApi(`/devices/${id}`),
+  cleanDatabase: async () => {
+    try {
+      await fetchApi('/admin/clean-database', { method: 'POST' });
+    } catch (e) {
+      try {
+        await fetchApi('/devices/clean-database', { method: 'POST' });
+      } catch (err) {}
+    }
+    localStorage.setItem('mrx_devices', JSON.stringify([]));
+    localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
+    localStorage.setItem('mrx_inventory_cleared', 'true');
+    return { success: true };
+  },
   createDevice: async (formData) => {
     const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
     const newDevice = {

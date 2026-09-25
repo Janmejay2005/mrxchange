@@ -61,6 +61,31 @@ export default function App() {
     return !seen;
   });
 
+  // Automatically reset legacy browser storage on any device loading the updated build
+  React.useEffect(() => {
+    const DATA_VERSION = 'v2_clean_zero_state_2026';
+    if (localStorage.getItem('mrx_data_version') !== DATA_VERSION) {
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_repair_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_exchanges', JSON.stringify([]));
+      localStorage.setItem('mrx_exchange_pool', JSON.stringify([]));
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
+      localStorage.setItem('mrx_sales', JSON.stringify([]));
+      localStorage.setItem('mrx_expenses', JSON.stringify([]));
+      localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_inventory_cleared', 'true');
+      localStorage.setItem('mrx_data_version', DATA_VERSION);
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, []);
+
   const handleSplashFinish = () => {
     sessionStorage.setItem('mrx_splash_shown', 'true');
     setShowSplash(false);
