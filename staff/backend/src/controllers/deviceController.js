@@ -270,7 +270,7 @@ export async function updateDeviceStatus(req, res) {
     const { status, reason, repair_issue, technician, repair_cost, rejection_reason } = req.body;
     const pool = getPool();
 
-    const [devices] = await pool.query('SELECT * FROM devices WHERE id = ?', [id]);
+    const [devices] = await pool.query('SELECT * FROM devices WHERE id = ? OR device_code = ?', [id, id]);
     if (devices.length === 0) {
       return res.status(404).json({ success: false, message: 'Device not found' });
     }
@@ -308,7 +308,7 @@ export async function updateDeviceStatus(req, res) {
     await conn.beginTransaction();
 
     try {
-      await conn.query('UPDATE devices SET status = ? WHERE id = ?', [status, id]);
+      await conn.query('UPDATE devices SET status = ? WHERE id = ?', [status, device.id]);
 
       if (status === 'IN_REPAIR' && repair_issue) {
         await conn.query(`

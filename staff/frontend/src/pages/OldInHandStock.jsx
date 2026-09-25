@@ -488,8 +488,10 @@ export default function OldInHandStock() {
       });
       const dataList = Array.isArray(res) ? res : (res?.data || []);
       const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'OLD_IN_HAND');
+      const mrxOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
 
-      const rawCombined = [...cancelledItems, ...dataList];
+      const rawCombined = [...cancelledItems, ...mrxDevices, ...mrxOldInv, ...dataList];
       const seenFingerprints = new Set();
       const allInHand = [];
 

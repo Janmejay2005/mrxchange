@@ -61,14 +61,13 @@ export const deviceService = {
     } catch (err) {
       console.warn("Backend API unavailable for getDevices, using local fallback:", err.message);
     }
-    const isCleared = typeof window !== 'undefined' && localStorage.getItem('mrx_inventory_cleared') === 'true';
     const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
     
     // Deduplicate: localDevices override remoteDevices for the same id or device_code
     const localIds = new Set(localDevices.map(d => String(d.id)));
     const localCodes = new Set(localDevices.map(d => d.device_code).filter(Boolean));
 
-    const uniqueRemote = isCleared ? [] : remoteDevices.filter(d => 
+    const uniqueRemote = remoteDevices.filter(d => 
       !localIds.has(String(d.id)) && (!d.device_code || !localCodes.has(d.device_code))
     );
 
@@ -93,10 +92,11 @@ export const deviceService = {
     }
     localStorage.setItem('mrx_devices', JSON.stringify([]));
     localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
-    localStorage.setItem('mrx_inventory_cleared', 'true');
+    localStorage.removeItem('mrx_inventory_cleared');
     return { success: true };
   },
   createDevice: async (formData) => {
+    localStorage.removeItem('mrx_inventory_cleared');
     const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
     const newDevice = {
       id: `dev_${Date.now()}`,
