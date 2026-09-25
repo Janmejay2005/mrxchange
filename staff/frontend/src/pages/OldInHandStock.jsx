@@ -554,6 +554,22 @@ export default function OldInHandStock() {
     }
     return true;
   });
+  const uniqueModelsCount = new Set(
+    filteredDevices
+      .map(d => `${d.brand || ''} ${d.model || ''}`.trim().toLowerCase())
+      .filter(Boolean)
+  ).size;
+
+  const totalStorageGB = filteredDevices.reduce(
+    (sum, d) => sum + (Number(d.storage) || 0),
+    0
+  );
+
+  const totalRamGB = filteredDevices.reduce(
+    (sum, d) => sum + (Number(d.ram) || 0),
+    0
+  );
+
   const handleExportXls = () => {
     const headers = ['#', 'Device Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchase Amount (Rs)', 'Intake Date', 'Status'];
     const rows = filteredDevices.map((d, idx) => [
@@ -620,28 +636,28 @@ export default function OldInHandStock() {
       <div className="kpi-grid">
         <KPICard 
           title="Old In-hand Units" 
-          value={stats?.total_in_hand || devices.length} 
+          value={filteredDevices.length} 
           icon={Smartphone}
           iconBg="#e0f2fe"
           iconColor="#0284c7"
         />
         <KPICard 
           title="Unique Models" 
-          value={stats?.unique_models || '14'} 
+          value={uniqueModelsCount} 
           icon={Layers}
           iconBg="#ecfdf5"
           iconColor="#059669"
         />
         <KPICard 
           title="Total Storage (GB)" 
-          value={stats?.total_storage?.toLocaleString() || '1,840'} 
+          value={totalStorageGB.toLocaleString()} 
           icon={HardDrive}
           iconBg="#f3e8ff"
           iconColor="#9333ea"
         />
         <KPICard 
           title="Total RAM (GB)" 
-          value={stats?.total_ram?.toLocaleString() || '320'} 
+          value={totalRamGB.toLocaleString()} 
           icon={Cpu}
           iconBg="#ffedd5"
           iconColor="#ea580c"
