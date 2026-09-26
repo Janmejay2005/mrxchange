@@ -18,6 +18,8 @@ import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
+import { expenseService, saleService } from '../services/api';
+
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export default function ProfitExpenseAndStatistic() {
@@ -40,40 +42,69 @@ export default function ProfitExpenseAndStatistic() {
   // Add Expense Modal
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
-    date: '2026-09-15',
+    date: new Date().toISOString().split('T')[0],
     amount: '',
     type: 'Shop Rent',
     remarks: ''
   });
 
-  const [phoneProfits, setPhoneProfits] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('mrx_sales') || '[]');
-    } catch (e) {
-      return [];
-    }
-  });
+  const [phoneProfits, setPhoneProfits] = useState([]);
+  const [expenses, setExpenses] = useState([]);
 
-  const [expenses, setExpenses] = useState(() => {
+  const loadData = async () => {
     try {
-      return JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
-    } catch (e) {
-      return [];
+      const [salesRes, expRes] = await Promise.all([
+        saleService.getSales(),
+        expenseService.getExpenses()
+      ]);
+      setPhoneProfits(salesRes.data || []);
+      setExpenses(expRes.data || []);
+    } catch (err) {
+      console.error("Error loading profit and expense data:", err);
+      try {
+        setPhoneProfits(JSON.parse(localStorage.getItem('mrx_sales') || '[]'));
+        setExpenses(JSON.parse(localStorage.getItem('mrx_expenses') || '[]'));
+      } catch (e) {}
     }
-  });
+  };
 
-  const handleExpenseSubmit = (e) => {
+  React.useEffect(() => {
+    loadData();
+
+    const handleSync = () => loadData();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('mrx_sales_updated', handleSync);
+    window.addEventListener('mrx_expenses_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('mrx_sales_updated', handleSync);
+      window.removeEventListener('mrx_expenses_updated', handleSync);
+    };
+  }, []);
+
+  const handleExpenseSubmit = async (e) => {
     e.preventDefault();
-    const newExp = {
-      id: expenses.length + 1,
+    const adminName = selectedAdmin === 'All Super Admins' ? 'Jeet' : selectedAdmin;
+    const expPayload = {
       date: expenseForm.date,
-      admin: selectedAdmin === 'All Super Admins' ? 'Aadarsh Sharma' : selectedAdmin,
+      expense_date: expenseForm.date,
+      admin: adminName,
+      admin_name: adminName,
       type: expenseForm.type,
-      amount: Number(expenseForm.amount) || 1000,
+      category: expenseForm.type === 'Salary' ? 'SALARY' : (expenseForm.type === 'Repairing Cost' ? 'REPAIRING_COST' : 'OTHER'),
+      amount: Number(expenseForm.amount) || 0,
       remarks: expenseForm.remarks || 'Business expense'
     };
-    setExpenses([newExp, ...expenses]);
+    await expenseService.createExpense(expPayload);
+    alert('Expense added successfully & synced across all devices!');
     setIsExpenseModalOpen(false);
+    setExpenseForm({
+      date: new Date().toISOString().split('T')[0],
+      amount: '',
+      type: 'Shop Rent',
+      remarks: ''
+    });
+    loadData();
   };
 
   const toYMD = (val) => {

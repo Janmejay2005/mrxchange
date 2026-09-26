@@ -240,11 +240,65 @@ export const rejectionService = {
 
 // Sale Service
 export const saleService = {
-  createSale: (payload) => fetchApi('/sales', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  getSales: () => fetchApi('/sales'),
+  createSale: async (payload) => {
+    let res = {};
+    try {
+      res = await fetchApi('/sales', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn("Backend sale create offline fallback:", err.message);
+    }
+    const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    const newSale = {
+      id: res.saleId || `SALE-${Date.now()}`,
+      date: payload.date || new Date().toISOString().split('T')[0],
+      brand: payload.brand || 'Device',
+      model: payload.model || 'Model',
+      purchase: Number(payload.purchase_amount || payload.purchase || 0),
+      selling: Number(payload.selling_price || payload.selling || 0),
+      profit: Number(payload.selling_price || payload.selling || 0) - Number(payload.purchase_amount || payload.purchase || 0),
+      admin: payload.admin || payload.sold_by || 'Jeet',
+      customerName: payload.customer_name || 'Customer'
+    };
+    const updated = [newSale, ...localSales];
+    localStorage.setItem('mrx_sales', JSON.stringify(updated));
+    window.dispatchEvent(new Event('mrx_sales_updated'));
+    window.dispatchEvent(new Event('storage'));
+    return res;
+  },
+  getSales: async () => {
+    let remoteSales = [];
+    try {
+      const res = await fetchApi('/sales');
+      remoteSales = res?.data || [];
+    } catch (err) {
+      console.warn("Backend API sales fetch offline fallback:", err.message);
+    }
+    const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    const seen = new Set();
+    const combined = [];
+    for (const s of [...remoteSales, ...localSales]) {
+      if (!s) continue;
+      const key = s.id || `${s.brand}|${s.model}|${s.selling_price || s.selling}|${s.sold_at || s.date}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push({
+          ...s,
+          date: s.sold_at ? s.sold_at.split('T')[0] : (s.date || new Date().toISOString().split('T')[0]),
+          purchase: Number(s.purchase_amount || s.purchase || s.total_cost || 0),
+          selling: Number(s.selling_price || s.selling || 0),
+          profit: Number(s.realized_profit || s.profit || (Number(s.selling_price || 0) - Number(s.purchase_amount || 0))),
+          admin: s.sold_by || s.admin || 'Jeet'
+        });
+      }
+    }
+    return { success: true, data: combined };
+  },
+  getSalesList: async () => {
+    return saleService.getSales();
+  }
 };
 
 // Central Ledger Service (Superadmin)
@@ -261,14 +315,63 @@ export const ledgerService = {
 
 // Expenses Service (Superadmin)
 export const expenseService = {
-  getExpenses: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return fetchApi(`/expenses?${query}`);
+  getExpenses: async (params = {}) => {
+    let remoteExpenses = [];
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetchApi(`/expenses?${query}`);
+      remoteExpenses = res?.data || [];
+    } catch (err) {
+      console.warn("Backend API expense fetch offline fallback:", err.message);
+    }
+    const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+    const seen = new Set();
+    const combined = [];
+    for (const e of [...remoteExpenses, ...localExpenses]) {
+      if (!e) continue;
+      const key = e.id || e.expense_code || `${e.category || e.type}|${e.amount}|${e.expense_date || e.date}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push({
+          ...e,
+          date: e.expense_date || e.date || new Date().toISOString().split('T')[0],
+          admin: e.admin_name || e.admin || 'Jeet',
+          type: e.category || e.type || 'Operational'
+        });
+      }
+    }
+    return { success: true, data: combined, total_expenses: combined.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) };
   },
-  createExpense: (payload) => fetchApi('/expenses', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
+  createExpense: async (payload) => {
+    let createdRes = {};
+    try {
+      createdRes = await fetchApi('/expenses', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn("Backend API expense creation offline fallback:", err.message);
+    }
+    const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+    const newEntry = {
+      id: createdRes.id || `EXP-${Date.now()}`,
+      expense_code: createdRes.expense_code || `EXP-${Date.now().toString().slice(-6)}`,
+      category: payload.category || payload.type || 'OTHER',
+      type: payload.type || payload.category || 'OTHER',
+      amount: Number(payload.amount) || 0,
+      expense_date: payload.expense_date || payload.date || new Date().toISOString().split('T')[0],
+      date: payload.expense_date || payload.date || new Date().toISOString().split('T')[0],
+      admin_name: payload.admin_name || payload.admin || 'Jeet',
+      admin: payload.admin_name || payload.admin || 'Jeet',
+      recipient: payload.recipient || '',
+      remarks: payload.remarks || ''
+    };
+    const updated = [newEntry, ...localExpenses];
+    localStorage.setItem('mrx_expenses', JSON.stringify(updated));
+    window.dispatchEvent(new Event('mrx_expenses_updated'));
+    window.dispatchEvent(new Event('storage'));
+    return { success: true, data: newEntry };
+  }
 };
 
 // Investments Service (Superadmin)
