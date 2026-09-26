@@ -5,7 +5,8 @@ import {
   MoreHorizontal,
   CheckCircle,
   Trash2,
-  Home
+  Home,
+  X
 } from 'lucide-react';
 import { deviceService, repairService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
@@ -18,6 +19,7 @@ export default function RepairStock() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [popupDevice, setPopupDevice] = useState(null);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -223,6 +225,7 @@ export default function RepairStock() {
           <thead>
             <tr>
               <th>#</th>
+              <th>Image</th>
               <th>Mobile Brand</th>
               <th>Mobile Model</th>
               <th>Storage (GB)</th>
@@ -238,6 +241,36 @@ export default function RepairStock() {
             {filteredDevices.map((device, idx) => (
               <tr key={device.id || idx}>
                 <td data-label="#">{idx + 1}</td>
+                <td data-label="Image">
+                  <div 
+                    onClick={() => setPopupDevice(device)} 
+                    style={{ cursor: 'pointer', display: 'inline-block' }}
+                    title="Click to view full photos & details"
+                  >
+                    {device.images && device.images.length > 1 ? (
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <img 
+                          src={device.images[0]} 
+                          alt="Front" 
+                          className="device-thumb" 
+                          title="Front View - Click to expand"
+                        />
+                        <img 
+                          src={device.images[1]} 
+                          alt="Back" 
+                          className="device-thumb" 
+                          title="Back View - Click to expand"
+                        />
+                      </div>
+                    ) : (
+                      <img 
+                        src={device.image_url || device.image_data || (device.images && device.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
+                        alt={device.model} 
+                        className="device-thumb" 
+                      />
+                    )}
+                  </div>
+                </td>
                 <td data-label="Brand" style={{ fontWeight: 600 }}>{device.brand}</td>
                 <td data-label="Model" style={{ fontWeight: 700 }}>{device.model}</td>
                 <td data-label="Storage">{device.storage} GB</td>
@@ -297,6 +330,77 @@ export default function RepairStock() {
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#64748b' }}>
         <span>Showing all {devices.length} repair stock items</span>
       </div>
+
+      {/* Image Preview Modal */}
+      {popupDevice && (
+        <div className="modal-overlay" onClick={() => setPopupDevice(null)}>
+          <div 
+            className="modal-card" 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px', textAlign: 'center' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Repair Device Photos & Details</h3>
+              <button onClick={() => setPopupDevice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#64748b' }}>✕</button>
+            </div>
+
+            {/* Device Image Preview */}
+            {(() => {
+              const allImgs = (popupDevice.images && popupDevice.images.length > 0)
+                ? popupDevice.images.filter(Boolean)
+                : [popupDevice.image_url || popupDevice.image_data].filter(Boolean);
+              const previewList = allImgs.length > 0 ? allImgs : ['https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'];
+
+              return (
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', marginBottom: '16px', display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {previewList.map((imgSrc, i) => (
+                    <div key={i} style={{ textAlign: 'center' }}>
+                      <img 
+                        src={imgSrc} 
+                        alt={`${popupDevice.model} - Photo ${i+1}`} 
+                        style={{ maxHeight: '160px', maxWidth: previewList.length > 1 ? '160px' : '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                      />
+                      {previewList.length > 1 && (
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '4px' }}>
+                          Photo {i+1} {i === 0 ? '(Front)' : i === 1 ? '(Back)' : ''}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Device Specs Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left', background: '#f1f5f9', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Brand:</span>
+                <span style={{ color: '#0f172a', fontWeight: 800 }}>{popupDevice.brand}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Model:</span>
+                <span style={{ color: '#0f172a', fontWeight: 800 }}>{popupDevice.model}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Specs (Storage / RAM):</span>
+                <span style={{ color: '#0f172a', fontWeight: 700 }}>{popupDevice.storage} GB / {popupDevice.ram} GB</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Color:</span>
+                <span style={{ color: '#0f172a', fontWeight: 700 }}>{popupDevice.colour || '-'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Status:</span>
+                <span style={{ color: '#ea580c', fontWeight: 800, background: '#ffedd5', padding: '2px 8px', borderRadius: '6px' }}>Under Repair</span>
+              </div>
+            </div>
+
+            <button onClick={() => setPopupDevice(null)} className="btn-secondary" style={{ width: '100%', padding: '10px' }}>
+              Close Preview
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Repair Completion Modal */}
       {completeModal.isOpen && (

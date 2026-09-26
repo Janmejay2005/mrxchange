@@ -794,13 +794,9 @@ export default function OldInHandStock() {
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
                       ) : isDelivered ? (
-                        <button 
-                          onClick={() => openSellModal(d)}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <ShoppingBag size={14} /> Sell
-                        </button>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Delivered ✔️
+                        </span>
                       ) : isBooked ? (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                           <button 
@@ -1078,146 +1074,6 @@ export default function OldInHandStock() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
                 <button type="button" onClick={() => setIsBookModalOpen(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Submit Booking</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Sell Mobile Modal */}
-      {isSellModalOpen && selectedSellDevice && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#059669', margin: 0 }}>Sell Mobile</h2>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>Complete sales transaction for delivered exchange device.</p>
-              </div>
-              <button onClick={() => setIsSellModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
-            </div>
-
-            {sellError && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={16} />
-                <span>{sellError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSellSubmit}>
-              {/* Device Model */}
-              <div style={{ marginBottom: '14px' }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Device Model *</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={sellForm.model} 
-                  onChange={(e) => setSellForm({ ...sellForm, model: e.target.value })} 
-                  required 
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                {/* Sold by */}
-                <div>
-                  <label className="form-label" style={{ fontWeight: 700 }}>Sold by *</label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    value={sellForm.soldBy} 
-                    onChange={(e) => setSellForm({ ...sellForm, soldBy: e.target.value })} 
-                    required 
-                  />
-                </div>
-
-                {/* Unit */}
-                <div>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#dc2626' }}>
-                    Sell Quantity *
-                  </label>
-                  <input 
-                    type="number" 
-                    className="form-control" 
-                    value={sellForm.unit} 
-                    onChange={(e) => {
-                      const u = parseInt(e.target.value) || 0;
-                      const sp = Number(sellForm.soldPrice) || 0;
-                      setSellForm({ ...sellForm, unit: u, totalAmount: u * sp });
-                    }} 
-                    min="1"
-                    required 
-                  />
-                </div>
-              </div>
-
-              {/* Customer Name */}
-              <div style={{ marginBottom: '14px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Customer Name *</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="Enter customer or party name" 
-                  value={sellForm.soldTo} 
-                  onChange={(e) => setSellForm({ ...sellForm, soldTo: e.target.value })} 
-                  required 
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                {/* Price Per Unit */}
-                <div>
-                  <label className="form-label" style={{ fontWeight: 700 }}>Price Per Unit (₹) *</label>
-                  <input 
-                    type="number" 
-                    className="form-control" 
-                    value={sellForm.soldPrice} 
-                    onChange={(e) => {
-                      const sp = e.target.value;
-                      const u = Number(sellForm.unit) || 1;
-                      setSellForm({ ...sellForm, soldPrice: sp, totalAmount: Number(sp) * u });
-                    }} 
-                    required 
-                  />
-                </div>
-
-                {/* Total Selling Price */}
-                <div>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#059669' }}>Total Selling Price (₹) *</label>
-                  <input 
-                    type="number" 
-                    className="form-control" 
-                    value={sellForm.totalAmount} 
-                    onChange={(e) => setSellForm({ ...sellForm, totalAmount: e.target.value })} 
-                    required 
-                  />
-                </div>
-              </div>
-
-              {/* Paid Amount */}
-              <div style={{ marginBottom: '18px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Paid Amount (₹) *</label>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  placeholder="₹ Amount paid so far" 
-                  value={sellForm.paidAmount} 
-                  onChange={(e) => setSellForm({ ...sellForm, paidAmount: e.target.value })} 
-                  required 
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button type="button" onClick={() => setIsSellModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button 
-                  type="submit" 
-                  className="btn-primary" 
-                  style={{ 
-                    padding: '10px 24px', 
-                    fontWeight: 800,
-                    background: '#059669'
-                  }}
-                >
-                  Confirm Sale ({sellForm.unit} Unit)
-                </button>
               </div>
             </form>
           </div>
