@@ -1,6 +1,6 @@
 import express from 'express';
 import { login, getProfile } from '../controllers/authController.js';
-import { getDevices, getDeviceById, createDevice, updateDeviceStatus, cleanDatabase } from '../controllers/deviceController.js';
+import { getDevices, getDeviceById, createDevice, updateDeviceStatus, deleteDevice, cleanDatabase } from '../controllers/deviceController.js';
 import { createRepair, updateRepair } from '../controllers/repairController.js';
 import { createRejection, resolveRejection } from '../controllers/rejectionController.js';
 import { createSale, getSalesList } from '../controllers/saleController.js';
@@ -32,6 +32,7 @@ router.get('/devices', authenticateToken, getDevices);
 router.get('/devices/:id', authenticateToken, getDeviceById);
 router.post('/devices', authenticateToken, upload.single('image'), createDevice);
 router.patch('/devices/:id/status', authenticateToken, updateDeviceStatus);
+router.delete('/devices/:id', authenticateToken, deleteDevice);
 
 // Repairs
 router.post('/repairs', authenticateToken, createRepair);

@@ -365,6 +365,27 @@ export async function updateDeviceStatus(req, res) {
   }
 }
 
+export async function deleteDevice(req, res) {
+  try {
+    const { id } = req.params;
+    const pool = getPool();
+    if (pool.isMockPool) {
+      await pool.query('DELETE FROM devices WHERE id = ? OR device_code = ?', [id, id]);
+    } else {
+      await pool.query('DELETE FROM device_images WHERE device_id = ?', [id]);
+      await pool.query('DELETE FROM repairs WHERE device_id = ?', [id]);
+      await pool.query('DELETE FROM rejections WHERE device_id = ?', [id]);
+      await pool.query('DELETE FROM sales WHERE device_id = ?', [id]);
+      await pool.query('DELETE FROM device_status_history WHERE device_id = ?', [id]);
+      await pool.query('DELETE FROM devices WHERE id = ? OR device_code = ?', [id, id]);
+    }
+    res.json({ success: true, message: 'Device deleted successfully' });
+  } catch (error) {
+    console.error('deleteDevice error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 export async function cleanDatabase(req, res) {
   try {
     const pool = getPool();
@@ -394,3 +415,4 @@ export async function cleanDatabase(req, res) {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+

@@ -145,6 +145,22 @@ export const deviceService = {
     localStorage.setItem('mrx_devices', JSON.stringify([newDevice, ...filteredExisting]));
     return newDevice;
   },
+  deleteDevice: async (id) => {
+    try {
+      await fetchApi(`/devices/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn("Backend API delete device offline/failed:", err.message);
+    }
+    const localInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+    const updatedInv = localInv.filter(d => String(d.id) !== String(id) && String(d.device_code) !== String(id));
+    localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
+
+    const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+    const updatedDevices = localDevices.filter(d => String(d.id) !== String(id) && String(d.device_code) !== String(id));
+    localStorage.setItem('mrx_devices', JSON.stringify(updatedDevices));
+    
+    return { success: true };
+  },
   updateStatus: async (id, payload, deviceObj = null) => {
     const statusVal = typeof payload === 'object' ? payload.status : payload;
     const existing = JSON.parse(localStorage.getItem('mrx_devices') || '[]');

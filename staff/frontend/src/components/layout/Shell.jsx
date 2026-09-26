@@ -15,10 +15,14 @@ export default function Shell() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
-        e.preventDefault();
-        // Go up to dashboard if on a sub-page, but never go back to login page
+        // If a modal overlay is currently active, do not navigate away
+        const activeModal = document.querySelector('.modal-overlay');
+        if (activeModal) {
+          return;
+        }
         if (location.pathname !== '/dashboard' && location.pathname !== '/') {
-          navigate('/dashboard');
+          e.preventDefault();
+          navigate(-1);
         }
       }
     };

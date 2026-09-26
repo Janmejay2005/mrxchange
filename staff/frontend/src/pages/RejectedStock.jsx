@@ -93,6 +93,36 @@ export default function RejectedStock() {
     }
   };
 
+  const handleCleanInventory = async () => {
+    if (window.confirm('Are you sure you want to clean/clear all central database inventory data? This will reset all server database rows to 0 across all devices.')) {
+      try {
+        await deviceService.cleanDatabase();
+      } catch (err) {
+        console.warn('Backend DB clean warning:', err);
+      }
+
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_repair_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_exchanges', JSON.stringify([]));
+      localStorage.setItem('mrx_exchange_pool', JSON.stringify([]));
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
+      localStorage.setItem('mrx_sales', JSON.stringify([]));
+      localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_inventory_cleared', 'true');
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+
+      setDevices([]);
+      alert('Central database & local memory cleared to 0 successfully!');
+    }
+  };
+
   const handleExportPdf = () => {
     const headers = ['#', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Amount (Rs)', 'Reason'];
     const rows = filteredDevices.map((d, idx) => [
@@ -121,15 +151,34 @@ export default function RejectedStock() {
   return (
     <div>
       {/* Header & Breadcrumb */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Rejected Stock</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Mobiles rejected due to non-repairable or unusable condition.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
             <Home size={14} /> / <span style={{ color: '#ef4444', fontWeight: 600 }}>Rejected Stock</span>
           </div>
+          <button 
+            onClick={handleCleanInventory} 
+            style={{ 
+              padding: '9px 16px', 
+              borderRadius: '8px', 
+              background: '#fef2f2', 
+              color: '#dc2626', 
+              border: '1px solid #fecaca', 
+              fontWeight: 700, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+            title="Clear all local inventory stock, exchanges, payments, and sales to test fresh flow"
+          >
+            <Trash2 size={15} /> Clean Inventory
+          </button>
           <button onClick={handleExportPdf} className="btn-primary">
             <FileText size={16} /> Export PDF
           </button>
@@ -144,22 +193,6 @@ export default function RejectedStock() {
             {filteredDevices.length} Items
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Unrepairable / Returned stock</div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #dc2626' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Rejection Value / Loss</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#dc2626', marginTop: '6px' }}>
-            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0)} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Capital locked in rejected units</div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg Loss Per Unit</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
-            <CurrencyAmount amount={filteredDevices.length > 0 ? Math.round(filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0) / filteredDevices.length) : 0} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Average cost per rejected item</div>
         </div>
       </div>
 
@@ -200,10 +233,16 @@ export default function RejectedStock() {
                 </td>
                 <td data-label="Action" style={{ textAlign: 'center' }}>
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Delete ${device.brand} ${device.model} from Rejected Stock?`)) {
+                    onClick={async () => {
+                      if (window.confirm(`Delete ${device.brand} ${device.model} permanently from Rejected Stock?`)) {
+                        await deviceService.deleteDevice(device.id);
                         setDevices(prev => prev.filter(d => String(d.id) !== String(device.id)));
-                        alert('Item deleted from Rejected Stock!');
+                        const localRej = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+                        const updatedRej = localRej.filter(d => String(d.id) !== String(device.id));
+                        localStorage.setItem('mrx_rejected_stock', JSON.stringify(updatedRej));
+                        window.dispatchEvent(new Event('mrx_inventory_updated'));
+                        window.dispatchEvent(new Event('storage'));
+                        alert('Item permanently deleted from Rejected Stock!');
                       }
                     }}
                     style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}

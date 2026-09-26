@@ -47,8 +47,30 @@ export default function RepairStock() {
       const dataList = Array.isArray(res) ? res : (res?.data || []);
       const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
 
-      const allRepair = [...localRepair, ...dataList].filter(d => d.status === 'IN_REPAIR' || !d.status);
-      setDevices(allRepair);
+      const rawCombined = [...localRepair, ...dataList];
+      const seenFingerprints = new Set();
+      const repairDevices = [];
+
+      for (const item of rawCombined) {
+        if (!item) continue;
+        if (item.status && item.status !== 'IN_REPAIR') continue;
+        const brand = (item.brand || '').trim().toLowerCase();
+        const model = (item.model || '').trim().toLowerCase();
+        const amount = Number(item.purchase_amount || item.amount || 0);
+        const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
+        const date = item.intake_date || item.created_at || item.date || '';
+
+        const fingerprint = item.device_code
+          ? `code_${item.device_code}`
+          : item.id ? `id_${item.id}`
+          : `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
+
+        if (!seenFingerprints.has(fingerprint)) {
+          seenFingerprints.add(fingerprint);
+          repairDevices.push(item);
+        }
+      }
+      setDevices(repairDevices);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -184,7 +206,7 @@ export default function RepairStock() {
         </div>
       </div>
 
-      {/* KPI Cards Summary Section for Repair Costs & Valuations */}
+      {/* KPI Cards Summary Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #ea580c' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items Under Repair</div>
@@ -192,30 +214,6 @@ export default function RepairStock() {
             {filteredDevices.length} Devices
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Active repair process</div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #0284c7' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Purchase Cost</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
-            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0)} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Initial acquisition value</div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #7c3aed' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Repair Cost</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#7c3aed', marginTop: '6px' }}>
-            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.repair_cost || d.estimated_repair_cost || 1500)), 0)} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Estimated / Incurred repairs</div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', borderLeft: '4px solid #16a34a' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Inventory Investment</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#16a34a', marginTop: '6px' }}>
-            <CurrencyAmount amount={filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0) + (Number(d.repair_cost || d.estimated_repair_cost || 1500)), 0)} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Purchase + Repair combined</div>
         </div>
       </div>
 

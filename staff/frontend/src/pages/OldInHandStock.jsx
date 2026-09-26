@@ -663,7 +663,7 @@ export default function OldInHandStock() {
       </div>
 
       {/* KPI Cards */}
-      <div className="kpi-grid">
+      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         <KPICard 
           title="Old In-hand Units" 
           value={filteredDevices.length} 
@@ -677,20 +677,6 @@ export default function OldInHandStock() {
           icon={Layers}
           iconBg="#ecfdf5"
           iconColor="#059669"
-        />
-        <KPICard 
-          title="Total Storage (GB)" 
-          value={totalStorageGB.toLocaleString()} 
-          icon={HardDrive}
-          iconBg="#f3e8ff"
-          iconColor="#9333ea"
-        />
-        <KPICard 
-          title="Total RAM (GB)" 
-          value={totalRamGB.toLocaleString()} 
-          icon={Cpu}
-          iconBg="#ffedd5"
-          iconColor="#ea580c"
         />
       </div>
 
@@ -829,9 +815,9 @@ export default function OldInHandStock() {
                           <button 
                             onClick={() => handleRejectAction(d)}
                             style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Reject booking -> Restore old phone details with Exchange and Delete options"
+                            title="Cancel booking -> Restore old phone details with Exchange option"
                           >
-                            <XCircle size={14} /> Rejected
+                            <XCircle size={14} /> Cancel
                           </button>
                         </div>
                       ) : (
@@ -843,13 +829,6 @@ export default function OldInHandStock() {
                             title="Book New Device for exchange"
                           >
                             Exchange
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDevice(d.id)}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                          >
-                            <Trash2 size={14} /> Delete
                           </button>
                         </div>
                       )}

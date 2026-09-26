@@ -137,15 +137,20 @@ export default function OldInventory() {
     alert('Device details and photo updated successfully!');
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
       alert('Please select at least 1 device to delete.');
       return;
     }
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected device(s) from inventory?`)) {
+      for (const id of selectedIds) {
+        await deviceService.deleteDevice(id);
+      }
       setDevices(prev => prev.filter(d => !selectedIds.includes(String(d.id))));
       setSelectedIds([]);
-      alert(`${selectedIds.length} device(s) deleted successfully!`);
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+      alert(`${selectedIds.length} device(s) deleted permanently!`);
     }
   };
 
@@ -399,24 +404,6 @@ export default function OldInventory() {
             <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
               <Plus size={18} /> Add Mobile
             </button>
-            <button 
-              onClick={handleCleanInventory} 
-              style={{ 
-                padding: '10px 18px', 
-                borderRadius: '8px', 
-                background: '#fef2f2', 
-                color: '#dc2626', 
-                border: '1px solid #fecaca', 
-                fontWeight: 700, 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                cursor: 'pointer' 
-              }}
-              title="Clear all local inventory stock, exchanges, payments, and sales to test fresh flow"
-            >
-              <Trash2 size={16} /> Clean Inventory
-            </button>
           </div>
         </div>
 
@@ -634,21 +621,39 @@ export default function OldInventory() {
           <div 
             className="modal-card" 
             onClick={(e) => e.stopPropagation()} 
-            style={{ maxWidth: '420px', borderRadius: '16px', padding: '24px', textAlign: 'center' }}
+            style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px', textAlign: 'center' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Device Details</h3>
               <button onClick={() => setPopupDevice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#64748b' }}>✕</button>
             </div>
 
-            {/* Device Image Preview */}
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-              <img 
-                src={popupDevice.image_url || (popupDevice.images && popupDevice.images[0]) || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'} 
-                alt={popupDevice.model} 
-                style={{ maxHeight: '160px', objectFit: 'contain', borderRadius: '8px' }} 
-              />
-            </div>
+            {/* Device Image Preview (Show all attached photos side by side) */}
+            {(() => {
+              const allImgs = (popupDevice.images && popupDevice.images.length > 0)
+                ? popupDevice.images.filter(Boolean)
+                : [popupDevice.image_url || popupDevice.image_data].filter(Boolean);
+              const previewList = allImgs.length > 0 ? allImgs : ['https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200'];
+
+              return (
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', marginBottom: '16px', display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {previewList.map((imgSrc, i) => (
+                    <div key={i} style={{ textAlign: 'center' }}>
+                      <img 
+                        src={imgSrc} 
+                        alt={`${popupDevice.model} - Photo ${i+1}`} 
+                        style={{ maxHeight: '150px', maxWidth: previewList.length > 1 ? '160px' : '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                      />
+                      {previewList.length > 1 && (
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '4px' }}>
+                          Photo {i+1} {i === 0 ? '(Front)' : i === 1 ? '(Back)' : ''}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* Info Grid */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left', background: '#f1f5f9', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
