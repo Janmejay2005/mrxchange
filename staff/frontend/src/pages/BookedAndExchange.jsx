@@ -54,7 +54,7 @@ export default function BookedAndExchange() {
     oldImage: '',
 
     // Booking New Phone
-    exchangeRemarks: '',
+    exchangeValue: '0',
     newBrand: 'Google Pixel',
     customBrand: '',
     newModel: '',
@@ -1153,9 +1153,9 @@ export default function BookedAndExchange() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label className="form-label">Exchange Remarks / Notes</label>
-                    <input type="text" className="form-control" placeholder="Enter exchange remarks or notes" value={bookForm.exchangeRemarks} onChange={(e) => setBookForm({ ...bookForm, exchangeRemarks: e.target.value })} />
+                  <div>
+                    <label className="form-label">Exchange Value (₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
                   </div>
 
                   <div>

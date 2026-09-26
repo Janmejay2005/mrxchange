@@ -282,43 +282,54 @@ export default function RepairStock() {
                 <td data-label="Paid By" style={{ color: '#64748b' }}>{device.paid_by || 'Rohit'}</td>
                 <td data-label="Date" style={{ color: '#64748b' }}>{device.intake_date}</td>
                 <td data-label="Action">
-                  <div className="action-menu">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <button
-                      onClick={() => setActiveMenuId(activeMenuId === device.id ? null : device.id)}
-                      style={{ padding: '6px', background: '#f1f5f9', borderRadius: '6px' }}
+                      type="button"
+                      onClick={() => setCompleteModal({
+                        isOpen: true,
+                        device,
+                        actualCost: '1200',
+                        paidBy: 'Rohit',
+                        notes: 'Repaired and tested OK'
+                      })}
+                      style={{
+                        background: '#059669',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}
+                      title="Complete repair & move to Old In-hand"
                     >
-                      <MoreHorizontal size={16} color="#64748b" />
+                      <CheckCircle size={14} /> Complete Repair
                     </button>
-
-                    {activeMenuId === device.id && (
-                      <div className="menu-dropdown">
-                        <button
-                          className="menu-item"
-                          onClick={() => {
-                            setActiveMenuId(null);
-                            setCompleteModal({
-                              isOpen: true,
-                              device,
-                              actualCost: '1200',
-                              paidBy: 'Rohit',
-                              notes: 'Repaired and tested OK'
-                            });
-                          }}
-                          style={{ color: '#059669' }}
-                        >
-                          <CheckCircle size={16} />
-                          <div>Complete Repair</div>
-                        </button>
-                        <button
-                          className="menu-item"
-                          onClick={() => handleRejectDevice(device)}
-                          style={{ color: '#dc2626' }}
-                        >
-                          <Trash2 size={16} />
-                          <div>Reject Device</div>
-                        </button>
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRejectDevice(device)}
+                      style={{
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer'
+                      }}
+                      title="Move to Rejected Stock"
+                    >
+                      <Trash2 size={14} /> Reject
+                    </button>
                   </div>
                 </td>
               </tr>

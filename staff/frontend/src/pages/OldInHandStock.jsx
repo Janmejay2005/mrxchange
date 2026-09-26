@@ -68,7 +68,7 @@ export default function OldInHandStock() {
     oldAmount: '0',
     oldPayBy: 'Staff',
     oldImage: '',
-    exchangeRemarks: '',
+    exchangeValue: '',
     newBrand: 'Apple',
     customBrand: '',
     newModel: '',
@@ -180,7 +180,7 @@ export default function OldInHandStock() {
       oldAmount: amt,
       oldPayBy: device.paid_by || 'Staff',
       oldImage: device.image_url || (device.images && device.images[0]) || '',
-      exchangeRemarks: '',
+      exchangeValue: String(amt),
       newBrand: 'Apple',
       customBrand: '',
       newModel: '',
@@ -202,6 +202,7 @@ export default function OldInHandStock() {
 
     const oldAmt = Number(bookForm.oldAmount) || 0;
     const newAmt = Number(bookForm.purchasedAmount) || 0;
+    const exVal = Number(bookForm.exchangeValue) || 0;
     const finalBrand = bookForm.newBrand === 'Others' ? (bookForm.customBrand || 'Others') : bookForm.newBrand;
     const exchangeId = `EXCH-${Date.now()}`;
 
@@ -224,7 +225,7 @@ export default function OldInHandStock() {
       oldImage: bookForm.oldImage || '',
       platform: bookForm.platform,
       platformRemarks: bookForm.platformRemarks || '',
-      exchangeRemarks: bookForm.exchangeRemarks || '',
+      exchangeValue: exVal,
       status: 'Booked'
     };
 
@@ -969,9 +970,9 @@ export default function OldInHandStock() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label className="form-label">Exchange Remarks / Notes</label>
-                    <input type="text" className="form-control" placeholder="Enter exchange remarks or notes" value={bookForm.exchangeRemarks} onChange={(e) => setBookForm({ ...bookForm, exchangeRemarks: e.target.value })} />
+                  <div>
+                    <label className="form-label">Exchange Value (₹) *</label>
+                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
                   </div>
 
                   <div>
