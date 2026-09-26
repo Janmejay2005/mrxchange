@@ -29,7 +29,6 @@ export async function seedInitialData() {
   }
   console.log('✅ Users verified and seeded (Staff23 / staff123, Admin23 / admin123, Jeet, Sunal)');
 }
-}
 
 if (process.argv[1].endsWith('seed.js')) {
   (async () => {
