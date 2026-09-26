@@ -137,33 +137,34 @@ export default function PendingAndReceivingPayments() {
     }
 
     if (selectedPayment) {
+      const currentTotal = Number(selectedPayment.totalAmount) || 0;
+      const existingPaid = Math.min(currentTotal, Number(selectedPayment.paidAmount) || 0);
+      const maxRemaining = Math.max(0, currentTotal - existingPaid);
+
+      if (existingPaid >= currentTotal && currentTotal > 0) {
+        alert('This payment is already fully completed (₹0 remaining). Paid amount cannot exceed total amount.');
+        return;
+      }
+
+      if (newPayAmt > maxRemaining && currentTotal > 0) {
+        alert(`Paid amount cannot be greater than Total Amount! Maximum remaining payable amount is ₹${maxRemaining.toLocaleString()}.`);
+        return;
+      }
+
       const updatedList = payments.map(p => {
         if (String(p.id) === String(selectedPayment.id)) {
-          const currentTotal = Number(p.totalAmount) || 0;
-          const existingPaid = Number(p.paidAmount) || 0;
-          const newPaidAmount = existingPaid + newPayAmt;
-
-          let updatedTotal = currentTotal;
-          let newPendingAmount = 0;
-          let newStatus = 'Pending';
-
-          if (newPaidAmount >= currentTotal) {
-            // When total amount <= paid amount, set total amount = paid amount and mark as Received
-            updatedTotal = newPaidAmount;
-            newPendingAmount = 0;
-            newStatus = 'Received';
-          } else {
-            newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
-            newStatus = newPendingAmount === 0 ? 'Received' : 'Pending';
-          }
+          const newPaidAmount = Math.min(currentTotal, existingPaid + newPayAmt);
+          const newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
+          const newStatus = newPendingAmount === 0 ? 'Received' : 'Pending';
 
           return {
             ...p,
-            totalAmount: updatedTotal,
+            totalAmount: currentTotal,
             customerName: equateForm.customerName || p.customerName,
             paidAmount: newPaidAmount,
             pendingAmount: newPendingAmount,
-            status: newStatus
+            status: newStatus,
+            equatedBy: equateForm.equatedBy || 'Jeet'
           };
         }
         return p;
@@ -185,7 +186,8 @@ export default function PendingAndReceivingPayments() {
         paidAmount: initialPaid,
         pendingAmount: calculatedPending,
         status: calculatedPending <= 0 ? 'Received' : 'Pending',
-        mode: 'Cash'
+        mode: 'Cash',
+        equatedBy: equateForm.equatedBy || 'Jeet'
       };
       savePaymentsToStorage([newPayEntry, ...payments]);
       alert(`Payment added successfully for ${equateForm.customerName || 'Customer'}!`);
@@ -457,16 +459,8 @@ export default function PendingAndReceivingPayments() {
 
             {/* Amount Calculation Breakdown Box */}
             {selectedPayment && (() => {
-              const rawTotal = Number(selectedPayment.totalAmount) || 0;
-              const rawPaid = Number(selectedPayment.paidAmount) || 0;
-              const rawPending = Number(selectedPayment.pendingAmount) || 0;
-
-              const isExtraPaid = rawPaid > rawTotal && rawTotal > 0;
-              const extraAmount = isExtraPaid ? rawPaid - rawTotal : 0;
-
-              // If legacy record had rawPaid == rawTotal and rawPending > 0, true total is rawPaid + rawPending
-              const modalTotal = rawTotal > 0 && rawPaid <= rawTotal ? rawTotal : (rawPaid + rawPending);
-              const modalPaid = rawPaid;
+              const modalTotal = Number(selectedPayment.totalAmount) || 0;
+              const modalPaid = Math.min(modalTotal, Number(selectedPayment.paidAmount) || 0);
               const modalPending = Math.max(0, modalTotal - modalPaid);
 
               return (
@@ -475,9 +469,9 @@ export default function PendingAndReceivingPayments() {
                     <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       📊 Amount Calculation Breakdown
                     </div>
-                    {isExtraPaid && (
-                      <span style={{ fontSize: '11px', fontWeight: 800, background: '#fee2e2', color: '#dc2626', padding: '3px 8px', borderRadius: '6px' }}>
-                        Extra Paid: ₹{extraAmount.toLocaleString()}
+                    {modalPending === 0 && modalTotal > 0 && (
+                      <span style={{ fontSize: '11px', fontWeight: 800, background: '#dcfce7', color: '#16a34a', padding: '3px 8px', borderRadius: '6px' }}>
+                        Fully Paid (₹0 Pending)
                       </span>
                     )}
                   </div>
@@ -501,12 +495,6 @@ export default function PendingAndReceivingPayments() {
                       </div>
                     </div>
                   </div>
-
-                  {isExtraPaid && (
-                    <div style={{ marginTop: '10px', padding: '8px 12px', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '11px', color: '#b91c1c' }}>
-                      ℹ️ <strong>Extra payment detected:</strong> Paid amount exceeds total amount by <strong>₹{extraAmount.toLocaleString()}</strong>. Equating will automatically set Total Amount = Paid Amount and move this record to the Receiving / Received column.
-                    </div>
-                  )}
                 </div>
               );
             })()}
@@ -527,11 +515,10 @@ export default function PendingAndReceivingPayments() {
 
               {/* Equated by */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Equated by *</label>
+                <label className="form-label">Equated by (Super Admin) *</label>
                 <select className="form-control" value={equateForm.equatedBy} onChange={(e) => setEquateForm({ ...equateForm, equatedBy: e.target.value })}>
-                  <option value="Jeet">Jeet</option>
-                  <option value="Sonal">Sonal</option>
-                  <option value="Rohit">Rohit</option>
+                  <option value="Jeet">Jeet (Super Admin)</option>
+                  <option value="Sonal">Sonal (Super Admin)</option>
                 </select>
               </div>
 

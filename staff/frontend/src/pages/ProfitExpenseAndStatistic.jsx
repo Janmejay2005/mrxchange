@@ -16,7 +16,11 @@ import {
   ChevronUp,
   BookOpen,
   UserCheck,
-  Tag
+  CheckCircle,
+  Tag,
+  ShieldCheck,
+  RefreshCw,
+  FileText
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
@@ -35,9 +39,49 @@ export default function ProfitExpenseAndStatistic() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Dropdown option for Booking & Staff Expenses: 'staff' (1. Staff) or 'book' (2. Book)
-  const [expenseViewType, setExpenseViewType] = useState('staff');
+  // Dropdown option for Booking & Staff Expenses: 'book' (Book) or 'staff' (Staff)
+  const [expenseViewType, setExpenseViewType] = useState('book');
   const [expandedPayer, setExpandedPayer] = useState(null);
+  const [openEvaluateMenuId, setOpenEvaluateMenuId] = useState(null);
+
+  // Persistent Evaluation State (Paid by Jeet / Paid by Sonal)
+  const [evaluations, setEvaluations] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('mrx_expense_evaluations') || '{}');
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Dynamic Super Admins List (Only actual Super Admins: Jeet & Sonal)
+  const superAdminsList = React.useMemo(() => {
+    try {
+      const storedMembers = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
+      const admins = storedMembers
+        .filter(m => m.role === 'SUPERADMIN' || m.isSuperAdmin)
+        .map(m => m.name);
+      if (admins.length > 0) return ['All Super Admins', ...new Set(admins)];
+    } catch (e) {}
+    return ['All Super Admins', 'Jeet Khubchandani', 'Sonal Wadwani'];
+  }, []);
+
+  const handleSetEvaluation = (key, superAdminName) => {
+    const updated = {
+      ...evaluations,
+      [key]: superAdminName ? {
+        evaluatedBy: superAdminName,
+        status: `Paid by ${superAdminName}`,
+        evaluatedAt: new Date().toISOString()
+      } : null
+    };
+    if (!superAdminName) {
+      delete updated[key];
+    }
+    setEvaluations(updated);
+    localStorage.setItem('mrx_expense_evaluations', JSON.stringify(updated));
+    setOpenEvaluateMenuId(null);
+    window.dispatchEvent(new Event('mrx_evaluations_updated'));
+  };
 
   // Export PDF Dialogue Modal State
   const [exportModalConfig, setExportModalConfig] = useState({
@@ -100,6 +144,10 @@ export default function ProfitExpenseAndStatistic() {
       });
       setExchanges(Array.from(combinedExchMap.values()));
 
+      try {
+        setEvaluations(JSON.parse(localStorage.getItem('mrx_expense_evaluations') || '{}'));
+      } catch (e) {}
+
     } catch (err) {
       console.error("Error loading profit and expense data:", err);
       try {
@@ -119,6 +167,7 @@ export default function ProfitExpenseAndStatistic() {
 
         const localExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
         setExchanges(localExchanges);
+        setEvaluations(JSON.parse(localStorage.getItem('mrx_expense_evaluations') || '{}'));
       } catch (e) {}
     }
   };
@@ -132,12 +181,14 @@ export default function ProfitExpenseAndStatistic() {
     window.addEventListener('mrx_expenses_updated', handleSync);
     window.addEventListener('mrx_inventory_updated', handleSync);
     window.addEventListener('mrx_exchanges_updated', handleSync);
+    window.addEventListener('mrx_evaluations_updated', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('mrx_sales_updated', handleSync);
       window.removeEventListener('mrx_expenses_updated', handleSync);
       window.removeEventListener('mrx_inventory_updated', handleSync);
       window.removeEventListener('mrx_exchanges_updated', handleSync);
+      window.removeEventListener('mrx_evaluations_updated', handleSync);
     };
   }, []);
 
@@ -146,7 +197,7 @@ export default function ProfitExpenseAndStatistic() {
     if (isSubmittingExpense) return;
     setIsSubmittingExpense(true);
     try {
-      const adminName = selectedAdmin === 'All Super Admins' ? 'Jeet' : selectedAdmin;
+      const adminName = selectedAdmin === 'All Super Admins' ? 'Jeet Khubchandani' : selectedAdmin;
       const expPayload = {
         date: expenseForm.date,
         expense_date: expenseForm.date,
@@ -185,8 +236,19 @@ export default function ProfitExpenseAndStatistic() {
     return `${y}-${m}-${day}`;
   };
 
+  const matchesAdmin = (itemAdmin, selAdmin) => {
+    if (selAdmin === 'All Super Admins') return true;
+    if (!itemAdmin) return false;
+    const itemLower = String(itemAdmin).toLowerCase();
+    const selLower = String(selAdmin).toLowerCase();
+    if (itemLower === selLower) return true;
+    if (selLower.includes('jeet') && itemLower.includes('jeet')) return true;
+    if (selLower.includes('sonal') && itemLower.includes('sonal')) return true;
+    return false;
+  };
+
   const filteredProfits = phoneProfits.filter(p => {
-    if (selectedAdmin !== 'All Super Admins' && p.admin !== selectedAdmin) return false;
+    if (!matchesAdmin(p.admin, selectedAdmin)) return false;
     if (selectedDate) {
       const pYMD = toYMD(p.date);
       const selYMD = toYMD(selectedDate);
@@ -212,7 +274,7 @@ export default function ProfitExpenseAndStatistic() {
   });
 
   const filteredExpenses = expenses.filter(e => {
-    if (selectedAdmin !== 'All Super Admins' && e.admin !== selectedAdmin) return false;
+    if (!matchesAdmin(e.admin, selectedAdmin)) return false;
     if (selectedDate) {
       const eYMD = toYMD(e.date);
       const selYMD = toYMD(selectedDate);
@@ -238,7 +300,7 @@ export default function ProfitExpenseAndStatistic() {
   });
 
   const filteredDevices = allDevices.filter(d => {
-    if (selectedAdmin !== 'All Super Admins' && (d.paid_by || d.purchasedBy) !== selectedAdmin) return false;
+    if (!matchesAdmin(d.paid_by || d.purchasedBy || d.admin, selectedAdmin)) return false;
     if (selectedDate) {
       const dYMD = toYMD(d.intake_date || d.date || d.created_at);
       const selYMD = toYMD(selectedDate);
@@ -325,7 +387,7 @@ export default function ProfitExpenseAndStatistic() {
   // AGGREGATION 2: BOOK EXPENSES (Booking / Exchange Payers)
   // -------------------------------------------------------------
   const filteredExchanges = exchanges.filter(e => {
-    if (selectedAdmin !== 'All Super Admins' && (e.newPurchasedBy || e.oldPurchasedBy || e.paid_by) !== selectedAdmin) return false;
+    if (!matchesAdmin(e.newPurchasedBy || e.oldPurchasedBy || e.paid_by, selectedAdmin)) return false;
     if (selectedDate) {
       const eYMD = toYMD(e.date || e.bookingDate);
       const selYMD = toYMD(selectedDate);
@@ -445,22 +507,26 @@ export default function ProfitExpenseAndStatistic() {
   };
 
   const openStaffExport = () => {
-    const headers = ['#', 'Staff / Payer Name', 'Total Mobiles Paid', 'Total Amount Paid (Rs)', 'Devices Summary'];
-    const rows = staffAggregatedList.map((s, idx) => [
-      idx + 1,
-      s.payerName,
-      s.mobileCount,
-      `Rs. ${s.totalAmountPaid.toLocaleString()}`,
-      s.mobiles.map(m => `${m.brand} ${m.model} (Rs. ${m.amount.toLocaleString()})`).join(', ')
-    ]);
+    const headers = ['S.No.', 'Name (Staff)', 'Total Spend (Rs)', 'Evaluate By', 'Devices Breakdown'];
+    const rows = staffAggregatedList.map((s, idx) => {
+      const evalKey = `staff_${s.payerName}`;
+      const evalState = evaluations[evalKey];
+      return [
+        idx + 1,
+        s.payerName,
+        `Rs. ${s.totalAmountPaid.toLocaleString()}`,
+        evalState?.status || 'Pending Evaluation',
+        s.mobiles.map(m => `${m.brand} ${m.model} (Rs. ${m.amount.toLocaleString()})`).join(', ')
+      ];
+    });
     setExportModalConfig({
       isOpen: true,
-      title: 'Staff Add Inventory Payments Report',
+      title: 'Staff Expenses & Evaluation Report',
       headers,
       rows,
-      filename: `Staff_Inventory_Payments_${new Date().toISOString().slice(0, 10)}.pdf`,
+      filename: `Staff_Expenses_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Staff Outflow', value: `Rs. ${totalStaffPaidAmount.toLocaleString()}`, color: '#059669' },
+        { label: 'Total Staff Spend', value: `Rs. ${totalStaffPaidAmount.toLocaleString()}`, color: '#059669' },
         { label: 'Total Mobiles Paid', value: `${totalStaffMobilesCount} Units`, color: '#0284c7' },
         { label: 'Staff Count', value: `${staffAggregatedList.length} Persons`, color: '#64748b' }
       ]
@@ -468,23 +534,26 @@ export default function ProfitExpenseAndStatistic() {
   };
 
   const openBookExport = () => {
-    const headers = ['#', 'Pay By / Agent Name', 'Total Mobiles Booked', 'Purchased Amount Paid (Rs)', 'Exchange Value (Rs)', 'Booking Details'];
-    const rows = bookAggregatedList.map((b, idx) => [
-      idx + 1,
-      b.payByName,
-      b.mobileCount,
-      `Rs. ${b.totalAmountPaid.toLocaleString()}`,
-      `Rs. ${b.totalExchangeValue.toLocaleString()}`,
-      b.mobiles.map(m => `${m.newBrand} ${m.newModel} (Rs. ${m.purchasedAmount.toLocaleString()})`).join(', ')
-    ]);
+    const headers = ['S.No.', 'Name (Book)', 'Total Spend (Rs)', 'Evaluate By', 'Booked Devices'];
+    const rows = bookAggregatedList.map((b, idx) => {
+      const evalKey = `book_${b.payByName}`;
+      const evalState = evaluations[evalKey];
+      return [
+        idx + 1,
+        b.payByName,
+        `Rs. ${b.totalAmountPaid.toLocaleString()}`,
+        evalState?.status || 'Pending Evaluation',
+        b.mobiles.map(m => `${m.newBrand} ${m.newModel} (Rs. ${m.purchasedAmount.toLocaleString()})`).join(', ')
+      ];
+    });
     setExportModalConfig({
       isOpen: true,
-      title: 'Booking Payments & Purchased Amount Report',
+      title: 'Book Expenses & Evaluation Report',
       headers,
       rows,
-      filename: `Book_Payments_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+      filename: `Book_Expenses_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Total Purchased Paid', value: `Rs. ${totalBookPaidAmount.toLocaleString()}`, color: '#0284c7' },
+        { label: 'Total Book Spend', value: `Rs. ${totalBookPaidAmount.toLocaleString()}`, color: '#0284c7' },
         { label: 'Total Mobiles Booked', value: `${totalBookMobilesCount} Units`, color: '#16a34a' },
         { label: 'Total Exchange Value', value: `Rs. ${totalBookExchangeValue.toLocaleString()}`, color: '#8b5cf6' }
       ]
@@ -527,21 +596,21 @@ export default function ProfitExpenseAndStatistic() {
         </div>
       </div>
 
-      {/* Top Bar with Super Admin Selector */}
+      {/* Top Bar with Super Admin Selector (Only verified Super Admins: Jeet & Sonal) */}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Select Super Admin</label>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+            <ShieldCheck size={14} /> Select Super Admin
+          </label>
           <select 
             className="form-control" 
             value={selectedAdmin} 
             onChange={(e) => setSelectedAdmin(e.target.value)}
-            style={{ width: '220px', padding: '7px 12px', fontWeight: 700 }}
+            style={{ width: '230px', padding: '7px 12px', fontWeight: 700 }}
           >
-            <option>All Super Admins</option>
-            <option>Aadarsh Sharma</option>
-            <option>Rohit Kumar</option>
-            <option>Neha Patel</option>
-            <option>Vikram Singh</option>
+            {superAdminsList.map(admin => (
+              <option key={admin} value={admin}>{admin}</option>
+            ))}
           </select>
         </div>
 
@@ -796,7 +865,7 @@ export default function ProfitExpenseAndStatistic() {
       {/* ----------------- TAB: PHONE-WISE PROFIT ----------------- */}
       {activeTab === 'profit' && (
         <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Phone-wise Profit Records</h2>
               <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0' }}>Showing all sold devices and calculated margins.</p>
@@ -849,7 +918,7 @@ export default function ProfitExpenseAndStatistic() {
       {/* ----------------- TAB: EXPENSES REGISTER ----------------- */}
       {activeTab === 'expenses' && (
         <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Expenses Register</h2>
               <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0' }}>Log of rent, payroll, repair costs, and miscellaneous disbursements.</p>
@@ -922,48 +991,63 @@ export default function ProfitExpenseAndStatistic() {
         </div>
       )}
 
-      {/* ----------------- TAB: BOOKING & STAFF EXPENSES (DROPDOWN + DETAILS) ----------------- */}
+      {/* ----------------- TAB: BOOKING & STAFF EXPENSES (IMAGE 3 & 4 TABULAR FORMAT + EVALUATE STATUS) ----------------- */}
       {activeTab === 'booking_staff_expenses' && (
         <div className="card" style={{ padding: '24px' }}>
-          {/* Header with Title and Mode Selector Dropdown */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          {/* Header Bar with Dropdown Selector [ Book v ] / [ Staff v ] */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '12px', backgroundColor: expenseViewType === 'staff' ? '#ecfdf5' : '#eff6ff', color: expenseViewType === 'staff' ? '#059669' : '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${expenseViewType === 'staff' ? '#a7f3d0' : '#bfdbfe'}` }}>
-                {expenseViewType === 'staff' ? <Users size={26} /> : <BookOpen size={26} />}
+              <div style={{ width: 44, height: 44, borderRadius: '12px', backgroundColor: expenseViewType === 'book' ? '#eff6ff' : '#ecfdf5', color: expenseViewType === 'book' ? '#0284c7' : '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${expenseViewType === 'book' ? '#bfdbfe' : '#a7f3d0'}` }}>
+                {expenseViewType === 'book' ? <BookOpen size={24} /> : <Users size={24} />}
               </div>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  {expenseViewType === 'staff' ? 'Staff Expenses (Add Inventory Payers)' : 'Book Expenses (Booking & Exchange Payers)'}
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    {expenseViewType === 'book' ? 'Book Expenses' : 'Staff Expenses'}
+                  </h2>
+                  <span style={{ fontSize: '11px', fontWeight: 800, background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '12px' }}>
+                    {expenseViewType === 'book' ? `${bookAggregatedList.length} Payers` : `${staffAggregatedList.length} Staff`}
+                  </span>
+                </div>
                 <p style={{ fontSize: '13px', color: '#64748b', margin: '3px 0 0' }}>
-                  {expenseViewType === 'staff'
-                    ? 'Summary of who paid in Add Inventory, total amount paid, and number of mobiles paid (additive per person).'
-                    : 'Summary of booking agents / payers who paid for booked devices, total purchased amount, and mobiles count (additive per person).'
+                  {expenseViewType === 'book' 
+                    ? 'Total spend of booking payers with Super Admin evaluation (Jeet / Sonal).' 
+                    : 'Total spend of staff members in Add Inventory with Super Admin evaluation (Jeet / Sonal).'
                   }
                 </p>
               </div>
             </div>
 
-            {/* Dropdown Selector + Action Buttons */}
+            {/* Dropdown Selector matching Image 3 & 4 drawings */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>Select View:</span>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>Select:</span>
                 <select 
                   className="form-control"
                   value={expenseViewType}
                   onChange={(e) => {
                     setExpenseViewType(e.target.value);
                     setExpandedPayer(null);
+                    setOpenEvaluateMenuId(null);
                   }}
-                  style={{ fontWeight: 800, padding: '6px 12px', fontSize: '13px', width: '250px', borderColor: expenseViewType === 'staff' ? '#059669' : '#0284c7', color: expenseViewType === 'staff' ? '#059669' : '#0284c7', cursor: 'pointer' }}
+                  style={{ 
+                    fontWeight: 800, 
+                    padding: '6px 14px', 
+                    fontSize: '14px', 
+                    width: '130px', 
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    borderColor: expenseViewType === 'book' ? '#0284c7' : '#059669',
+                    color: expenseViewType === 'book' ? '#0284c7' : '#059669'
+                  }}
                 >
-                  <option value="staff">1. Staff (Add Inventory)</option>
-                  <option value="book">2. Book (Booking / Exchange)</option>
+                  <option value="book">Book</option>
+                  <option value="staff">Staff</option>
                 </select>
               </div>
 
               <button 
-                onClick={expenseViewType === 'staff' ? openStaffExport : openBookExport} 
+                onClick={expenseViewType === 'book' ? openBookExport : openStaffExport} 
                 className="btn-secondary" 
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontWeight: 700 }}
               >
@@ -972,379 +1056,570 @@ export default function ProfitExpenseAndStatistic() {
             </div>
           </div>
 
-          {/* ----------------- SUB-VIEW: 1. STAFF EXPENSES ----------------- */}
-          {expenseViewType === 'staff' && (
+          {/* Quick Stats Strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                {expenseViewType === 'book' ? 'Total Book Spend' : 'Total Staff Spend'}
+              </span>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: expenseViewType === 'book' ? '#0284c7' : '#059669', marginTop: '4px' }}>
+                <CurrencyAmount amount={expenseViewType === 'book' ? totalBookPaidAmount : totalStaffPaidAmount} />
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                {expenseViewType === 'book' ? 'Total Mobiles Booked' : 'Total Mobiles Paid'}
+              </span>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                {expenseViewType === 'book' ? totalBookMobilesCount : totalStaffMobilesCount} <span style={{ fontSize: '13px', fontWeight: 600 }}>Units</span>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                Evaluated By Super Admin
+              </span>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: '#7c3aed', marginTop: '4px' }}>
+                {expenseViewType === 'book' 
+                  ? bookAggregatedList.filter(b => evaluations[`book_${b.payByName}`]).length 
+                  : staffAggregatedList.filter(s => evaluations[`staff_${s.payerName}`]).length
+                } / {expenseViewType === 'book' ? bookAggregatedList.length : staffAggregatedList.length}
+              </div>
+            </div>
+          </div>
+
+          {/* ----------------- SUB-VIEW 1: BOOK TABLE (AS PER IMAGE 3) ----------------- */}
+          {expenseViewType === 'book' && (
             <div>
-              {/* KPI Summary Cards for Staff View */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ background: '#f0fdf4', padding: '18px', borderRadius: '14px', border: '1px solid #bbf7d0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#15803d' }}>Total Staff Paid Amount</span>
-                    <Wallet size={18} color="#15803d" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#166534', marginTop: '6px' }}>
-                    <CurrencyAmount amount={totalStaffPaidAmount} />
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#15803d' }}>Cumulative payout across all staff</span>
-                </div>
+              <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'visible' }}>
+                <table className="custom-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ width: '80px', textAlign: 'center' }}>S.No.</th>
+                      <th>Name</th>
+                      <th style={{ textAlign: 'right' }}>Total Spend</th>
+                      <th style={{ textAlign: 'center', width: '220px' }}>Evaluate By</th>
+                      <th style={{ width: '100px', textAlign: 'center' }}>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookAggregatedList.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                          <BookOpen size={32} color="#cbd5e1" style={{ marginBottom: '8px' }} />
+                          <div>No Book expenses recorded yet.</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      bookAggregatedList.map((book, idx) => {
+                        const rowKey = `book_${book.payByName}`;
+                        const evalState = evaluations[rowKey];
+                        const isExpanded = expandedPayer === rowKey;
+                        const isMenuOpen = openEvaluateMenuId === rowKey;
 
-                <div style={{ background: '#f0f9ff', padding: '18px', borderRadius: '14px', border: '1px solid #bae6fd' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1' }}>Total Mobiles Paid</span>
-                    <Smartphone size={18} color="#0369a1" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#0c4a6e', marginTop: '6px' }}>
-                    {totalStaffMobilesCount} <span style={{ fontSize: '14px', fontWeight: 600 }}>Mobiles</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#0369a1' }}>Total units entered in Add Inventory</span>
-                </div>
+                        return (
+                          <React.Fragment key={rowKey}>
+                            <tr style={{ background: isExpanded ? '#f0f9ff' : '#ffffff', transition: 'all 0.15s ease' }}>
+                              <td style={{ textAlign: 'center', fontWeight: 700, color: '#64748b' }}>
+                                ① {idx + 1}
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
+                                    {book.payByName.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>{book.payByName}</strong>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{book.mobileCount} {book.mobileCount === 1 ? 'Mobile' : 'Mobiles (Additive)'}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '15px', color: '#0284c7' }}>
+                                <CurrencyAmount amount={book.totalAmountPaid} />
+                              </td>
+                              <td style={{ textAlign: 'center', position: 'relative' }}>
+                                {/* Evaluate Status Bar or Trigger */}
+                                {evalState?.evaluatedBy ? (
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setOpenEvaluateMenuId(isMenuOpen ? null : rowKey)}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 14px',
+                                        borderRadius: '20px',
+                                        fontSize: '12px',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        border: evalState.evaluatedBy === 'Jeet' ? '1px solid #86efac' : '1px solid #c4b5fd',
+                                        background: evalState.evaluatedBy === 'Jeet' ? '#f0fdf4' : '#f5f3ff',
+                                        color: evalState.evaluatedBy === 'Jeet' ? '#166534' : '#5b21b6',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                      }}
+                                    >
+                                      <ShieldCheck size={14} />
+                                      {evalState.status}
+                                      <ChevronDown size={13} style={{ opacity: 0.7 }} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenEvaluateMenuId(isMenuOpen ? null : rowKey)}
+                                    style={{
+                                      padding: '6px 16px',
+                                      borderRadius: '8px',
+                                      fontSize: '12px',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      border: '1px solid #cbd5e1',
+                                      background: '#ffffff',
+                                      color: '#0284c7',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                                    }}
+                                  >
+                                    Evaluate <ChevronDown size={14} />
+                                  </button>
+                                )}
 
-                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Active Staff Payers</span>
-                    <UserCheck size={18} color="#475569" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
-                    {staffAggregatedList.length} <span style={{ fontSize: '14px', fontWeight: 600 }}>Members</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>Unique persons recording devices</span>
-                </div>
+                                {/* Interactive Popup Menu (Jeet / Sonal) */}
+                                {isMenuOpen && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 50,
+                                    background: '#ffffff',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '10px',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                    padding: '6px',
+                                    width: '180px',
+                                    textAlign: 'left',
+                                    marginTop: '4px'
+                                  }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', padding: '4px 8px' }}>
+                                      Evaluate By (Super Admin):
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetEvaluation(rowKey, 'Jeet')}
+                                      style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '7px 10px',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        background: evalState?.evaluatedBy === 'Jeet' ? '#f0fdf4' : 'transparent',
+                                        color: '#15803d',
+                                        fontWeight: 700,
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left'
+                                      }}
+                                    >
+                                      <CheckCircle size={14} color="#15803d" /> Jeet
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetEvaluation(rowKey, 'Sonal')}
+                                      style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '7px 10px',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        background: evalState?.evaluatedBy === 'Sonal' ? '#f5f3ff' : 'transparent',
+                                        color: '#6d28d9',
+                                        fontWeight: 700,
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left'
+                                      }}
+                                    >
+                                      <CheckCircle size={14} color="#6d28d9" /> Sonal
+                                    </button>
+                                    {evalState?.evaluatedBy && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetEvaluation(rowKey, null)}
+                                        style={{
+                                          width: '100%',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          padding: '6px 10px',
+                                          borderTop: '1px solid #f1f5f9',
+                                          marginTop: '4px',
+                                          background: 'transparent',
+                                          color: '#ef4444',
+                                          fontWeight: 600,
+                                          fontSize: '11px',
+                                          cursor: 'pointer',
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <X size={12} /> Clear Evaluation
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedPayer(isExpanded ? null : rowKey)}
+                                  style={{
+                                    border: 'none',
+                                    background: isExpanded ? '#0284c7' : '#f1f5f9',
+                                    color: isExpanded ? '#ffffff' : '#64748b',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                  {book.mobileCount} Mobiles
+                                </button>
+                              </td>
+                            </tr>
 
-                <div style={{ background: '#fdf4ff', padding: '18px', borderRadius: '14px', border: '1px solid #f5d0fe' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#a21caf' }}>Avg. Outflow Per Mobile</span>
-                    <Tag size={18} color="#a21caf" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#701a75', marginTop: '6px' }}>
-                    ₹ {totalStaffMobilesCount > 0 ? Math.round(totalStaffPaidAmount / totalStaffMobilesCount).toLocaleString() : '0'}
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#a21caf' }}>Average purchase cost per phone</span>
-                </div>
+                            {/* Expanded Nested Details */}
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan="5" style={{ padding: '16px 20px', background: '#fafbfc', borderBottom: '2px solid #e2e8f0' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                                      📱 Mobiles Booked by {book.payByName} ({book.mobiles.length} Units)
+                                    </span>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#0284c7', background: '#e0f2fe', padding: '3px 10px', borderRadius: '12px' }}>
+                                      Additive Total Spend: ₹{book.totalAmountPaid.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <table className="custom-table" style={{ fontSize: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                                    <thead>
+                                      <tr style={{ background: '#f1f5f9' }}>
+                                        <th>#</th>
+                                        <th>Booking Date</th>
+                                        <th>New Phone (Booked)</th>
+                                        <th>Specs (RAM / Storage)</th>
+                                        <th>Old Exchanged Device</th>
+                                        <th>Purchased Amount (Paid ₹)</th>
+                                        <th>Exchange Value (₹)</th>
+                                        <th>Platform</th>
+                                        <th>Payment Via / Ref</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {book.mobiles.map((m, mIdx) => (
+                                        <tr key={m.id || mIdx}>
+                                          <td>{mIdx + 1}</td>
+                                          <td>{m.date}</td>
+                                          <td><strong style={{ color: '#0f172a' }}>{m.newBrand}</strong> {m.newModel}</td>
+                                          <td>{m.newRam} / {m.newStorage}</td>
+                                          <td style={{ color: '#475569' }}>{m.oldBrand !== '-' ? `${m.oldBrand} ${m.oldModel}` : 'Direct Purchase'}</td>
+                                          <td style={{ fontWeight: 800, color: '#0284c7' }}><CurrencyAmount amount={m.purchasedAmount} /></td>
+                                          <td style={{ fontWeight: 700, color: '#8b5cf6' }}><CurrencyAmount amount={m.exchangeValue} /></td>
+                                          <td><span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', background: '#f1f5f9', color: '#334155', fontWeight: 600 }}>{m.platform}</span></td>
+                                          <td style={{ fontSize: '11px', color: '#64748b' }}>{m.via} {m.accountId !== '-' ? `(${m.accountId})` : ''}</td>
+                                          <td><span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#eff6ff', color: '#1d4ed8' }}>{m.status}</span></td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-
-              {/* Staff Records Aggregated List */}
-              <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
-                  Staff Members Overview ({staffAggregatedList.length})
-                </span>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  💡 Click any staff card or row to view the full breakdown of mobiles they paid for
-                </span>
-              </div>
-
-              {staffAggregatedList.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                  <Users size={36} color="#94a3b8" style={{ marginBottom: '10px' }} />
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#475569' }}>No Staff Inventory Payment Records Found</div>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Mobiles added via Add Inventory will automatically appear and aggregate here by staff payer name.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {staffAggregatedList.map((staff, idx) => {
-                    const isExpanded = expandedPayer === `staff_${staff.payerName}`;
-                    return (
-                      <div 
-                        key={`staff_${staff.payerName}_${idx}`} 
-                        style={{ 
-                          borderRadius: '12px', 
-                          border: isExpanded ? '2px solid #059669' : '1px solid #e2e8f0', 
-                          background: '#ffffff', 
-                          boxShadow: isExpanded ? '0 4px 12px rgba(5, 150, 105, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-                          transition: 'all 0.2s ease',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {/* Summary Header Row */}
-                        <div 
-                          onClick={() => setExpandedPayer(isExpanded ? null : `staff_${staff.payerName}`)}
-                          style={{ 
-                            padding: '16px 20px', 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center', 
-                            cursor: 'pointer',
-                            background: isExpanded ? '#f0fdf4' : '#ffffff'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px' }}>
-                              {staff.payerName.charAt(0)}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
-                                {staff.payerName}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                                Total Mobiles Paid: <strong style={{ color: '#0284c7' }}>{staff.mobileCount}</strong> {staff.mobileCount === 1 ? 'Mobile' : 'Mobiles (Additive)'}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Total Amount Paid</span>
-                              <div style={{ fontSize: '18px', fontWeight: 800, color: '#059669' }}>
-                                <CurrencyAmount amount={staff.totalAmountPaid} />
-                              </div>
-                            </div>
-                            <div style={{ width: 32, height: 32, borderRadius: '8px', background: isExpanded ? '#059669' : '#f1f5f9', color: isExpanded ? '#ffffff' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Expanded Mobiles Breakdown Table */}
-                        {isExpanded && (
-                          <div style={{ padding: '0 20px 20px', borderTop: '1px solid #e2e8f0', background: '#fafafa' }}>
-                            <div style={{ padding: '14px 0 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-                                📱 Mobiles Paid by {staff.payerName} ({staff.mobiles.length})
-                              </span>
-                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669', background: '#dcfce7', padding: '3px 10px', borderRadius: '12px' }}>
-                                Additive Total: ₹ {staff.totalAmountPaid.toLocaleString()}
-                              </span>
-                            </div>
-
-                            <div className="table-responsive" style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                              <table className="custom-table" style={{ fontSize: '12px', margin: 0 }}>
-                                <thead>
-                                  <tr style={{ background: '#f8fafc' }}>
-                                    <th>#</th>
-                                    <th>Date Added</th>
-                                    <th>Brand & Model</th>
-                                    <th>Specs (RAM / Storage)</th>
-                                    <th>Color</th>
-                                    <th>Paid Amount (₹)</th>
-                                    <th>Remarks / Accessories</th>
-                                    <th>Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {staff.mobiles.map((m, mIdx) => (
-                                    <tr key={m.id || mIdx}>
-                                      <td>{mIdx + 1}</td>
-                                      <td>{m.date}</td>
-                                      <td>
-                                        <strong style={{ color: '#0f172a' }}>{m.brand}</strong> {m.model}
-                                      </td>
-                                      <td>{m.ram} / {m.storage}</td>
-                                      <td>{m.color}</td>
-                                      <td style={{ fontWeight: 800, color: '#059669' }}>
-                                        <CurrencyAmount amount={m.amount} />
-                                      </td>
-                                      <td style={{ color: '#64748b' }}>{m.remarks}</td>
-                                      <td>
-                                        <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#ecfdf5', color: '#047857' }}>
-                                          {m.status}
-                                        </span>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
 
-          {/* ----------------- SUB-VIEW: 2. BOOK EXPENSES ----------------- */}
-          {expenseViewType === 'book' && (
+          {/* ----------------- SUB-VIEW 2: STAFF TABLE (AS PER IMAGE 4) ----------------- */}
+          {expenseViewType === 'staff' && (
             <div>
-              {/* KPI Summary Cards for Book View */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ background: '#f0f9ff', padding: '18px', borderRadius: '14px', border: '1px solid #bae6fd' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1' }}>Total Purchased Amount Paid</span>
-                    <Wallet size={18} color="#0369a1" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#0c4a6e', marginTop: '6px' }}>
-                    <CurrencyAmount amount={totalBookPaidAmount} />
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#0369a1' }}>Paid amount recorded for bookings</span>
-                </div>
+              <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'visible' }}>
+                <table className="custom-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ width: '80px', textAlign: 'center' }}>S.No.</th>
+                      <th>Name</th>
+                      <th style={{ textAlign: 'right' }}>Total Spend</th>
+                      <th style={{ textAlign: 'center', width: '220px' }}>Evaluate By</th>
+                      <th style={{ width: '100px', textAlign: 'center' }}>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staffAggregatedList.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                          <Users size={32} color="#cbd5e1" style={{ marginBottom: '8px' }} />
+                          <div>No Staff inventory expenses recorded yet.</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      staffAggregatedList.map((staff, idx) => {
+                        const rowKey = `staff_${staff.payerName}`;
+                        const evalState = evaluations[rowKey];
+                        const isExpanded = expandedPayer === rowKey;
+                        const isMenuOpen = openEvaluateMenuId === rowKey;
 
-                <div style={{ background: '#f5f3ff', padding: '18px', borderRadius: '14px', border: '1px solid #ddd6fe' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#6d28d9' }}>Total Mobiles Booked</span>
-                    <Smartphone size={18} color="#6d28d9" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#4c1d95', marginTop: '6px' }}>
-                    {totalBookMobilesCount} <span style={{ fontSize: '14px', fontWeight: 600 }}>Units</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#6d28d9' }}>Total new exchange booking units</span>
-                </div>
+                        return (
+                          <React.Fragment key={rowKey}>
+                            <tr style={{ background: isExpanded ? '#f0fdf4' : '#ffffff', transition: 'all 0.15s ease' }}>
+                              <td style={{ textAlign: 'center', fontWeight: 700, color: '#64748b' }}>
+                                ① {idx + 1}
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
+                                    {staff.payerName.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>{staff.payerName}</strong>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{staff.mobileCount} {staff.mobileCount === 1 ? 'Mobile' : 'Mobiles (Additive)'}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '15px', color: '#059669' }}>
+                                <CurrencyAmount amount={staff.totalAmountPaid} />
+                              </td>
+                              <td style={{ textAlign: 'center', position: 'relative' }}>
+                                {/* Evaluate Status Bar or Trigger */}
+                                {evalState?.evaluatedBy ? (
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setOpenEvaluateMenuId(isMenuOpen ? null : rowKey)}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 14px',
+                                        borderRadius: '20px',
+                                        fontSize: '12px',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        border: evalState.evaluatedBy === 'Jeet' ? '1px solid #86efac' : '1px solid #c4b5fd',
+                                        background: evalState.evaluatedBy === 'Jeet' ? '#f0fdf4' : '#f5f3ff',
+                                        color: evalState.evaluatedBy === 'Jeet' ? '#166534' : '#5b21b6',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                      }}
+                                    >
+                                      <ShieldCheck size={14} />
+                                      {evalState.status}
+                                      <ChevronDown size={13} style={{ opacity: 0.7 }} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenEvaluateMenuId(isMenuOpen ? null : rowKey)}
+                                    style={{
+                                      padding: '6px 16px',
+                                      borderRadius: '8px',
+                                      fontSize: '12px',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      border: '1px solid #cbd5e1',
+                                      background: '#ffffff',
+                                      color: '#059669',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                                    }}
+                                  >
+                                    Evaluate <ChevronDown size={14} />
+                                  </button>
+                                )}
 
-                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Active Booking Payers</span>
-                    <UserCheck size={18} color="#475569" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
-                    {bookAggregatedList.length} <span style={{ fontSize: '14px', fontWeight: 600 }}>Payers</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>Distinct customers / agents</span>
-                </div>
+                                {/* Interactive Popup Menu (Jeet / Sonal) */}
+                                {isMenuOpen && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 50,
+                                    background: '#ffffff',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '10px',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                    padding: '6px',
+                                    width: '180px',
+                                    textAlign: 'left',
+                                    marginTop: '4px'
+                                  }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', padding: '4px 8px' }}>
+                                      Evaluate By (Super Admin):
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetEvaluation(rowKey, 'Jeet')}
+                                      style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '7px 10px',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        background: evalState?.evaluatedBy === 'Jeet' ? '#f0fdf4' : 'transparent',
+                                        color: '#15803d',
+                                        fontWeight: 700,
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left'
+                                      }}
+                                    >
+                                      <CheckCircle size={14} color="#15803d" /> Jeet
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetEvaluation(rowKey, 'Sonal')}
+                                      style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '7px 10px',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        background: evalState?.evaluatedBy === 'Sonal' ? '#f5f3ff' : 'transparent',
+                                        color: '#6d28d9',
+                                        fontWeight: 700,
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left'
+                                      }}
+                                    >
+                                      <CheckCircle size={14} color="#6d28d9" /> Sonal
+                                    </button>
+                                    {evalState?.evaluatedBy && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetEvaluation(rowKey, null)}
+                                        style={{
+                                          width: '100%',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          padding: '6px 10px',
+                                          borderTop: '1px solid #f1f5f9',
+                                          marginTop: '4px',
+                                          background: 'transparent',
+                                          color: '#ef4444',
+                                          fontWeight: 600,
+                                          fontSize: '11px',
+                                          cursor: 'pointer',
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <X size={12} /> Clear Evaluation
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedPayer(isExpanded ? null : rowKey)}
+                                  style={{
+                                    border: 'none',
+                                    background: isExpanded ? '#059669' : '#f1f5f9',
+                                    color: isExpanded ? '#ffffff' : '#64748b',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                  {staff.mobileCount} Mobiles
+                                </button>
+                              </td>
+                            </tr>
 
-                <div style={{ background: '#fdf2f8', padding: '18px', borderRadius: '14px', border: '1px solid #fbcfe8' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#be185d' }}>Total Exchange Value</span>
-                    <Tag size={18} color="#be185d" />
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#831843', marginTop: '6px' }}>
-                    <CurrencyAmount amount={totalBookExchangeValue} />
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#be185d' }}>Combined old device trade-in value</span>
-                </div>
+                            {/* Expanded Nested Details */}
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan="5" style={{ padding: '16px 20px', background: '#fafbfc', borderBottom: '2px solid #e2e8f0' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                                      📱 Mobiles Entered in Add Inventory by {staff.payerName} ({staff.mobiles.length} Units)
+                                    </span>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#dcfce7', padding: '3px 10px', borderRadius: '12px' }}>
+                                      Additive Total Spend: ₹{staff.totalAmountPaid.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <table className="custom-table" style={{ fontSize: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                                    <thead>
+                                      <tr style={{ background: '#f1f5f9' }}>
+                                        <th>#</th>
+                                        <th>Date Added</th>
+                                        <th>Brand & Model</th>
+                                        <th>Specs (RAM / Storage)</th>
+                                        <th>Color</th>
+                                        <th>Paid Amount (₹)</th>
+                                        <th>Remarks / Accessories</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {staff.mobiles.map((m, mIdx) => (
+                                        <tr key={m.id || mIdx}>
+                                          <td>{mIdx + 1}</td>
+                                          <td>{m.date}</td>
+                                          <td><strong style={{ color: '#0f172a' }}>{m.brand}</strong> {m.model}</td>
+                                          <td>{m.ram} / {m.storage}</td>
+                                          <td>{m.color}</td>
+                                          <td style={{ fontWeight: 800, color: '#059669' }}><CurrencyAmount amount={m.amount} /></td>
+                                          <td style={{ color: '#64748b' }}>{m.remarks}</td>
+                                          <td><span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#ecfdf5', color: '#047857' }}>{m.status}</span></td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-
-              {/* Book Records Aggregated List */}
-              <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
-                  Booking Payers Overview ({bookAggregatedList.length})
-                </span>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  💡 Click any booking card or row to view the full breakdown of booked mobiles and trade-ins
-                </span>
-              </div>
-
-              {bookAggregatedList.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                  <BookOpen size={36} color="#94a3b8" style={{ marginBottom: '10px' }} />
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#475569' }}>No Booking Payment Records Found</div>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Bookings created via Book New Device / Exchange will automatically appear and aggregate here by Pay By name.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {bookAggregatedList.map((book, idx) => {
-                    const isExpanded = expandedPayer === `book_${book.payByName}`;
-                    return (
-                      <div 
-                        key={`book_${book.payByName}_${idx}`} 
-                        style={{ 
-                          borderRadius: '12px', 
-                          border: isExpanded ? '2px solid #0284c7' : '1px solid #e2e8f0', 
-                          background: '#ffffff', 
-                          boxShadow: isExpanded ? '0 4px 12px rgba(2, 132, 199, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-                          transition: 'all 0.2s ease',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {/* Summary Header Row */}
-                        <div 
-                          onClick={() => setExpandedPayer(isExpanded ? null : `book_${book.payByName}`)}
-                          style={{ 
-                            padding: '16px 20px', 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center', 
-                            cursor: 'pointer',
-                            background: isExpanded ? '#f0f9ff' : '#ffffff'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#bae6fd', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px' }}>
-                              {book.payByName.charAt(0)}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
-                                {book.payByName}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                                Total Booked Mobiles: <strong style={{ color: '#0284c7' }}>{book.mobileCount}</strong> {book.mobileCount === 1 ? 'Mobile' : 'Mobiles (Additive)'}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Purchased Amount Paid</span>
-                              <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7' }}>
-                                <CurrencyAmount amount={book.totalAmountPaid} />
-                              </div>
-                            </div>
-                            <div style={{ width: 32, height: 32, borderRadius: '8px', background: isExpanded ? '#0284c7' : '#f1f5f9', color: isExpanded ? '#ffffff' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Expanded Booked Mobiles Breakdown Table */}
-                        {isExpanded && (
-                          <div style={{ padding: '0 20px 20px', borderTop: '1px solid #e2e8f0', background: '#fafafa' }}>
-                            <div style={{ padding: '14px 0 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-                                📱 Booked Mobiles Paid by {book.payByName} ({book.mobiles.length})
-                              </span>
-                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#0284c7', background: '#e0f2fe', padding: '3px 10px', borderRadius: '12px' }}>
-                                Additive Total: ₹ {book.totalAmountPaid.toLocaleString()}
-                              </span>
-                            </div>
-
-                            <div className="table-responsive" style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                              <table className="custom-table" style={{ fontSize: '12px', margin: 0 }}>
-                                <thead>
-                                  <tr style={{ background: '#f8fafc' }}>
-                                    <th>#</th>
-                                    <th>Booking Date</th>
-                                    <th>New Phone (Booked)</th>
-                                    <th>Specs (RAM / Storage)</th>
-                                    <th>Old Exchanged Device</th>
-                                    <th>Purchased Amount (Paid ₹)</th>
-                                    <th>Exchange Value (₹)</th>
-                                    <th>Platform</th>
-                                    <th>Payment Via / Ref</th>
-                                    <th>Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {book.mobiles.map((m, mIdx) => (
-                                    <tr key={m.id || mIdx}>
-                                      <td>{mIdx + 1}</td>
-                                      <td>{m.date}</td>
-                                      <td>
-                                        <strong style={{ color: '#0f172a' }}>{m.newBrand}</strong> {m.newModel}
-                                      </td>
-                                      <td>{m.newRam} / {m.newStorage}</td>
-                                      <td style={{ color: '#475569' }}>
-                                        {m.oldBrand !== '-' ? `${m.oldBrand} ${m.oldModel}` : 'Direct Purchase'}
-                                      </td>
-                                      <td style={{ fontWeight: 800, color: '#0284c7' }}>
-                                        <CurrencyAmount amount={m.purchasedAmount} />
-                                      </td>
-                                      <td style={{ fontWeight: 700, color: '#8b5cf6' }}>
-                                        <CurrencyAmount amount={m.exchangeValue} />
-                                      </td>
-                                      <td>
-                                        <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', background: '#f1f5f9', color: '#334155', fontWeight: 600 }}>
-                                          {m.platform}
-                                        </span>
-                                      </td>
-                                      <td style={{ fontSize: '11px', color: '#64748b' }}>
-                                        {m.via} {m.accountId !== '-' ? `(${m.accountId})` : ''}
-                                      </td>
-                                      <td>
-                                        <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#eff6ff', color: '#1d4ed8' }}>
-                                          {m.status}
-                                        </span>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
         </div>
