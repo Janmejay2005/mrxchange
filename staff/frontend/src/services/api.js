@@ -1,5 +1,5 @@
 const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_BASE = rawApiUrl ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`) : '/api';
+const API_BASE = rawApiUrl ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`) : 'https://mrchange-qjrl.onrender.com/api';
 
 export async function fetchApi(endpoint, options = {}) {
   const token = localStorage.getItem('mrx_token');

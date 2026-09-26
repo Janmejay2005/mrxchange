@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://mrx-change-backend.onrender.com/api/:path*"
+      "destination": "https://mrchange-qjrl.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://mrx-change-backend.onrender.com/uploads/:path*"
+      "destination": "https://mrchange-qjrl.onrender.com/uploads/:path*"
     },
     {
       "source": "/(.*)",
