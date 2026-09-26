@@ -19,6 +19,7 @@ async function createPgPool(connectionString) {
     let pgSql = sql
       .replace(/`condition`/gi, '"condition"')
       .replace(/`/g, '')
+      .replace(/\bactive\s*=\s*1\b/gi, 'active = true')
       .replace(/CURDATE\(\)/gi, 'CURRENT_DATE')
       .replace(/DATE_SUB\(CURRENT_DATE,\s*INTERVAL\s*7\s*DAY\)/gi, "(CURRENT_DATE - INTERVAL '7 days')")
       .replace(/DATE_SUB\(CURDATE\(\),\s*INTERVAL\s*7\s*DAY\)/gi, "(CURRENT_DATE - INTERVAL '7 days')")

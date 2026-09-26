@@ -23,7 +23,7 @@ export async function seedInitialData() {
     if (exists.length === 0) {
       await pool.query(`
         INSERT INTO users (id, name, email, password_hash, auth_identifier, role, active)
-        VALUES (?, ?, ?, ?, ?, ?, 1)
+        VALUES (?, ?, ?, ?, ?, ?, true)
       `, [uuidv4(), u.name, u.email, u.pass, u.identifier, u.role]);
     }
   }
@@ -31,7 +31,7 @@ export async function seedInitialData() {
 
   // 2. Check existing devices
   const [devices] = await pool.query('SELECT COUNT(*) as count FROM devices');
-  if (devices[0].count === 0) {
+  if (Number(devices[0]?.count || 0) === 0) {
     console.log('🌱 Seeding sample devices for Old In-hand, New In-hand, Repair, and Rejections...');
     
     const sampleDevices = [
@@ -311,8 +311,8 @@ export async function seedInitialData() {
   }
 
   // 3. Seed Central Ledger Transactions (Sales, Repairs, Operating Expenses, Capital Investments)
-  const [txCount] = await pool.query('SELECT COUNT(*) as count FROM transactions WHERE transaction_type != "ACQUISITION"');
-  if (txCount[0].count === 0) {
+  const [txCount] = await pool.query('SELECT COUNT(*) as count FROM transactions WHERE transaction_type != \'ACQUISITION\'');
+  if (Number(txCount[0]?.count || 0) === 0) {
     console.log('🌱 Seeding Central Ledger transactions, sales, and capital movements...');
 
     const demoTransactions = [

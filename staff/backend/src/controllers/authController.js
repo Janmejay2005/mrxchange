@@ -11,7 +11,7 @@ export async function login(req, res) {
     }
 
     const pool = getPool();
-    const [users] = await pool.query('SELECT * FROM users WHERE (email = ? OR auth_identifier = ?) AND active = 1', [identifier, identifier]);
+    const [users] = await pool.query('SELECT * FROM users WHERE (email = ? OR auth_identifier = ?) AND (active = true OR active = 1)', [identifier, identifier]);
     if (users.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
