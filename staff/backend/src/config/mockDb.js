@@ -97,12 +97,16 @@ export function createMockPool() {
         return [{ affectedRows: 1 }, []];
       }
 
-      // DELETE single device
+      // DELETE single device or status filtered devices
       if (s.includes('delete from devices') && s.includes('where')) {
-        const targetId = params[0];
-        store.mockDevices = store.mockDevices.filter(d => 
-          String(d.id) !== String(targetId) && String(d.device_code) !== String(targetId)
-        );
+        if (s.includes("status = 'rejected'")) {
+          store.mockDevices = store.mockDevices.filter(d => d.status !== 'REJECTED');
+        } else {
+          const targetId = params[0];
+          store.mockDevices = store.mockDevices.filter(d => 
+            String(d.id) !== String(targetId) && String(d.device_code) !== String(targetId)
+          );
+        }
         saveStore();
         return [{ affectedRows: 1 }, []];
       }

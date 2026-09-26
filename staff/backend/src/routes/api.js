@@ -1,6 +1,6 @@
 import express from 'express';
 import { login, getProfile } from '../controllers/authController.js';
-import { getDevices, getDeviceById, createDevice, updateDeviceStatus, deleteDevice, cleanDatabase } from '../controllers/deviceController.js';
+import { getDevices, getDeviceById, createDevice, updateDeviceStatus, deleteDevice, cleanRejectedStock, cleanDatabase } from '../controllers/deviceController.js';
 import { createRepair, updateRepair } from '../controllers/repairController.js';
 import { createRejection, resolveRejection } from '../controllers/rejectionController.js';
 import { createSale, getSalesList } from '../controllers/saleController.js';
@@ -18,9 +18,10 @@ const router = express.Router();
 router.post('/auth/login', login);
 router.get('/auth/profile', authenticateToken, getProfile);
 
-// Global Admin DB Clean Endpoint
+// Clean Endpoints
 router.post('/admin/clean-database', authenticateToken, cleanDatabase);
 router.post('/devices/clean-database', authenticateToken, cleanDatabase);
+router.post('/devices/clean-rejected', authenticateToken, cleanRejectedStock);
 
 // Dashboard & Analytics
 router.get('/dashboard/stats', authenticateToken, getDashboardStats);

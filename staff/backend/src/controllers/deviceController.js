@@ -386,6 +386,24 @@ export async function deleteDevice(req, res) {
   }
 }
 
+export async function cleanRejectedStock(req, res) {
+  try {
+    const pool = getPool();
+    if (pool.isMockPool) {
+      await pool.query("DELETE FROM devices WHERE status = 'REJECTED'");
+    } else {
+      await pool.query("DELETE FROM rejections WHERE device_id IN (SELECT id FROM devices WHERE status = 'REJECTED')");
+      await pool.query("DELETE FROM device_images WHERE device_id IN (SELECT id FROM devices WHERE status = 'REJECTED')");
+      await pool.query("DELETE FROM device_status_history WHERE device_id IN (SELECT id FROM devices WHERE status = 'REJECTED')");
+      await pool.query("DELETE FROM devices WHERE status = 'REJECTED'");
+    }
+    res.json({ success: true, message: 'All rejected stock data cleared successfully' });
+  } catch (error) {
+    console.error('cleanRejectedStock error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 export async function cleanDatabase(req, res) {
   try {
     const pool = getPool();

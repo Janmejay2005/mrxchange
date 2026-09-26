@@ -94,32 +94,24 @@ export default function RejectedStock() {
   };
 
   const handleCleanInventory = async () => {
-    if (window.confirm('Are you sure you want to clean/clear all central database inventory data? This will reset all server database rows to 0 across all devices.')) {
+    if (window.confirm('Are you sure you want to clean/clear all Rejected Stock data? This will remove all rejected items from stock.')) {
       try {
-        await deviceService.cleanDatabase();
+        await deviceService.cleanRejectedStock();
       } catch (err) {
-        console.warn('Backend DB clean warning:', err);
+        console.warn('Backend rejected stock clean warning:', err);
       }
 
-      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
-      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
-      localStorage.setItem('mrx_repair_stock', JSON.stringify([]));
       localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
-      localStorage.setItem('mrx_exchanges', JSON.stringify([]));
-      localStorage.setItem('mrx_exchange_pool', JSON.stringify([]));
-      localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
-      localStorage.setItem('mrx_sales', JSON.stringify([]));
-      localStorage.setItem('mrx_devices', JSON.stringify([]));
-      localStorage.setItem('mrx_inventory_cleared', 'true');
+
+      const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+      const updatedDevices = localDevices.filter(d => d.status !== 'REJECTED');
+      localStorage.setItem('mrx_devices', JSON.stringify(updatedDevices));
 
       window.dispatchEvent(new Event('mrx_inventory_updated'));
-      window.dispatchEvent(new Event('mrx_exchanges_updated'));
-      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
       window.dispatchEvent(new Event('storage'));
 
       setDevices([]);
-      alert('Central database & local memory cleared to 0 successfully!');
+      alert('All Rejected Stock data cleared successfully!');
     }
   };
 

@@ -111,6 +111,18 @@ export const deviceService = {
     localStorage.removeItem('mrx_inventory_cleared');
     return { success: true };
   },
+  cleanRejectedStock: async () => {
+    try {
+      await fetchApi('/devices/clean-rejected', { method: 'POST' });
+    } catch (e) {
+      console.warn('Backend rejected stock clean warning:', e);
+    }
+    localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
+    const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+    const updatedDevices = localDevices.filter(d => d.status !== 'REJECTED');
+    localStorage.setItem('mrx_devices', JSON.stringify(updatedDevices));
+    return { success: true };
+  },
   createDevice: async (formData) => {
     localStorage.removeItem('mrx_inventory_cleared');
     let createdObj = {};
