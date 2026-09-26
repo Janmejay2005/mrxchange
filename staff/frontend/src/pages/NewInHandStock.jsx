@@ -237,9 +237,9 @@ export default function NewInHandStock() {
 
     // Record Payment entry (Received if fully paid, Pending if partial)
     const totAmt = Number(sellForm.totalAmount) || (Number(sellForm.soldPrice) * requestedUnits) || 0;
-    const pdAmt = Number(sellForm.paidAmount) || totAmt;
+    const pdAmt = sellForm.paidAmount !== '' && sellForm.paidAmount !== undefined ? Math.min(totAmt, Number(sellForm.paidAmount)) : totAmt;
     const pendAmt = Math.max(0, totAmt - pdAmt);
-    const payStatus = pendAmt === 0 ? 'Received' : 'Pending';
+    const payStatus = pendAmt <= 0 ? 'Received' : 'Pending';
 
     const newPaymentObj = {
       id: `PAY-${Date.now()}_${Math.floor(Math.random() * 1000)}`,

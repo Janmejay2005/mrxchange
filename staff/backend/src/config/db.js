@@ -7,12 +7,25 @@ const isCloudDb = !!process.env.DATABASE_URL || process.env.NODE_ENV === 'produc
 
 let pool = null;
 
-async function createPgPool(connectionString) {
+async function createPgPool(connectionStringOrConfig) {
   const { default: pg } = await import('pg');
-  const pgPool = new pg.Pool({
-    connectionString,
-    ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
-  });
+  
+  // Parse NUMERIC / DECIMAL as Float, BIGINT as Integer in PostgreSQL
+  pg.types.setTypeParser(1700, val => (val === null ? 0 : parseFloat(val)));
+  pg.types.setTypeParser(20, val => (val === null ? 0 : parseInt(val, 10)));
+
+  const isConnStr = typeof connectionStringOrConfig === 'string';
+  const poolConfig = isConnStr 
+    ? {
+        connectionString: connectionStringOrConfig,
+        ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
+      }
+    : {
+        ...connectionStringOrConfig,
+        ssl: process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
+      };
+
+  const pgPool = new pg.Pool(poolConfig);
 
   const queryPg = async (executor, sql, params = []) => {
     let paramIdx = 1;
@@ -38,6 +51,7 @@ async function createPgPool(connectionString) {
         }
         if (normalized.total !== undefined) normalized.total = Number(normalized.total);
         if (normalized.count !== undefined) normalized.count = Number(normalized.count);
+        if (normalized.amount !== undefined && typeof normalized.amount === 'string') normalized.amount = Number(normalized.amount);
         return normalized;
       }
       return row;
@@ -68,10 +82,21 @@ async function createPgPool(connectionString) {
 
 export async function initDatabase() {
   try {
-    const dbUrl = process.env.DATABASE_URL || '';
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRESQL_URL || '';
+    const pgHost = process.env.PGHOST || (process.env.DB_TYPE === 'postgres' ? process.env.DB_HOST : null);
+
     if (dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://')) {
       pool = await createPgPool(dbUrl);
-      console.log('✅ Render PostgreSQL Database connected successfully');
+      console.log('✅ PostgreSQL Database connected successfully (via URL)');
+    } else if (pgHost) {
+      pool = await createPgPool({
+        host: pgHost,
+        port: parseInt(process.env.PGPORT || process.env.DB_PORT || '5432'),
+        user: process.env.PGUSER || process.env.DB_USER || 'postgres',
+        password: process.env.PGPASSWORD || process.env.DB_PASSWORD || '',
+        database: process.env.PGDATABASE || process.env.DB_NAME || 'mr_x_change_staff'
+      });
+      console.log('✅ PostgreSQL Database connected successfully (via params)');
     } else if (dbUrl) {
       pool = mysql.createPool({
         uri: dbUrl,

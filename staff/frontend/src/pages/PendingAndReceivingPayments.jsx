@@ -122,26 +122,39 @@ export default function PendingAndReceivingPayments() {
     });
   };
 
-  const pendingList = applyFilters(payments.filter(item => item.status === 'Pending' || item.pendingAmount > 0));
-  const receivingList = applyFilters(payments.filter(item => item.status === 'Received' || item.pendingAmount <= 0));
+  const pendingList = applyFilters(payments.filter(item => Number(item.pendingAmount) > 0));
+  const receivingList = applyFilters(payments.filter(item => Number(item.pendingAmount) <= 0));
 
-  const totalPendingVal = pendingList.reduce((sum, item) => sum + (item.pendingAmount || 0), 0);
-  const totalReceivedVal = receivingList.reduce((sum, item) => sum + (item.paidAmount || 0), 0);
+  const totalPendingVal = pendingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
+  const totalReceivedVal = receivingList.reduce((sum, item) => sum + (Number(item.paidAmount) || 0), 0);
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
     const newPayAmt = Number(equateForm.newPay) || 0;
+    if (newPayAmt <= 0) {
+      alert('Please enter a valid payment amount greater than 0.');
+      return;
+    }
+
     if (selectedPayment) {
       const updatedList = payments.map(p => {
         if (String(p.id) === String(selectedPayment.id)) {
-          const newPaidAmount = (p.paidAmount || 0) + newPayAmt;
-          const newPendingAmount = Math.max(0, (p.pendingAmount || 0) - newPayAmt);
+          const currentTotal = Number(p.totalAmount) || (Number(p.paidAmount || 0) + Number(p.pendingAmount || 0));
+          const existingPaid = Number(p.paidAmount) || 0;
+          const remainingPending = Math.max(0, currentTotal - existingPaid);
+
+          // Apply payment capped to remaining pending if partial/complete
+          const appliedPay = remainingPending > 0 ? Math.min(newPayAmt, remainingPending) : newPayAmt;
+          const newPaidAmount = Math.min(currentTotal, existingPaid + appliedPay);
+          const newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
+
           return {
             ...p,
+            totalAmount: currentTotal,
             customerName: equateForm.customerName || p.customerName,
             paidAmount: newPaidAmount,
             pendingAmount: newPendingAmount,
-            status: newPendingAmount === 0 ? 'Received' : 'Pending'
+            status: newPendingAmount <= 0 ? 'Received' : 'Pending'
           };
         }
         return p;
@@ -149,20 +162,24 @@ export default function PendingAndReceivingPayments() {
       savePaymentsToStorage(updatedList);
       alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! New pay of ₹${newPayAmt.toLocaleString()} recorded.`);
     } else {
+      const enteredTotal = Number(equateForm.pendingPayment) || newPayAmt;
+      const initialPaid = Math.min(newPayAmt, enteredTotal);
+      const calculatedPending = Math.max(0, enteredTotal - initialPaid);
+
       const newPayEntry = {
         id: `PAY-${Date.now()}`,
         date: equateForm.date,
-        customerName: equateForm.customerName,
+        customerName: equateForm.customerName || 'Customer',
         brand: 'General',
         model: 'Payment Record',
-        totalAmount: Number(equateForm.pendingPayment) || newPayAmt,
-        paidAmount: newPayAmt,
-        pendingAmount: Math.max(0, (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt),
-        status: (Number(equateForm.pendingPayment) || newPayAmt) - newPayAmt <= 0 ? 'Received' : 'Pending',
+        totalAmount: enteredTotal,
+        paidAmount: initialPaid,
+        pendingAmount: calculatedPending,
+        status: calculatedPending <= 0 ? 'Received' : 'Pending',
         mode: 'Cash'
       };
       savePaymentsToStorage([newPayEntry, ...payments]);
-      alert(`Payment added successfully for ${equateForm.customerName}!`);
+      alert(`Payment added successfully for ${equateForm.customerName || 'Customer'}!`);
     }
     setIsEquateModalOpen(false);
   };
@@ -257,7 +274,7 @@ export default function PendingAndReceivingPayments() {
       {/* DUAL COLUMNS SECTION: RECEIVED PAYMENTS (LEFT COLUMN) & PENDING PAYMENTS (RIGHT COLUMN) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
         
-        {/* COLUMN 1: RECEIVED PAYMENTS COLUMN */}
+        {/* COLUMN 1: RECEIVING PAYMENTS COLUMN (Customer Receivables) */}
         <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #a7f3d0', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -265,13 +282,13 @@ export default function PendingAndReceivingPayments() {
                 <CheckCircle size={20} />
               </div>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Received Payments Column</h2>
-                <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Completed customer collections ({receivingList.length} items)</span>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payments Column</h2>
+                <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Customer receivables to collect after sales ({receivingList.length} items)</span>
               </div>
             </div>
 
             <div style={{ background: '#ecfdf5', padding: '8px 16px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#047857' }}>Total Collected:</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#047857' }}>Total Collected / Received:</span>
               <span style={{ fontSize: '16px', fontWeight: 800, color: '#065f46' }}>
                 <CurrencyAmount amount={totalReceivedVal} />
               </span>
@@ -334,7 +351,7 @@ export default function PendingAndReceivingPayments() {
           </div>
         </div>
 
-        {/* COLUMN 2: PENDING PAYMENTS COLUMN */}
+        {/* COLUMN 2: PENDING PAYMENTS COLUMN (Agent Payables) */}
         <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -342,13 +359,13 @@ export default function PendingAndReceivingPayments() {
                 <Clock size={20} />
               </div>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column</h2>
-                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Uncollected customer receivables ({pendingList.length} items)</span>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column (Agent Payables)</h2>
+                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Dues to pay to booking agents / suppliers ({pendingList.length} items)</span>
               </div>
             </div>
 
             <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Balance:</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Payables:</span>
               <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
                 <CurrencyAmount amount={totalPendingVal} />
               </span>
@@ -430,33 +447,39 @@ export default function PendingAndReceivingPayments() {
             </div>
 
             {/* Amount Calculation Breakdown Box */}
-            {selectedPayment && (
-              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
-                  📊 Amount Calculation Breakdown
+            {selectedPayment && (() => {
+              const modalTotal = Number(selectedPayment.totalAmount) || (Number(selectedPayment.paidAmount || 0) + Number(selectedPayment.pendingAmount || 0));
+              const modalPaid = Math.min(modalTotal, Number(selectedPayment.paidAmount) || 0);
+              const modalPending = Math.max(0, modalTotal - modalPaid);
+
+              return (
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                    📊 Amount Calculation Breakdown
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
+                    <div style={{ background: '#ffffff', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Total Amount</div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                        <CurrencyAmount amount={modalTotal} />
+                      </div>
+                    </div>
+                    <div style={{ background: '#ecfdf5', padding: '8px', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                      <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600 }}>Paid Amount</div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                        <CurrencyAmount amount={modalPaid} />
+                      </div>
+                    </div>
+                    <div style={{ background: '#fff7ed', padding: '8px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
+                      <div style={{ fontSize: '11px', color: '#c2410c', fontWeight: 600 }}>Pending Amount</div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#ea580c', marginTop: '2px' }}>
+                        <CurrencyAmount amount={modalPending} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
-                  <div style={{ background: '#ffffff', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Total Amount</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
-                      <CurrencyAmount amount={selectedPayment.totalAmount} />
-                    </div>
-                  </div>
-                  <div style={{ background: '#ecfdf5', padding: '8px', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
-                    <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600 }}>Paid Amount</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
-                      <CurrencyAmount amount={selectedPayment.paidAmount} />
-                    </div>
-                  </div>
-                  <div style={{ background: '#fff7ed', padding: '8px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
-                    <div style={{ fontSize: '11px', color: '#c2410c', fontWeight: 600 }}>Pending Amount</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#ea580c', marginTop: '2px' }}>
-                      <CurrencyAmount amount={selectedPayment.pendingAmount} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <form onSubmit={handleEquateSubmit}>
               {/* Customer Name */}

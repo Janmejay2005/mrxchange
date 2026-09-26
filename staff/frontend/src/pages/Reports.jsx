@@ -132,8 +132,66 @@ export default function Reports() {
 
   const handleExport = async () => {
     try {
+      let rawDevices = [];
+      if (exportTarget === 'pending_payments') {
+        const localStr = localStorage.getItem('mrx_pending_payments');
+        const payments = localStr ? JSON.parse(localStr) : [];
+        const headers = ['ID', 'Date', 'Customer', 'Brand', 'Model', 'Total Amount', 'Paid Amount', 'Pending Amount', 'Status', 'Mode'];
+        const rows = payments.map(p => [
+          p.id || '-',
+          p.date || '-',
+          p.customerName || '-',
+          p.brand || '-',
+          p.model || '-',
+          `Rs. ${Number(p.totalAmount || 0).toLocaleString()}`,
+          `Rs. ${Number(p.paidAmount || 0).toLocaleString()}`,
+          `Rs. ${Number(p.pendingAmount || 0).toLocaleString()}`,
+          p.status || 'Pending',
+          p.mode || 'Cash'
+        ]);
+        const totalVal = payments.reduce((sum, p) => sum + (Number(p.totalAmount) || 0), 0);
+        if (exportFormat === 'XLS') {
+          exportToXls(`Report: Pending & Received Payments`, headers, rows, `Report_Payments_${new Date().toISOString().slice(0, 10)}.xls`);
+        } else {
+          setExportModalConfig({
+            isOpen: true,
+            title: `Report: Pending and Receiving Payments`,
+            headers,
+            rows,
+            filename: `Report_Payments_${new Date().toISOString().slice(0, 10)}.pdf`,
+            summaryInfo: [
+              { label: 'Total Payment Value', value: `Rs. ${totalVal.toLocaleString()}`, color: '#0284c7' }
+            ]
+          });
+        }
+        return;
+      }
+
       const res = await deviceService.getDevices({});
-      const rawDevices = res.data || [];
+      rawDevices = Array.isArray(res) ? res : (res?.data || []);
+
+      if (exportTarget === 'old_inventory') {
+        rawDevices = rawDevices.filter(d => d.status === 'OLD_INVENTORY');
+      } else if (exportTarget === 'old_in_hand') {
+        rawDevices = rawDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'IN_HAND');
+      } else if (exportTarget === 'new_in_hand') {
+        rawDevices = rawDevices.filter(d => d.status === 'NEW_IN_HAND');
+      } else if (exportTarget === 'repair') {
+        rawDevices = rawDevices.filter(d => d.status === 'IN_REPAIR');
+      } else if (exportTarget === 'rejected') {
+        rawDevices = rawDevices.filter(d => d.status === 'REJECTED');
+      }
+
+      // Apply date and brand filters if specified
+      if (selectedBrand !== 'All Brands') {
+        rawDevices = rawDevices.filter(d => d.brand === selectedBrand);
+      }
+      if (fromDate) {
+        rawDevices = rawDevices.filter(d => (d.intake_date || '') >= fromDate);
+      }
+      if (toDate) {
+        rawDevices = rawDevices.filter(d => (d.intake_date || '') <= toDate);
+      }
 
       if (exportFormat === 'XLS') {
         const headers = ['ID', 'Device Code', 'Brand', 'Model', 'Storage', 'RAM', 'Color', 'Purchase Amount', 'Paid By', 'Date', 'Status'];
@@ -144,11 +202,11 @@ export default function Reports() {
           d.model,
           d.storage,
           d.ram,
-          d.colour,
-          d.purchase_amount,
-          d.paid_by,
-          d.intake_date,
-          d.status
+          d.colour || d.color || '-',
+          d.purchase_amount || d.amount || 0,
+          d.paid_by || d.purchasedBy || '-',
+          d.intake_date || d.date || '-',
+          d.status || 'OLD_INVENTORY'
         ]);
         exportToXls(`Report: ${exportTarget.toUpperCase().replace(/_/g, ' ')}`, headers, rows, `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.xls`);
       } else {
@@ -158,14 +216,14 @@ export default function Reports() {
           d.brand,
           d.model,
           `${d.storage}GB`,
-          d.colour || '-',
-          `Rs. ${d.purchase_amount}`,
+          d.colour || d.color || '-',
+          `Rs. ${Number(d.purchase_amount || d.amount || 0).toLocaleString()}`,
           d.status || 'OLD_INVENTORY'
         ]);
-        const totalAmount = rawDevices.reduce((sum, d) => sum + (Number(d.purchase_amount) || 0), 0);
+        const totalAmount = rawDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
         setExportModalConfig({
           isOpen: true,
-          title: `Report: ${exportTarget.toUpperCase().replace('_', ' ')}`,
+          title: `Report: ${exportTarget.toUpperCase().replace(/_/g, ' ')}`,
           headers,
           rows,
           filename: `Report_${exportTarget}_${new Date().toISOString().slice(0,10)}.pdf`,

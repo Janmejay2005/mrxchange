@@ -18,7 +18,7 @@ import { CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
-import { expenseService, saleService } from '../services/api';
+import { expenseService, saleService, deviceService } from '../services/api';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -41,6 +41,7 @@ export default function ProfitExpenseAndStatistic() {
 
   // Add Expense Modal
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     date: new Date().toISOString().split('T')[0],
     amount: '',
@@ -50,20 +51,24 @@ export default function ProfitExpenseAndStatistic() {
 
   const [phoneProfits, setPhoneProfits] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [allDevices, setAllDevices] = useState([]);
 
   const loadData = async () => {
     try {
-      const [salesRes, expRes] = await Promise.all([
+      const [salesRes, expRes, devRes] = await Promise.all([
         saleService.getSales(),
-        expenseService.getExpenses()
+        expenseService.getExpenses(),
+        deviceService.getDevices().catch(() => [])
       ]);
       setPhoneProfits(salesRes.data || []);
       setExpenses(expRes.data || []);
+      setAllDevices(Array.isArray(devRes) ? devRes : (devRes?.data || []));
     } catch (err) {
       console.error("Error loading profit and expense data:", err);
       try {
         setPhoneProfits(JSON.parse(localStorage.getItem('mrx_sales') || '[]'));
         setExpenses(JSON.parse(localStorage.getItem('mrx_expenses') || '[]'));
+        setAllDevices(JSON.parse(localStorage.getItem('mrx_devices') || '[]'));
       } catch (e) {}
     }
   };
@@ -75,36 +80,46 @@ export default function ProfitExpenseAndStatistic() {
     window.addEventListener('storage', handleSync);
     window.addEventListener('mrx_sales_updated', handleSync);
     window.addEventListener('mrx_expenses_updated', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('mrx_sales_updated', handleSync);
       window.removeEventListener('mrx_expenses_updated', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
     };
   }, []);
 
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
-    const adminName = selectedAdmin === 'All Super Admins' ? 'Jeet' : selectedAdmin;
-    const expPayload = {
-      date: expenseForm.date,
-      expense_date: expenseForm.date,
-      admin: adminName,
-      admin_name: adminName,
-      type: expenseForm.type,
-      category: expenseForm.type === 'Salary' ? 'SALARY' : (expenseForm.type === 'Repairing Cost' ? 'REPAIRING_COST' : 'OTHER'),
-      amount: Number(expenseForm.amount) || 0,
-      remarks: expenseForm.remarks || 'Business expense'
-    };
-    await expenseService.createExpense(expPayload);
-    alert('Expense added successfully & synced across all devices!');
-    setIsExpenseModalOpen(false);
-    setExpenseForm({
-      date: new Date().toISOString().split('T')[0],
-      amount: '',
-      type: 'Shop Rent',
-      remarks: ''
-    });
-    loadData();
+    if (isSubmittingExpense) return;
+    setIsSubmittingExpense(true);
+    try {
+      const adminName = selectedAdmin === 'All Super Admins' ? 'Jeet' : selectedAdmin;
+      const expPayload = {
+        date: expenseForm.date,
+        expense_date: expenseForm.date,
+        admin: adminName,
+        admin_name: adminName,
+        type: expenseForm.type,
+        category: expenseForm.type === 'Salary' ? 'SALARY' : (expenseForm.type === 'Repairing Cost' ? 'REPAIRING_COST' : 'OTHER'),
+        amount: Number(expenseForm.amount) || 0,
+        remarks: expenseForm.remarks || 'Business expense'
+      };
+      await expenseService.createExpense(expPayload);
+      alert('Expense added successfully & synced across all devices!');
+      setIsExpenseModalOpen(false);
+      setExpenseForm({
+        date: new Date().toISOString().split('T')[0],
+        amount: '',
+        type: 'Shop Rent',
+        remarks: ''
+      });
+      await loadData();
+    } catch (err) {
+      alert('Failed to add expense: ' + (err.message || 'Server error'));
+    } finally {
+      setIsSubmittingExpense(false);
+    }
   };
 
   const toYMD = (val) => {
@@ -170,10 +185,48 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  const totalInvestment = filteredProfits.reduce((sum, p) => sum + p.purchase, 0);
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + p.selling, 0);
-  const totalProfit = filteredProfits.reduce((sum, p) => sum + p.profit, 0);
-  const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const filteredDevices = allDevices.filter(d => {
+    if (selectedAdmin !== 'All Super Admins' && (d.paid_by || d.purchasedBy) !== selectedAdmin) return false;
+    if (selectedDate) {
+      const dYMD = toYMD(d.intake_date || d.date);
+      const selYMD = toYMD(selectedDate);
+      if (dYMD && selYMD && dYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const dYMD = toYMD(d.intake_date || d.date);
+      const fYMD = toYMD(fromDate);
+      if (dYMD && fYMD && dYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const dYMD = toYMD(d.intake_date || d.date);
+      const tYMD = toYMD(toDate);
+      if (dYMD && tYMD && dYMD > tYMD) return false;
+    }
+    const q = (globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchModel = (d.model || '').toLowerCase().includes(q);
+      const matchBrand = (d.brand || '').toLowerCase().includes(q);
+      if (!matchModel && !matchBrand) return false;
+    }
+    return true;
+  });
+
+  // 1. Investment = Total amount of devices entered in Add Inventory
+  const totalInvestment = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+
+  // 2. Selling = Data sum from selling devices in new in hand inventory
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price) || 0), 0);
+
+  // 3. Profit = Sold price from new in hand - (repair cost + bought cost)
+  const totalProfit = filteredProfits.reduce((sum, p) => {
+    const sellPrice = Number(p.selling || p.selling_price) || 0;
+    const boughtCost = Number(p.purchase || p.purchase_amount) || 0;
+    const repairCost = Number(p.repair_cost || p.repairCost) || 0;
+    const calculatedProfit = p.profit !== undefined && p.repair_cost === undefined ? Number(p.profit) : (sellPrice - (boughtCost + repairCost));
+    return sum + calculatedProfit;
+  }, 0);
+
+  const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const finalProfit = totalProfit - totalExpensesAmount;
   const roi = totalInvestment > 0 ? ((finalProfit / totalInvestment) * 100).toFixed(2) : '0.00';
 
@@ -705,7 +758,14 @@ export default function ProfitExpenseAndStatistic() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Expense</button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingExpense} 
+                  className="btn-primary" 
+                  style={{ padding: '10px 24px', opacity: isSubmittingExpense ? 0.6 : 1, cursor: isSubmittingExpense ? 'not-allowed' : 'pointer' }}
+                >
+                  {isSubmittingExpense ? 'Saving...' : 'Save Expense'}
+                </button>
               </div>
             </form>
           </div>
