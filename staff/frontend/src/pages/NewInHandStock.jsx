@@ -59,18 +59,7 @@ export default function NewInHandStock() {
     image_url: ''
   });
 
-  const getInitialSampleStock = () => [
-    { sno: 'sample_1', date: '2026-09-15', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Bay Blue', purchasedBy: 'Jeet Khubchandani', amount: 89000, totalUnits: 15, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_2', date: '2026-09-14', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, color: 'Natural Titanium', purchasedBy: 'Sonal Wadwani', amount: 132000, totalUnits: 24, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_3', date: '2026-09-14', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, color: 'Titanium Black', purchasedBy: 'Rohit Kumar', amount: 114000, totalUnits: 10, soldUnits: 0, procedure: 'Hold' },
-    { sno: 'sample_4', date: '2026-09-13', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Silky Black', purchasedBy: 'Neha Gupta', amount: 64999, totalUnits: 8, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_5', date: '2026-09-12', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', purchasedBy: 'Aman Verma', amount: 89999, totalUnits: 12, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_6', date: '2026-09-11', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, color: 'Milk White', purchasedBy: 'Karan Malhotra', amount: 27999, totalUnits: 5, soldUnits: 0, procedure: 'Check' },
-    { sno: 'sample_7', date: '2026-09-11', brand: 'Xiaomi', model: '14 Ultra', storage: 512, ram: 16, color: 'White', purchasedBy: 'Vikram Singh', amount: 99999, totalUnits: 6, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_8', date: '2026-09-10', brand: 'Realme', model: 'GT 5 Pro', storage: 256, ram: 12, color: 'Silver', purchasedBy: 'Sunal Rao', amount: 42000, totalUnits: 7, soldUnits: 0, procedure: 'Sell' },
-    { sno: 'sample_9', date: '2026-09-09', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, color: 'Nordic Wood', purchasedBy: 'Ananya Roy', amount: 59999, totalUnits: 9, soldUnits: 0, procedure: 'Hold' },
-    { sno: 'sample_10', date: '2026-09-08', brand: 'Oppo', model: 'Find N3 Flip', storage: 256, ram: 12, color: 'Gold', purchasedBy: 'Jeet Khubchandani', amount: 84999, totalUnits: 4, soldUnits: 0, procedure: 'Sell' }
-  ];
+  const getInitialSampleStock = () => [];
 
   const fetchCombinedStock = () => {
     try {

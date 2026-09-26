@@ -32,17 +32,7 @@ export default function PendingAndReceivingPayments() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const samplePayments = [
-    { id: 1, date: '15 Sep 2026', customerName: 'Jeet Khubchandani', brand: 'Google Pixel', model: 'Pixel 8 Pro', imei: '356789123456789', totalAmount: 89000, paidAmount: 60000, pendingAmount: 29000, status: 'Pending', mode: 'UPI' },
-    { id: 2, date: '14 Sep 2026', customerName: 'Sonal Wadwani', brand: 'Apple', model: 'iPhone 15 Pro Max', imei: '352671234567890', totalAmount: 132000, paidAmount: 132000, pendingAmount: 0, status: 'Received', mode: 'Cash' },
-    { id: 3, date: '13 Sep 2026', customerName: 'Rohit Kumar', brand: 'Samsung', model: 'Galaxy S24 Ultra', imei: '358912345678901', totalAmount: 114000, paidAmount: 70000, pendingAmount: 44000, status: 'Pending', mode: 'Card' },
-    { id: 4, date: '12 Sep 2026', customerName: 'Neha Gupta', brand: 'OnePlus', model: 'OnePlus 12', imei: '353456789012345', totalAmount: 64999, paidAmount: 64999, pendingAmount: 0, status: 'Received', mode: 'UPI' },
-    { id: 5, date: '11 Sep 2026', customerName: 'Aman Verma', brand: 'Vivo', model: 'X100 Pro', imei: '357801234567890', totalAmount: 89999, paidAmount: 50000, pendingAmount: 39999, status: 'Pending', mode: 'UPI' },
-    { id: 6, date: '10 Sep 2026', customerName: 'Karan Malhotra', brand: 'Nothing', model: 'Phone (2a)', imei: '359012345678901', totalAmount: 27999, paidAmount: 27999, pendingAmount: 0, status: 'Received', mode: 'Cash' },
-    { id: 7, date: '09 Sep 2026', customerName: 'Vikram Singh', brand: 'Xiaomi', model: '14 Ultra', imei: '352345678901234', totalAmount: 99999, paidAmount: 40000, pendingAmount: 59999, status: 'Pending', mode: 'Card' },
-    { id: 8, date: '08 Sep 2026', customerName: 'Sunal Rao', brand: 'Realme', model: 'GT 5 Pro', imei: '356901234567890', totalAmount: 42000, paidAmount: 42000, pendingAmount: 0, status: 'Received', mode: 'UPI' },
-    { id: 9, date: '07 Sep 2026', customerName: 'Ananya Roy', brand: 'Motorola', model: 'Edge 50 Ultra', imei: '353789012345678', totalAmount: 59999, paidAmount: 30000, pendingAmount: 29999, status: 'Pending', mode: 'Cash' }
-  ];
+  const samplePayments = [];
 
   const getStoredPayments = () => {
     try {

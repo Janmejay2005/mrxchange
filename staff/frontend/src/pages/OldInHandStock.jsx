@@ -68,14 +68,15 @@ export default function OldInHandStock() {
     oldAmount: '0',
     oldPayBy: 'Staff',
     oldImage: '',
-    exchangeValue: '0',
+    exchangeRemarks: '',
     newBrand: 'Apple',
+    customBrand: '',
     newModel: '',
     newStorage: '256',
     newRam: '8',
-    newColor: '',
     newPayBy: '',
     platform: 'Offline / Store',
+    platformRemarks: '',
     purchasedAmount: '',
     via: 'Cash',
     accountId: ''
@@ -179,14 +180,15 @@ export default function OldInHandStock() {
       oldAmount: amt,
       oldPayBy: device.paid_by || 'Staff',
       oldImage: device.image_url || (device.images && device.images[0]) || '',
-      exchangeValue: amt,
+      exchangeRemarks: '',
       newBrand: 'Apple',
+      customBrand: '',
       newModel: '',
       newStorage: '256',
       newRam: '8',
-      newColor: '',
       newPayBy: '',
       platform: 'Offline / Store',
+      platformRemarks: '',
       purchasedAmount: '',
       via: 'Cash',
       accountId: ''
@@ -200,28 +202,29 @@ export default function OldInHandStock() {
 
     const oldAmt = Number(bookForm.oldAmount) || 0;
     const newAmt = Number(bookForm.purchasedAmount) || 0;
-    const exVal = Number(bookForm.exchangeValue) || oldAmt;
+    const finalBrand = bookForm.newBrand === 'Others' ? (bookForm.customBrand || 'Others') : bookForm.newBrand;
     const exchangeId = `EXCH-${Date.now()}`;
 
     // 1. Add entry into mrx_exchanges so it's in sync with Exchange page
     const newExchangeEntry = {
       id: exchangeId,
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      newBrand: bookForm.newBrand,
+      newBrand: finalBrand,
       newModel: bookForm.newModel,
       newStorage: Number(bookForm.newStorage) || 256,
       newRam: Number(bookForm.newRam) || 12,
-      newColor: bookForm.newColor || 'Standard',
       newPurchasedBy: bookForm.newPayBy || 'Customer',
-      newAmount: newAmt + exVal,
+      newAmount: newAmt,
       oldBrand: bookForm.oldBrand,
       oldModel: bookForm.oldModel,
       oldStorage: Number(bookForm.oldStorage) || 128,
       oldRam: Number(bookForm.oldRam) || 8,
-      oldColor: selectedDeviceForExchange.colour || 'Default',
       oldPurchasedBy: bookForm.oldPayBy || 'Staff',
       oldAmount: oldAmt,
       oldImage: bookForm.oldImage || '',
+      platform: bookForm.platform,
+      platformRemarks: bookForm.platformRemarks || '',
+      exchangeRemarks: bookForm.exchangeRemarks || '',
       status: 'Booked'
     };
 
@@ -240,14 +243,15 @@ export default function OldInHandStock() {
           ...d,
           status: 'Booked',
           exchangeId: exchangeId,
-          newBrand: bookForm.newBrand,
+          newBrand: finalBrand,
           newModel: bookForm.newModel,
           newStorage: Number(bookForm.newStorage) || 256,
           newRam: Number(bookForm.newRam) || 12,
-          newColor: bookForm.newColor || 'Standard',
           newPurchasedBy: bookForm.newPayBy || 'Customer',
-          newAmount: newAmt + exVal,
-          exchangeValue: exVal
+          newAmount: newAmt,
+          platform: bookForm.platform,
+          platformRemarks: bookForm.platformRemarks || '',
+          exchangeRemarks: bookForm.exchangeRemarks || ''
         };
       }
       return d;
@@ -718,7 +722,6 @@ export default function OldInHandStock() {
               <th>Storage</th>
               <th>RAM</th>
               <th>Color Name</th>
-              <th>Purchase Price</th>
               <th>Purchased By</th>
               <th>Date Added</th>
               <th style={{ textAlign: 'center' }}>Action</th>
@@ -727,13 +730,13 @@ export default function OldInHandStock() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   Loading stock...
                 </td>
               </tr>
             ) : filteredDevices.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   No Old In-hand devices available.
                 </td>
               </tr>
@@ -749,7 +752,6 @@ export default function OldInHandStock() {
                 const displayStorage = showNewDetails ? (d.newStorage || d.storage) : d.storage;
                 const displayRam = showNewDetails ? (d.newRam || d.ram) : d.ram;
                 const displayColor = showNewDetails ? (d.newColor || d.colour) : d.colour;
-                const displayAmount = showNewDetails ? (d.newAmount || d.purchase_amount) : d.purchase_amount;
                 const displayPurchasedBy = showNewDetails ? (d.newPurchasedBy || d.paid_by) : d.paid_by;
 
                 return (
@@ -784,10 +786,6 @@ export default function OldInHandStock() {
                     <td data-label="Storage">{displayStorage} GB</td>
                     <td data-label="RAM">{displayRam} GB</td>
                     <td data-label="Color Name"><span style={{ fontWeight: 600 }}>{displayColor || '-'}</span></td>
-                    <td data-label="Purchase Price">
-                      <CurrencyAmount amount={displayAmount} />
-                      {showNewDetails && <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>}
-                    </td>
                     <td data-label="Purchased By"><span style={{ color: '#0284c7', fontWeight: 600 }}>{displayPurchasedBy || 'Rohit'}</span></td>
                     <td data-label="Date Added">{d.intake_date ? String(d.intake_date).slice(0, 10) : 'Today'}</td>
                     <td data-label="Action" style={{ textAlign: 'center' }}>
@@ -964,7 +962,6 @@ export default function OldInHandStock() {
                   <div><strong>Old Brand:</strong> {bookForm.oldBrand}</div>
                   <div><strong>Old Model:</strong> {bookForm.oldModel}</div>
                   <div><strong>Storage / RAM:</strong> {bookForm.oldStorage} GB / {bookForm.oldRam} GB</div>
-                  <div><strong>Trade Valuation:</strong> ₹{Number(bookForm.oldAmount).toLocaleString()}</div>
                   <div><strong>Evaluated By:</strong> {bookForm.oldPayBy}</div>
                 </div>
               </div>
@@ -976,9 +973,9 @@ export default function OldInHandStock() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div>
-                    <label className="form-label">Exchange Value (₹) *</label>
-                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Exchange Remarks / Notes</label>
+                    <input type="text" className="form-control" placeholder="Enter exchange remarks or notes" value={bookForm.exchangeRemarks} onChange={(e) => setBookForm({ ...bookForm, exchangeRemarks: e.target.value })} />
                   </div>
 
                   <div>
@@ -993,7 +990,19 @@ export default function OldInHandStock() {
                       <option value="Xiaomi">Xiaomi</option>
                       <option value="Nothing">Nothing</option>
                       <option value="Motorola">Motorola</option>
+                      <option value="Others">Others</option>
                     </select>
+                    {bookForm.newBrand === 'Others' && (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        style={{ marginTop: '8px' }}
+                        placeholder="Specify Brand Name" 
+                        value={bookForm.customBrand} 
+                        onChange={(e) => setBookForm({ ...bookForm, customBrand: e.target.value })} 
+                        required 
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="form-label">New Phone Model *</label>
@@ -1020,10 +1029,6 @@ export default function OldInHandStock() {
                   </div>
 
                   <div>
-                    <label className="form-label">Color *</label>
-                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
-                  </div>
-                  <div>
                     <label className="form-label">Customer Name / Pay By *</label>
                     <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
                   </div>
@@ -1035,8 +1040,20 @@ export default function OldInHandStock() {
                       <option value="Website">Website</option>
                       <option value="Amazon">Amazon</option>
                       <option value="Flipkart">Flipkart</option>
+                      <option value="Others">Others</option>
                     </select>
+                    <div style={{ marginTop: '8px' }}>
+                      <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Platform / Order Remarks</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        placeholder="Enter platform remarks / order ID details" 
+                        value={bookForm.platformRemarks} 
+                        onChange={(e) => setBookForm({ ...bookForm, platformRemarks: e.target.value })} 
+                      />
+                    </div>
                   </div>
+
                   <div>
                     <label className="form-label">Purchased Amount (Paid ₹) *</label>
                     <input type="number" className="form-control" placeholder="₹ Amount paid" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />

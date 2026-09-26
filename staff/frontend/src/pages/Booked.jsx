@@ -46,16 +46,11 @@ export default function Booked() {
 
   React.useEffect(() => {
     const fetchInHand = () => {
-      const sampleStock = [
-        { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, purchase_amount: 32000, paid_by: 'Rohit' },
-        { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, purchase_amount: 28000, paid_by: 'Aadarsh' },
-        { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, purchase_amount: 18000, paid_by: 'Neha' },
-        { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, purchase_amount: 20000, paid_by: 'Rohit' }
-      ];
+      const sampleStock = [];
       try {
         const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
         const storedInventoryInHand = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
-        const allRaw = [...stored, ...storedInventoryInHand, ...sampleStock];
+        const allRaw = [...stored, ...storedInventoryInHand];
         const seen = new Set();
         const formatted = [];
         for (const item of allRaw) {
@@ -68,7 +63,7 @@ export default function Booked() {
         }
         setInHandDevices(formatted);
       } catch (e) {
-        setInHandDevices(sampleStock);
+        setInHandDevices([]);
       }
     };
     fetchInHand();

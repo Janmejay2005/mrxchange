@@ -31,15 +31,7 @@ const MODELS_BY_BRAND = {
   'Motorola': ['Edge 50 Ultra', 'Edge 40']
 };
 
-const getSampleDevices = () => [
-  { id: '1', device_code: 'MRX-00001', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, colour: 'Bay Blue', condition: 'Like New', purchase_amount: 68000, paid_by: 'Jeet', intake_date: '2026-09-15', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-  { id: '2', device_code: 'MRX-00002', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 512, ram: 8, colour: 'Natural Titanium', condition: 'Excellent', purchase_amount: 105000, paid_by: 'Sonal', intake_date: '2026-09-14', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-  { id: '3', device_code: 'MRX-00003', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 256, ram: 12, colour: 'Titanium Black', condition: 'Good', purchase_amount: 88000, paid_by: 'Rohit', intake_date: '2026-09-14', status: 'IN_REPAIR', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-  { id: '4', device_code: 'MRX-00004', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, colour: 'Silky Black', condition: 'Like New', purchase_amount: 49000, paid_by: 'Neha', intake_date: '2026-09-13', status: 'REJECTED', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-  { id: '5', device_code: 'MRX-00005', brand: 'Vivo', model: 'Vivo X100 Pro', storage: 512, ram: 16, colour: 'Sunset Orange', condition: 'Good', purchase_amount: 68000, paid_by: 'Aman', intake_date: '2026-09-13', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-  { id: '6', device_code: 'MRX-00006', brand: 'Nothing', model: 'Phone (2a)', storage: 256, ram: 12, colour: 'Milk White', condition: 'Good', purchase_amount: 19000, paid_by: 'Karan', intake_date: '2026-09-12', status: 'OLD_INVENTORY', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-  { id: '7', device_code: 'MRX-00007', brand: 'Motorola', model: 'Edge 50 Ultra', storage: 512, ram: 16, colour: 'Nordic Wood', condition: 'Excellent', purchase_amount: 43000, paid_by: 'Vikram', intake_date: '2026-09-11', status: 'OLD_IN_HAND', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' }
-];
+const getSampleDevices = () => [];
 
 export default function OldInventory() {
   const { globalSearch, selectedDate } = useOutletContext() || {};

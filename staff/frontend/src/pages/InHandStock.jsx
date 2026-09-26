@@ -51,24 +51,12 @@ export default function InHandStock() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      // Sample fallback list matching In-hand Stock reference screenshot
-      setDevices([
-        { id: '1', model: 'iPhone 13', imei: '352039847593812', storage: 128, ram: 4, colour: 'Midnight', purchase_amount: 32000, intake_date: '15 Sep 2026', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '2', model: 'Samsung S22', imei: '358240951234765', storage: 256, ram: 8, colour: 'Phantom Black', purchase_amount: 28000, intake_date: '14 Sep 2026', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-        { id: '3', model: 'iPhone 12', imei: '351682947651903', storage: 64, ram: 4, colour: 'White', purchase_amount: 18000, intake_date: '14 Sep 2026', image_url: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=100' },
-        { id: '4', model: 'OnePlus 10R', imei: '867985064321098', storage: 128, ram: 8, colour: 'Sierra Black', purchase_amount: 20000, intake_date: '13 Sep 2026', image_url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=100' },
-        { id: '5', model: 'Redmi Note 11', imei: '864320567981234', storage: 128, ram: 6, colour: 'Blue', purchase_amount: 10000, intake_date: '12 Sep 2026', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
-        { id: '6', model: 'Google Pixel 6', imei: '357293847561092', storage: 128, ram: 8, colour: 'Sorta Seafoam', purchase_amount: 22000, intake_date: '11 Sep 2026', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
-        { id: '7', model: 'Vivo V27', imei: '864209753642190', storage: 256, ram: 8, colour: 'Noble Black', purchase_amount: 18500, intake_date: '10 Sep 2026', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
-        { id: '8', model: 'Oppo Reno 8T', imei: '861047592836410', storage: 128, ram: 8, colour: 'Sunrise Gold', purchase_amount: 16000, intake_date: '09 Sep 2026', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=100' },
-        { id: '9', model: 'iPhone 11', imei: '354893762901234', storage: 64, ram: 4, colour: 'Purple', purchase_amount: 14000, intake_date: '08 Sep 2026', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100' },
-        { id: '10', model: 'Samsung A54', imei: '351964827361095', storage: 128, ram: 6, colour: 'Awesome Lime', purchase_amount: 13500, intake_date: '08 Sep 2026', image_url: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100' },
-      ]);
+      setDevices([]);
       setStats({
-        total_in_hand: 620,
-        unique_models: 48,
-        total_storage: 12480,
-        total_ram: 3420
+        total_in_hand: 0,
+        unique_models: 0,
+        total_storage: 0,
+        total_ram: 0
       });
       setLoading(false);
     }

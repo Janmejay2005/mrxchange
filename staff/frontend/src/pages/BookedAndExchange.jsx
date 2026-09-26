@@ -46,23 +46,24 @@ export default function BookedAndExchange() {
   const [bookForm, setBookForm] = useState({
     // Exchange Old Phone
     oldBrand: 'Samsung',
-    oldModel: 'Galaxy S22',
+    oldModel: '',
     oldStorage: '128',
     oldRam: '8',
-    oldAmount: '25000',
+    oldAmount: '0',
     oldPayBy: 'Staff',
     oldImage: '',
 
     // Booking New Phone
-    exchangeValue: '25000',
+    exchangeRemarks: '',
     newBrand: 'Google Pixel',
-    newModel: 'Pixel 8 Pro',
+    customBrand: '',
+    newModel: '',
     newStorage: '256',
     newRam: '12',
-    newColor: 'Bay Blue',
-    newPayBy: 'Jeet Khubchandani',
+    newPayBy: '',
     platform: 'Offline / Store',
-    purchasedAmount: '64000',
+    platformRemarks: '',
+    purchasedAmount: '',
     via: 'Cash',
     accountId: ''
   });
@@ -72,12 +73,7 @@ export default function BookedAndExchange() {
 
   React.useEffect(() => {
     const fetchLiveInHandStock = async () => {
-      const sampleOldInHand = [
-        { id: 'old_hand_1', brand: 'Apple', model: 'iPhone 13', storage: 128, ram: 4, amount: 32000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=200' },
-        { id: 'old_hand_2', brand: 'Samsung', model: 'Galaxy S22', storage: 256, ram: 8, amount: 28000, paid_by: 'Aadarsh', image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200' },
-        { id: 'old_hand_3', brand: 'Apple', model: 'iPhone 12', storage: 64, ram: 4, amount: 18000, paid_by: 'Neha', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200' },
-        { id: 'old_hand_4', brand: 'OnePlus', model: 'OnePlus 10R', storage: 128, ram: 8, amount: 20000, paid_by: 'Rohit', image_url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200' }
-      ];
+      const sampleOldInHand = [];
 
       let apiDevices = [];
       try {
@@ -1153,13 +1149,13 @@ export default function BookedAndExchange() {
               {/* SECTION 2: Booking New Phone */}
               <div style={{ background: '#f0f9ff', padding: '16px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '20px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 800, color: '#0369a1', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  Product Customer Name
+                  📱 Booking New Phone Details
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div>
-                    <label className="form-label">Exchange Value (₹) *</label>
-                    <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Exchange Remarks / Notes</label>
+                    <input type="text" className="form-control" placeholder="Enter exchange remarks or notes" value={bookForm.exchangeRemarks} onChange={(e) => setBookForm({ ...bookForm, exchangeRemarks: e.target.value })} />
                   </div>
 
                   <div>
@@ -1174,7 +1170,19 @@ export default function BookedAndExchange() {
                       <option value="Xiaomi">Xiaomi</option>
                       <option value="Nothing">Nothing</option>
                       <option value="Motorola">Motorola</option>
+                      <option value="Others">Others</option>
                     </select>
+                    {bookForm.newBrand === 'Others' && (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        style={{ marginTop: '8px' }}
+                        placeholder="Specify Brand Name" 
+                        value={bookForm.customBrand} 
+                        onChange={(e) => setBookForm({ ...bookForm, customBrand: e.target.value })} 
+                        required 
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="form-label">New Phone Model *</label>
@@ -1201,11 +1209,7 @@ export default function BookedAndExchange() {
                   </div>
 
                   <div>
-                    <label className="form-label">Color *</label>
-                    <input type="text" className="form-control" placeholder="e.g. Natural Titanium / Bay Blue" value={bookForm.newColor} onChange={(e) => setBookForm({ ...bookForm, newColor: e.target.value })} required />
-                  </div>
-                  <div>
-                    <label className="form-label">Pay By *</label>
+                    <label className="form-label">Customer Name / Pay By *</label>
                     <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
                   </div>
 
@@ -1216,8 +1220,20 @@ export default function BookedAndExchange() {
                       <option value="Website">Website</option>
                       <option value="Amazon">Amazon</option>
                       <option value="Flipkart">Flipkart</option>
+                      <option value="Others">Others</option>
                     </select>
+                    <div style={{ marginTop: '8px' }}>
+                      <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Platform / Order Remarks</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        placeholder="Enter platform remarks / order ID details" 
+                        value={bookForm.platformRemarks} 
+                        onChange={(e) => setBookForm({ ...bookForm, platformRemarks: e.target.value })} 
+                      />
+                    </div>
                   </div>
+
                   <div>
                     <label className="form-label">Purchased Amount (Paid ₹) *</label>
                     <input type="number" className="form-control" placeholder="₹ Amount paid" value={bookForm.purchasedAmount} onChange={(e) => setBookForm({ ...bookForm, purchasedAmount: e.target.value })} required />
@@ -1235,25 +1251,6 @@ export default function BookedAndExchange() {
                   <div>
                     <label className="form-label">Account ID / UTR</label>
                     <input type="text" className="form-control" placeholder="Enter account ID / Transaction ref" value={bookForm.accountId} onChange={(e) => setBookForm({ ...bookForm, accountId: e.target.value })} />
-                  </div>
-                </div>
-
-                {/* Dynamic Auto Calculated Costs */}
-                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #bae6fd', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #93c5fd' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', display: 'block' }}>Total Exchange Cost (Exchange Val + Purchased Amt)</label>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
-                      ₹ {((Number(bookForm.exchangeValue) || 0) + (Number(bookForm.purchasedAmount) || 0)).toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>* Automatically calculated</div>
-                  </div>
-
-                  <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #93c5fd' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', display: 'block' }}>Actual Cost (Paid Amt + Purchased Amt)</label>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#0369a1', marginTop: '4px' }}>
-                      ₹ {((Number(bookForm.oldAmount) || 0) + (Number(bookForm.purchasedAmount) || 0)).toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>* Automatically calculated</div>
                   </div>
                 </div>
               </div>
