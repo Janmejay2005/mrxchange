@@ -139,28 +139,37 @@ export default function PendingAndReceivingPayments() {
     if (selectedPayment) {
       const updatedList = payments.map(p => {
         if (String(p.id) === String(selectedPayment.id)) {
-          const currentTotal = Number(p.totalAmount) || (Number(p.paidAmount || 0) + Number(p.pendingAmount || 0));
+          const currentTotal = Number(p.totalAmount) || 0;
           const existingPaid = Number(p.paidAmount) || 0;
-          const remainingPending = Math.max(0, currentTotal - existingPaid);
+          const newPaidAmount = existingPaid + newPayAmt;
 
-          // Apply payment capped to remaining pending if partial/complete
-          const appliedPay = remainingPending > 0 ? Math.min(newPayAmt, remainingPending) : newPayAmt;
-          const newPaidAmount = Math.min(currentTotal, existingPaid + appliedPay);
-          const newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
+          let updatedTotal = currentTotal;
+          let newPendingAmount = 0;
+          let newStatus = 'Pending';
+
+          if (newPaidAmount >= currentTotal) {
+            // When total amount <= paid amount, set total amount = paid amount and mark as Received
+            updatedTotal = newPaidAmount;
+            newPendingAmount = 0;
+            newStatus = 'Received';
+          } else {
+            newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
+            newStatus = newPendingAmount === 0 ? 'Received' : 'Pending';
+          }
 
           return {
             ...p,
-            totalAmount: currentTotal,
+            totalAmount: updatedTotal,
             customerName: equateForm.customerName || p.customerName,
             paidAmount: newPaidAmount,
             pendingAmount: newPendingAmount,
-            status: newPendingAmount <= 0 ? 'Received' : 'Pending'
+            status: newStatus
           };
         }
         return p;
       });
       savePaymentsToStorage(updatedList);
-      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! New pay of ₹${newPayAmt.toLocaleString()} recorded.`);
+      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Record updated and balanced.`);
     } else {
       const enteredTotal = Number(equateForm.pendingPayment) || newPayAmt;
       const initialPaid = Math.min(newPayAmt, enteredTotal);
@@ -448,14 +457,29 @@ export default function PendingAndReceivingPayments() {
 
             {/* Amount Calculation Breakdown Box */}
             {selectedPayment && (() => {
-              const modalTotal = Number(selectedPayment.totalAmount) || (Number(selectedPayment.paidAmount || 0) + Number(selectedPayment.pendingAmount || 0));
-              const modalPaid = Math.min(modalTotal, Number(selectedPayment.paidAmount) || 0);
+              const rawTotal = Number(selectedPayment.totalAmount) || 0;
+              const rawPaid = Number(selectedPayment.paidAmount) || 0;
+              const rawPending = Number(selectedPayment.pendingAmount) || 0;
+
+              const isExtraPaid = rawPaid > rawTotal && rawTotal > 0;
+              const extraAmount = isExtraPaid ? rawPaid - rawTotal : 0;
+
+              // If legacy record had rawPaid == rawTotal and rawPending > 0, true total is rawPaid + rawPending
+              const modalTotal = rawTotal > 0 && rawPaid <= rawTotal ? rawTotal : (rawPaid + rawPending);
+              const modalPaid = rawPaid;
               const modalPending = Math.max(0, modalTotal - modalPaid);
 
               return (
                 <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
-                    📊 Amount Calculation Breakdown
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      📊 Amount Calculation Breakdown
+                    </div>
+                    {isExtraPaid && (
+                      <span style={{ fontSize: '11px', fontWeight: 800, background: '#fee2e2', color: '#dc2626', padding: '3px 8px', borderRadius: '6px' }}>
+                        Extra Paid: ₹{extraAmount.toLocaleString()}
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
                     <div style={{ background: '#ffffff', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
@@ -477,6 +501,12 @@ export default function PendingAndReceivingPayments() {
                       </div>
                     </div>
                   </div>
+
+                  {isExtraPaid && (
+                    <div style={{ marginTop: '10px', padding: '8px 12px', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '11px', color: '#b91c1c' }}>
+                      ℹ️ <strong>Extra payment detected:</strong> Paid amount exceeds total amount by <strong>₹{extraAmount.toLocaleString()}</strong>. Equating will automatically set Total Amount = Paid Amount and move this record to the Receiving / Received column.
+                    </div>
+                  )}
                 </div>
               );
             })()}
