@@ -35,7 +35,6 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'New In-hand Inventory', path: '/new-in-hand', icon: Package },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
-    { label: 'Exchange', path: '/booked-exchange', icon: RefreshCw },
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2 },
     { label: 'Report', path: '/reports', icon: FileText },

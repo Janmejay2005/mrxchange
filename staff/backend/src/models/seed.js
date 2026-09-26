@@ -12,8 +12,9 @@ export async function seedInitialData() {
   const defaultUsers = [
     { name: 'Staff User', email: 'staff23@mrx.com', identifier: 'Staff23', role: 'STAFF', pass: staffHash },
     { name: 'Super Administrator', email: 'admin23@mrx.com', identifier: 'Admin23', role: 'SUPERADMIN', pass: adminHash },
-    { name: 'Jeet (Admin)', email: 'jeet@mrx.com', identifier: 'Jeet', role: 'ADMIN', pass: adminHash },
-    { name: 'Sunal (Admin)', email: 'sunal@mrx.com', identifier: 'Sunal', role: 'ADMIN', pass: adminHash },
+    { name: 'Jeet Khubchandani', email: 'jeet@mrx.com', identifier: 'Jeet', role: 'SUPERADMIN', pass: adminHash },
+    { name: 'Sonal Wadwani', email: 'sonal@mrx.com', identifier: 'Sonal', role: 'SUPERADMIN', pass: adminHash },
+    { name: 'Sunal (Admin)', email: 'sunal@mrx.com', identifier: 'Sunal', role: 'SUPERADMIN', pass: adminHash },
     { name: 'Aadarsh Sharma', email: 'staff@mrx.com', identifier: 'STAFF-001', role: 'STAFF', pass: staffHash },
     { name: 'System Admin', email: 'admin@mrx.com', identifier: 'ADMIN-001', role: 'SUPERADMIN', pass: adminHash },
   ];
@@ -25,9 +26,13 @@ export async function seedInitialData() {
         INSERT INTO users (id, name, email, password_hash, auth_identifier, role, active)
         VALUES (?, ?, ?, ?, ?, ?, true)
       `, [uuidv4(), u.name, u.email, u.pass, u.identifier, u.role]);
+    } else {
+      if (u.role === 'SUPERADMIN') {
+        await pool.query('UPDATE users SET role = ? WHERE email = ? OR auth_identifier = ?', ['SUPERADMIN', u.email, u.identifier]);
+      }
     }
   }
-  console.log('✅ Users verified and seeded (Staff23 / staff123, Admin23 / admin123, Jeet, Sunal)');
+  console.log('✅ Users verified and seeded (Staff23 / staff123, Admin23 / admin123, Jeet SuperAdmin, Sonal SuperAdmin)');
 }
 
 if (process.argv[1].endsWith('seed.js')) {
