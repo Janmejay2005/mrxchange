@@ -588,6 +588,13 @@ export default function OldInHandStock() {
       if (devYMD && selYMD && devYMD !== selYMD) return false;
     }
     return true;
+  }).sort((a, b) => {
+    const brandA = (a.brand || '').trim().toLowerCase();
+    const brandB = (b.brand || '').trim().toLowerCase();
+    if (brandA !== brandB) return brandA.localeCompare(brandB);
+    const modelA = (a.model || '').trim().toLowerCase();
+    const modelB = (b.model || '').trim().toLowerCase();
+    return modelA.localeCompare(modelB);
   });
   const uniqueModelsCount = new Set(
     filteredDevices

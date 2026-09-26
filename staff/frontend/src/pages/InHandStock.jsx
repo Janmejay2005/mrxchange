@@ -46,7 +46,16 @@ export default function InHandStock() {
         }),
         statsService.getInHandStats()
       ]);
-      setDevices(devRes.data);
+      const rawData = Array.isArray(devRes.data) ? devRes.data : (devRes.data?.data || []);
+      const sortedData = [...rawData].sort((a, b) => {
+        const brandA = (a.brand || '').trim().toLowerCase();
+        const brandB = (b.brand || '').trim().toLowerCase();
+        if (brandA !== brandB) return brandA.localeCompare(brandB);
+        const modelA = (a.model || '').trim().toLowerCase();
+        const modelB = (b.model || '').trim().toLowerCase();
+        return modelA.localeCompare(modelB);
+      });
+      setDevices(sortedData);
       setStats(statRes.data);
       setLoading(false);
     } catch (err) {

@@ -165,6 +165,13 @@ export default function NewInHandStock() {
       if (!matchModel && !matchBrand && !matchPerson && !matchColor) return false;
     }
     return true;
+  }).sort((a, b) => {
+    const brandA = (a.brand || '').trim().toLowerCase();
+    const brandB = (b.brand || '').trim().toLowerCase();
+    if (brandA !== brandB) return brandA.localeCompare(brandB);
+    const modelA = (a.model || '').trim().toLowerCase();
+    const modelB = (b.model || '').trim().toLowerCase();
+    return modelA.localeCompare(modelB);
   });
 
   // Calculate Total Available Stock Units across all brands in current account scope

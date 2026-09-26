@@ -224,6 +224,13 @@ export default function BookedAndExchange() {
       if (!matchNew && !matchOld) return false;
     }
     return true;
+  }).sort((a, b) => {
+    const brandA = (a.newBrand || a.oldBrand || a.brand || '').trim().toLowerCase();
+    const brandB = (b.newBrand || b.oldBrand || b.brand || '').trim().toLowerCase();
+    if (brandA !== brandB) return brandA.localeCompare(brandB);
+    const modelA = (a.newModel || a.oldModel || a.model || '').trim().toLowerCase();
+    const modelB = (b.newModel || b.oldModel || b.model || '').trim().toLowerCase();
+    return modelA.localeCompare(modelB);
   });
 
   const totalBookingValue = filteredExchanges.reduce((sum, item) => sum + item.newAmount, 0);
