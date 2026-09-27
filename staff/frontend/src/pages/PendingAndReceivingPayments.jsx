@@ -132,11 +132,23 @@ export default function PendingAndReceivingPayments() {
     });
   };
 
-  const pendingList = applyFilters(payments.filter(item => Number(item.pendingAmount) > 0));
-  const receivingList = applyFilters(payments.filter(item => Number(item.pendingAmount) <= 0));
+  // Helper to distinguish Agent Payables (dues to evaluators/staff) vs Customer Receivables (from sold phones)
+  const isAgentPayableItem = (item) => {
+    if (item.type === 'AGENT_PAYABLE') return true;
+    if (item.type === 'CUSTOMER_RECEIVABLE') return false;
+    const idStr = String(item.id || '');
+    return idStr.startsWith('EXCH-PAYABLE') || idStr.startsWith('AGENT-');
+  };
+
+  // COLUMN 1: Receiving Payments Column (Customer receivables from sold phones in New In-Hand Stock)
+  const receivingList = applyFilters(payments.filter(item => !isAgentPayableItem(item)));
+
+  // COLUMN 2: Pending Payments Column (Agent Payables - dues to evaluators/staff from Old In-Hand Exchange)
+  const pendingList = applyFilters(payments.filter(item => isAgentPayableItem(item) && Number(item.pendingAmount) > 0));
 
   const totalPendingVal = pendingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
   const totalReceivedVal = receivingList.reduce((sum, item) => sum + (Number(item.paidAmount) || 0), 0);
+  const totalReceivingPendingVal = receivingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
 
   // Card Payment Identification & Breakdown
   const cardPaymentsList = payments.filter(item => String(item.mode || item.paymentType || '').toLowerCase() === 'card');
@@ -371,11 +383,19 @@ export default function PendingAndReceivingPayments() {
                 </div>
               </div>
 
-              <div style={{ background: '#ecfdf5', padding: '8px 16px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#047857' }}>Total Collected / Received:</span>
-                <span style={{ fontSize: '16px', fontWeight: 800, color: '#065f46' }}>
-                  <CurrencyAmount amount={totalReceivedVal} />
-                </span>
+              <div style={{ background: '#ecfdf5', padding: '8px 14px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#047857', display: 'block' }}>To Receive:</span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#dc2626' }}>
+                    <CurrencyAmount amount={totalReceivingPendingVal} />
+                  </span>
+                </div>
+                <div style={{ borderLeft: '1px solid #a7f3d0', paddingLeft: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#047857', display: 'block' }}>Collected:</span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#065f46' }}>
+                    <CurrencyAmount amount={totalReceivedVal} />
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -399,7 +419,7 @@ export default function PendingAndReceivingPayments() {
                   {receivingList.length === 0 ? (
                     <tr>
                       <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
-                        No received payments in this column.
+                        No customer receivables in this column.
                       </td>
                     </tr>
                   ) : (
@@ -430,12 +450,19 @@ export default function PendingAndReceivingPayments() {
                         <td data-label="Device" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
                         <td data-label="Total Amount" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
                         <td data-label="Paid Amount" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: '#059669' }}>
+                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: row.pendingAmount > 0 ? '#dc2626' : '#059669' }}>
                           <CurrencyAmount amount={row.pendingAmount} />
                         </td>
                         <td data-label="Status" style={{ padding: '8px 6px' }}>
-                          <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800, background: '#ecfdf5', color: '#047857' }}>
-                            Received
+                          <span style={{ 
+                            padding: '3px 8px', 
+                            borderRadius: '12px', 
+                            fontSize: '10px', 
+                            fontWeight: 800, 
+                            background: row.pendingAmount > 0 ? '#fef3c7' : '#ecfdf5', 
+                            color: row.pendingAmount > 0 ? '#d97706' : '#047857' 
+                          }}>
+                            {row.pendingAmount > 0 ? 'Pending Receive' : 'Received ✔️'}
                           </span>
                         </td>
                         <td data-label="Payment Mode" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.mode}</td>
@@ -479,7 +506,7 @@ export default function PendingAndReceivingPayments() {
                   <tr>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 4px' }}>#</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Date</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Customer</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Pay By (Person)</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Device (Brand / Model)</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Total (₹)</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Paid (₹)</th>

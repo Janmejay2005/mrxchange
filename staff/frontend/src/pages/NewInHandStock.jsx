@@ -341,6 +341,8 @@ export default function NewInHandStock() {
       paidAmount: pdAmt,
       pendingAmount: pendAmt,
       status: payStatus,
+      type: 'CUSTOMER_RECEIVABLE',
+      source: 'NEW_IN_HAND_SALE',
       mode: sellForm.paymentType || 'Cash'
     };
 

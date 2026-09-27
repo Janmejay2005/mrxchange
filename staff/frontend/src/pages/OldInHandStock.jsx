@@ -281,6 +281,8 @@ export default function OldInHandStock() {
         paidAmount: 0,
         pendingAmount: paidOutAmount,
         status: 'Pending',
+        type: 'AGENT_PAYABLE',
+        source: 'OLD_IN_HAND_EXCHANGE',
         mode: bookForm.via || 'Cash',
         equatedBy: 'Jeet'
       };
