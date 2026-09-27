@@ -32,6 +32,7 @@ export default function OldInHandStock() {
   const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
+  const [expandedImage, setExpandedImage] = useState(null);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -710,13 +711,17 @@ export default function OldInHandStock() {
                             src={d.images[0]} 
                             alt="Front" 
                             className="device-thumb" 
-                            title="Front View"
+                            onClick={() => setExpandedImage(d.images[0])}
+                            style={{ cursor: 'zoom-in' }}
+                            title="Click to zoom Front View"
                           />
                           <img 
                             src={d.images[1]} 
                             alt="Back" 
                             className="device-thumb" 
-                            title="Back View"
+                            onClick={() => setExpandedImage(d.images[1])}
+                            style={{ cursor: 'zoom-in' }}
+                            title="Click to zoom Back View"
                           />
                         </div>
                       ) : (
@@ -724,6 +729,9 @@ export default function OldInHandStock() {
                           src={d.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100'} 
                           alt={displayModel} 
                           className="device-thumb" 
+                          onClick={() => setExpandedImage(d.image_url || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100')}
+                          style={{ cursor: 'zoom-in' }}
+                          title="Click to zoom photo"
                         />
                       )}
                     </td>
@@ -1052,6 +1060,30 @@ export default function OldInHandStock() {
         onClose={() => setIsCameraOpen(false)}
         onCapture={(dataUrl) => setEditForm(prev => ({ ...prev, image_url: dataUrl }))}
       />
+
+      {/* Fullscreen Expandable Image Lightbox Modal */}
+      {expandedImage && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setExpandedImage(null)} 
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.85)', cursor: 'zoom-out', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setExpandedImage(null)}
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+              title="Close Preview"
+            >
+              <X size={28} />
+            </button>
+            <img 
+              src={expandedImage} 
+              alt="Expanded Preview" 
+              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '12px', objectFit: 'contain', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', border: '2px solid #ffffff' }} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

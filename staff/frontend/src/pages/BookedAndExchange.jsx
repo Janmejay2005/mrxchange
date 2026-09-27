@@ -780,7 +780,20 @@ export default function BookedAndExchange() {
 
                     {/* Old Mobile Cells */}
                     <td data-label="Old Brand" style={{ fontWeight: 600, color: '#475569' }}>{row.oldBrand}</td>
-                    <td data-label="Old Model" style={{ fontWeight: 700, color: '#475569' }}>{row.oldModel}</td>
+                    <td data-label="Old Model" style={{ fontWeight: 700, color: '#475569' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {row.oldImage && row.oldImage !== '-' && (
+                          <img 
+                            src={row.oldImage} 
+                            alt={row.oldModel} 
+                            onClick={() => setExpandedImage(row.oldImage)} 
+                            title="Click to zoom image" 
+                            style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover', cursor: 'zoom-in', border: '1px solid #cbd5e1' }}
+                          />
+                        )}
+                        <span>{row.oldModel}</span>
+                      </div>
+                    </td>
                     <td data-label="Old Storage">{row.oldStorage} GB</td>
                     <td data-label="Old RAM">{row.oldRam} GB</td>
                     <td data-label="Old Color">{row.oldColor}</td>
@@ -969,7 +982,20 @@ export default function BookedAndExchange() {
                     <td data-label="Intake Date">{row.date}</td>
                     <td data-label="Staff" style={{ fontWeight: 700, color: '#475569' }}>{row.oldPurchasedBy}</td>
                     <td data-label="Brand" style={{ fontWeight: 600 }}>{row.oldBrand}</td>
-                    <td data-label="Model" style={{ fontWeight: 700 }}>{row.oldModel}</td>
+                    <td data-label="Model" style={{ fontWeight: 700 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {row.oldImage && row.oldImage !== '-' && (
+                          <img 
+                            src={row.oldImage} 
+                            alt={row.oldModel} 
+                            onClick={() => setExpandedImage(row.oldImage)} 
+                            title="Click to zoom image" 
+                            style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover', cursor: 'zoom-in', border: '1px solid #cbd5e1' }}
+                          />
+                        )}
+                        <span>{row.oldModel}</span>
+                      </div>
+                    </td>
                     <td data-label="Storage">{row.oldStorage} GB</td>
                     <td data-label="RAM">{row.oldRam} GB</td>
                     <td data-label="Color">{row.oldColor}</td>
