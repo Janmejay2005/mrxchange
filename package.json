@@ -1,0 +1,13 @@
+{
+  "name": "mrxchange",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "staff/frontend",
+    "staff/backend"
+  ],
+  "scripts": {
+    "build": "npm --prefix staff/frontend install && npm --prefix staff/frontend run build",
+    "start": "node staff/backend/src/server.js"
+  }
+}
