@@ -5,19 +5,20 @@ export default function SplashScreen({ onFinish }) {
   const [progress, setProgress] = useState(0);
   const [stageText, setStageText] = useState('Initializing system core...');
   const [fading, setFading] = useState(false);
+  const finishedRef = React.useRef(false);
 
   useEffect(() => {
-    // Smooth progress counter from 0 to 100% over ~1600ms
+    // Smooth progress counter from 0 to 100% over ~800ms
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
           return 100;
         }
-        const next = prev + Math.floor(Math.random() * 8) + 4;
+        const next = prev + Math.floor(Math.random() * 12) + 8;
         return next > 100 ? 100 : next;
       });
-    }, 55);
+    }, 40);
 
     return () => clearInterval(interval);
   }, []);
@@ -27,20 +28,26 @@ export default function SplashScreen({ onFinish }) {
       setStageText('Initializing system core...');
     } else if (progress < 70) {
       setStageText('Synchronizing inventory & ledgers...');
-    } else if (progress < 98) {
+    } else if (progress < 100) {
       setStageText('Verifying permissions & security...');
-    } else {
+    } else if (progress >= 100 && !finishedRef.current) {
+      finishedRef.current = true;
       setStageText('Welcome to MR.X.Change');
-      const fadeTimer = setTimeout(() => {
-        setFading(true);
-        const finishTimer = setTimeout(() => {
-          onFinish && onFinish();
-        }, 350);
-        return () => clearTimeout(finishTimer);
-      }, 250);
-      return () => clearTimeout(fadeTimer);
+      setFading(true);
+      const finishTimer = setTimeout(() => {
+        if (onFinish) onFinish();
+      }, 350);
+      return () => clearTimeout(finishTimer);
     }
   }, [progress, onFinish]);
+
+  // Hard safety fallback: dismiss splash screen within 2 seconds unconditionally
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      if (onFinish) onFinish();
+    }, 2000);
+    return () => clearTimeout(safetyTimer);
+  }, [onFinish]);
 
   return (
     <div 
