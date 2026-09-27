@@ -969,52 +969,48 @@ export default function OldInHandStock() {
 
                   <div>
                     <label className="form-label">New Phone Brand *</label>
-                    <select className="form-control" value={bookForm.newBrand} onChange={(e) => setBookForm({ ...bookForm, newBrand: e.target.value })}>
-                      <option value="Apple">Apple</option>
-                      <option value="Samsung">Samsung</option>
-                      <option value="Google Pixel">Google Pixel</option>
-                      <option value="OnePlus">OnePlus</option>
-                      <option value="Vivo">Vivo</option>
-                      <option value="Oppo">Oppo</option>
-                      <option value="Xiaomi">Xiaomi</option>
-                      <option value="Nothing">Nothing</option>
-                      <option value="Motorola">Motorola</option>
-                      <option value="Others">Others</option>
-                    </select>
-                    {bookForm.newBrand === 'Others' && (
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        style={{ marginTop: '8px' }}
-                        placeholder="Specify Brand Name" 
-                        value={bookForm.customBrand} 
-                        onChange={(e) => setBookForm({ ...bookForm, customBrand: e.target.value })} 
-                        required 
-                      />
-                    )}
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter brand name / remarks (e.g. Apple, Samsung)" 
+                      value={bookForm.newBrand} 
+                      onChange={(e) => setBookForm({ ...bookForm, newBrand: e.target.value })} 
+                      required 
+                    />
                   </div>
                   <div>
                     <label className="form-label">New Phone Model *</label>
-                    <input type="text" className="form-control" placeholder="e.g. Pixel 8 Pro / iPhone 15 Pro" value={bookForm.newModel} onChange={(e) => setBookForm({ ...bookForm, newModel: e.target.value })} required />
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter model name / remarks (e.g. iPhone 15 Pro)" 
+                      value={bookForm.newModel} 
+                      onChange={(e) => setBookForm({ ...bookForm, newModel: e.target.value })} 
+                      required 
+                    />
                   </div>
 
                   <div>
-                    <label className="form-label">Storage (GB) *</label>
-                    <select className="form-control" value={bookForm.newStorage} onChange={(e) => setBookForm({ ...bookForm, newStorage: e.target.value })}>
-                      <option value="128">128 GB</option>
-                      <option value="256">256 GB</option>
-                      <option value="512">512 GB</option>
-                      <option value="1024">1 TB</option>
-                    </select>
+                    <label className="form-label">Storage *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter storage / remarks (e.g. 128 GB)" 
+                      value={bookForm.newStorage} 
+                      onChange={(e) => setBookForm({ ...bookForm, newStorage: e.target.value })} 
+                      required 
+                    />
                   </div>
                   <div>
-                    <label className="form-label">RAM (GB) *</label>
-                    <select className="form-control" value={bookForm.newRam} onChange={(e) => setBookForm({ ...bookForm, newRam: e.target.value })}>
-                      <option value="6">6 GB</option>
-                      <option value="8">8 GB</option>
-                      <option value="12">12 GB</option>
-                      <option value="16">16 GB</option>
-                    </select>
+                    <label className="form-label">RAM *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter RAM / remarks (e.g. 8 GB)" 
+                      value={bookForm.newRam} 
+                      onChange={(e) => setBookForm({ ...bookForm, newRam: e.target.value })} 
+                      required 
+                    />
                   </div>
 
                   {/* Pay By field is separate */}
