@@ -36,36 +36,26 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await statsService.getDashboardStats({
-        date: selectedDate || ''
-      });
-      if (res.data && res.data.kpis) {
-        setStats(res.data);
-      } else {
-        throw new Error('Using local fallback calculation');
-      }
+      
+      // Calculate dynamic local inventory stock values
+      const isOldInHandCleared = localStorage.getItem('mrx_old_in_hand_cleared') === 'true';
+      const isOldInvCleared = localStorage.getItem('mrx_old_inventory_cleared') === 'true';
+      const isNewInHandCleared = localStorage.getItem('mrx_new_in_hand_cleared') === 'true';
 
-      if (isSuperAdmin) {
-        const finRes = await statsService.getSuperadminAnalytics({
-          admin: selectedAdmin,
-          date: selectedDate || ''
-        });
-        setFinanceStats(finRes.data);
-      }
-      setLoading(false);
-    } catch (err) {
-      console.warn('Dashboard stats using dynamic local fallback calculation');
-      const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const localNewHand = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const localOldInv = isOldInvCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const localOldHand = isOldInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const localNewHand = isNewInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+      const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+
+      const extraOldInHand = isOldInHandCleared ? 0 : mrxDevices.filter(d => d.status === 'OLD_IN_HAND').length;
 
       const countOldInv = localOldInv.length;
-      const countOldHand = localOldHand.length;
-      const countNewHand = localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0);
-      const countRepair = localRepair.length;
-      const countRejected = localRejected.length;
+      const countOldHand = isOldInHandCleared ? 0 : (localOldHand.length + extraOldInHand);
+      const countNewHand = isNewInHandCleared ? 0 : localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0);
+      const countRepair = localRepair.filter(d => d.status === 'IN_REPAIR' || !d.status).length;
+      const countRejected = localRejected.filter(d => d.status === 'REJECTED' || !d.status).length;
 
       const totalMobiles = countOldInv + countOldHand + countNewHand + countRepair + countRejected;
       const inHandTotal = countOldHand + countNewHand;
@@ -99,7 +89,8 @@ export default function Dashboard() {
 
       if (isSuperAdmin) {
         const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
-        const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+        const isExpensesCleared = localStorage.getItem('mrx_expenses_cleared') === 'true';
+        const localExpenses = isExpensesCleared ? [] : JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
         
         const totalSalesVal = localSales.reduce((sum, s) => sum + (Number(s.soldPrice || s.totalAmount || s.amount) || 0), 0);
         const totalExpensesVal = localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -120,6 +111,9 @@ export default function Dashboard() {
           admin_performance: []
         });
       }
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
       setLoading(false);
     }
   };

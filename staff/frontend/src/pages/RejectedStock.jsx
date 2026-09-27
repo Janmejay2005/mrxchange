@@ -214,22 +214,33 @@ export default function RejectedStock() {
             </tr>
           </thead>
           <tbody>
-            {filteredDevices.map((device, idx) => (
-              <tr key={device.id || idx}>
-                <td data-label="#">{idx + 1}</td>
-                <td data-label="Brand" style={{ fontWeight: 600 }}>{device.brand}</td>
-                <td data-label="Model" style={{ fontWeight: 700 }}>{device.model}</td>
-                <td data-label="Storage">{device.storage} GB</td>
-                <td data-label="RAM">{device.ram} GB</td>
-                <td data-label="Color">{device.colour || '-'}</td>
-                <td data-label="Paid Amount" style={{ fontWeight: 700 }}>
-                  <CurrencyAmount amount={device.purchase_amount} />
-                </td>
-                <td data-label="Paid By" style={{ color: '#64748b' }}>{device.paid_by || 'Rohit'}</td>
-                <td data-label="Date" style={{ color: '#64748b' }}>{device.intake_date}</td>
-                <td data-label="Rejection Reason" style={{ color: '#dc2626', fontWeight: 600 }}>
-                  {device.last_rejection_reason || 'Defective piece'}
-                </td>
+            {filteredDevices.map((device, idx) => {
+              const brandVal = device.brand || device.mobileBrand || device.oldBrand || device.newBrand || '-';
+              const modelVal = device.model || device.mobileModel || device.oldModel || device.newModel || '-';
+              const storageVal = device.storage || device.oldStorage || device.newStorage || '';
+              const ramVal = device.ram || device.oldRam || device.newRam || '';
+              const colorVal = device.colour || device.color || '-';
+              const amountVal = device.purchase_amount ?? device.paidAmount ?? device.amount ?? device.purchasedAmount ?? 0;
+              const paidByVal = device.paid_by || device.paidBy || device.purchasedBy || 'Rohit';
+              const dateVal = device.intake_date || device.date || device.created_at || '-';
+              const reasonVal = device.last_rejection_reason || device.reason || 'Defective piece';
+
+              return (
+                <tr key={device.id || idx}>
+                  <td data-label="#">{idx + 1}</td>
+                  <td data-label="Brand" style={{ fontWeight: 600 }}>{brandVal}</td>
+                  <td data-label="Model" style={{ fontWeight: 700 }}>{modelVal}</td>
+                  <td data-label="Storage">{storageVal ? `${storageVal} GB` : '-'}</td>
+                  <td data-label="RAM">{ramVal ? `${ramVal} GB` : '-'}</td>
+                  <td data-label="Color">{colorVal}</td>
+                  <td data-label="Paid Amount" style={{ fontWeight: 700 }}>
+                    <CurrencyAmount amount={amountVal} />
+                  </td>
+                  <td data-label="Paid By" style={{ color: '#64748b' }}>{paidByVal}</td>
+                  <td data-label="Date" style={{ color: '#64748b' }}>{dateVal}</td>
+                  <td data-label="Rejection Reason" style={{ color: '#dc2626', fontWeight: 600 }}>
+                    {reasonVal}
+                  </td>
                 <td data-label="Action" style={{ textAlign: 'center' }}>
                   <button
                     onClick={async () => {

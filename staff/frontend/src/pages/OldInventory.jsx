@@ -152,7 +152,6 @@ export default function OldInventory() {
       let dataList = [];
       try {
         const res = await deviceService.getDevices({
-          status: 'OLD_INVENTORY',
           q: globalSearch || '',
           brand: selectedBrand === 'All Brands' ? '' : selectedBrand,
           from: selectedDate || '',
@@ -163,29 +162,46 @@ export default function OldInventory() {
         console.error(e);
       }
 
-      const localInventory = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => !d.status || d.status === 'OLD_INVENTORY');
+      const isOldInvCleared = localStorage.getItem('mrx_old_inventory_cleared') === 'true';
+      const isOldInHandCleared = localStorage.getItem('mrx_old_in_hand_cleared') === 'true';
+      const isNewInHandCleared = localStorage.getItem('mrx_new_in_hand_cleared') === 'true';
 
-      const rawCombined = [...localInventory, ...dataList];
+      const localOldInv = isOldInvCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const localOldHand = isOldInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const localNewHand = isNewInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+      const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+      const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+
+      const rawCombined = [
+        ...localOldInv,
+        ...localOldHand,
+        ...localNewHand,
+        ...localRepair,
+        ...localRejected,
+        ...mrxDevices,
+        ...dataList
+      ];
+
       const seenFingerprints = new Set();
       const inventoryDevices = [];
 
       for (const item of rawCombined) {
         if (!item) continue;
-        const brand = (item.brand || '').trim().toLowerCase();
-        const model = (item.model || '').trim().toLowerCase();
-        const amount = Number(item.purchase_amount || item.amount || 0);
-        const paidBy = (item.paid_by || item.purchasedBy || '').trim().toLowerCase();
+        const brand = (item.brand || item.oldBrand || item.newBrand || item.mobileBrand || '').trim().toLowerCase();
+        const model = (item.model || item.oldModel || item.newModel || item.mobileModel || '').trim().toLowerCase();
+        const amount = Number(item.purchase_amount || item.amount || item.paidAmount || 0);
+        const paidBy = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
         const date = item.intake_date || item.created_at || item.date || '';
 
         const fingerprint = item.device_code
           ? `code_${item.device_code}`
+          : item.id ? `id_${item.id}`
           : `${brand}|${model}|${item.storage || ''}|${item.ram || ''}|${amount}|${paidBy}|${date}`;
 
         if (!seenFingerprints.has(fingerprint)) {
           seenFingerprints.add(fingerprint);
-          if (!item.status || item.status === 'OLD_INVENTORY') {
-            inventoryDevices.push(item);
-          }
+          inventoryDevices.push(item);
         }
       }
       
@@ -259,31 +275,38 @@ export default function OldInventory() {
       const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
       if (newStatus === 'OLD_IN_HAND') {
+        localStorage.removeItem('mrx_old_in_hand_cleared');
+
         const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-        const filtered = oldInHandStock.filter(d => String(d.id) !== String(deviceId));
+        const filtered = oldInHandStock.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
 
-        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+        const updatedMrx = mrxDevices.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
+        updatedMrx.unshift(updatedDevice);
+        localStorage.setItem('mrx_devices', JSON.stringify(updatedMrx));
+
+        const updatedInv = oldInv.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
       } else if (newStatus === 'IN_REPAIR') {
         const repairStock = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
-        const filtered = repairStock.filter(d => String(d.id) !== String(deviceId));
+        const filtered = repairStock.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_repair_stock', JSON.stringify(filtered));
 
-        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        const updatedInv = oldInv.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
       } else if (newStatus === 'REJECTED') {
         const rejectedStock = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
-        const filtered = rejectedStock.filter(d => String(d.id) !== String(deviceId));
+        const filtered = rejectedStock.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_rejected_stock', JSON.stringify(filtered));
 
-        const updatedInv = oldInv.filter(d => String(d.id) !== String(deviceId));
+        const updatedInv = oldInv.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedInv));
       } else if (newStatus === 'OLD_INVENTORY') {
-        const filtered = oldInv.filter(d => String(d.id) !== String(deviceId));
+        const filtered = oldInv.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));
         filtered.unshift(updatedDevice);
         localStorage.setItem('mrx_old_inventory', JSON.stringify(filtered));
       }

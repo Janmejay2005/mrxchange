@@ -160,10 +160,44 @@ export default function RepairStock() {
   const handleRejectDevice = async (device) => {
     try {
       setActiveMenuId(null);
-      await deviceService.updateStatus(device.id, {
+      const rejectedItem = {
+        ...device,
+        id: device.id || `REJ-${Date.now()}`,
         status: 'REJECTED',
-        reason: 'Unrepairable damage'
-      });
+        brand: device.brand || device.mobileBrand || device.oldBrand || device.newBrand || 'N/A',
+        model: device.model || device.mobileModel || device.oldModel || device.newModel || 'N/A',
+        storage: device.storage || device.oldStorage || device.newStorage || '128',
+        ram: device.ram || device.oldRam || device.newRam || '8',
+        colour: device.colour || device.color || '-',
+        purchase_amount: device.purchase_amount ?? device.paidAmount ?? device.amount ?? device.purchasedAmount ?? 0,
+        paid_by: device.paid_by || device.paidBy || device.purchasedBy || 'Rohit',
+        intake_date: device.intake_date || device.date || device.created_at || new Date().toISOString().split('T')[0],
+        last_rejection_reason: 'Unrepairable damage'
+      };
+
+      try {
+        await deviceService.updateStatus(device.id, {
+          status: 'REJECTED',
+          reason: 'Unrepairable damage'
+        });
+      } catch (e) {
+        console.warn('Backend update error, saving to local storage:', e);
+      }
+
+      // Remove from repair stock in local storage
+      const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+      const updatedRepair = localRepair.filter(d => String(d.id || d.device_code) !== String(device.id || device.device_code));
+      localStorage.setItem('mrx_repair_stock', JSON.stringify(updatedRepair));
+
+      // Add to rejected stock in local storage
+      const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
+      const filteredRejected = localRejected.filter(d => String(d.id || d.device_code) !== String(device.id || device.device_code));
+      filteredRejected.unshift(rejectedItem);
+      localStorage.setItem('mrx_rejected_stock', JSON.stringify(filteredRejected));
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+
       navigate('/rejected-stocks');
     } catch (err) {
       console.error(err);

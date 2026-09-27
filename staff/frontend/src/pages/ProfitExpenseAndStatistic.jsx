@@ -482,6 +482,14 @@ export default function ProfitExpenseAndStatistic() {
         { label: 'Total Sales', value: `Rs. ${totalSelling.toLocaleString()}`, color: '#0284c7' }
       ]
     });
+  const handleClearExpenses = () => {
+    if (window.confirm('Are you sure you want to clear all expenses from the register?')) {
+      setExpenses([]);
+      localStorage.setItem('mrx_expenses', '[]');
+      localStorage.setItem('mrx_expenses_cleared', 'true');
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+    }
   };
 
   const openExpensesExport = () => {
@@ -923,7 +931,28 @@ export default function ProfitExpenseAndStatistic() {
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Expenses Register</h2>
               <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0' }}>Log of rent, payroll, repair costs, and miscellaneous disbursements.</p>
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button 
+                type="button"
+                onClick={handleClearExpenses} 
+                className="btn-secondary" 
+                style={{ 
+                  backgroundColor: '#fef2f2', 
+                  color: '#ef4444', 
+                  borderColor: '#fca5a5',
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Clear expense register data"
+              >
+                <Trash2 size={14} color="#ef4444" /> Clear Inventory
+              </button>
               <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Plus size={16} /> Add Expense
               </button>
