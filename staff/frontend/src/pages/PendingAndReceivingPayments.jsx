@@ -319,232 +319,235 @@ export default function PendingAndReceivingPayments() {
         </div>
       </div>
 
-      {/* Card Payment Identification & Summary Banner */}
-      <div style={{ background: '#f3e8ff', border: '1px solid #c084fc', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#7c3aed', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CreditCard size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b21a8', textTransform: 'uppercase' }}>💳 Card Payments Identification</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: '#581c87', marginTop: '2px' }}>
-              ₹{totalCardVal.toLocaleString('en-IN')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#7e22ce' }}>({cardPayersSet.size} Person(s) Paid via Card)</span>
+      {/* UNIFIED PAYMENTS CONTAINER WITH CARD IDENTIFICATION BANNER AT TOP */}
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+        {/* Card Payment Identification & Summary Banner */}
+        <div style={{ background: '#f3e8ff', border: '1px solid #c084fc', padding: '16px 20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#7c3aed', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CreditCard size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b21a8', textTransform: 'uppercase' }}>💳 Card Payments Identification</div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#581c87', marginTop: '2px' }}>
+                ₹{totalCardVal.toLocaleString('en-IN')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#7e22ce' }}>({cardPayersSet.size} Person(s) Paid via Card)</span>
+              </div>
             </div>
           </div>
+          <button 
+            onClick={() => setPaymentModeFilter(paymentModeFilter === 'Card' ? 'All' : 'Card')} 
+            style={{ padding: '8px 16px', background: paymentModeFilter === 'Card' ? '#581c87' : '#7c3aed', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <CreditCard size={16} /> {paymentModeFilter === 'Card' ? 'Show All Modes' : `Identify Card Payers (${cardPayersSet.size})`}
+          </button>
         </div>
-        <button 
-          onClick={() => setPaymentModeFilter(paymentModeFilter === 'Card' ? 'All' : 'Card')} 
-          style={{ padding: '8px 16px', background: paymentModeFilter === 'Card' ? '#581c87' : '#7c3aed', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <CreditCard size={16} /> {paymentModeFilter === 'Card' ? 'Show All Modes' : `Identify Card Payers (${cardPayersSet.size})`}
-        </button>
-      </div>
 
-      {/* DUAL EQUAL-WIDTH SIDE-BY-SIDE COLUMNS LAYOUT WITH MEDIA QUERY */}
-      <style>{`
-        .payments-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          align-items: start;
-        }
-        @media (max-width: 767px) {
+        {/* DUAL EQUAL-WIDTH SIDE-BY-SIDE COLUMNS LAYOUT WITH MEDIA QUERY */}
+        <style>{`
           .payments-grid {
-            grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
           }
-        }
-      `}</style>
+          @media (max-width: 767px) {
+            .payments-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
 
-      <div className="payments-grid">
-        {/* COLUMN 1: RECEIVING PAYMENTS COLUMN (Customer Receivables) */}
-        <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #a7f3d0', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckCircle size={20} />
+        <div className="payments-grid">
+          {/* COLUMN 1: RECEIVING PAYMENTS COLUMN (Customer Receivables) */}
+          <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #a7f3d0', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle size={20} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payments Column</h2>
+                  <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Customer receivables to collect after sales ({receivingList.length} items)</span>
+                </div>
               </div>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payments Column</h2>
-                <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Customer receivables to collect after sales ({receivingList.length} items)</span>
+
+              <div style={{ background: '#ecfdf5', padding: '8px 16px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#047857' }}>Total Collected / Received:</span>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#065f46' }}>
+                  <CurrencyAmount amount={totalReceivedVal} />
+                </span>
               </div>
             </div>
 
-            <div style={{ background: '#ecfdf5', padding: '8px 16px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#047857' }}>Total Collected / Received:</span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#065f46' }}>
-                <CurrencyAmount amount={totalReceivedVal} />
-              </span>
-            </div>
-          </div>
-
-          <div className="table-responsive">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>#</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Date</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Customer Name</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Brand</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Model</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Total Amount (₹)</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Paid Amount (₹)</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Pending Amount (₹)</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Payment Status</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Mode of Payment</th>
-                  <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receivingList.length === 0 ? (
+            <div className="table-responsive">
+              <table className="custom-table">
+                <thead>
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                      No received payments in this column.
-                    </td>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>#</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Date</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Customer Name</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Brand</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Model</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Total Amount (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Paid Amount (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Pending Amount (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Payment Status</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Mode of Payment</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Action</th>
                   </tr>
-                ) : (
-                  receivingList.map((row, idx) => (
-                    <tr key={row.id}>
-                      <td data-label="#">{idx + 1}</td>
-                      <td data-label="Date">{row.date}</td>
-                      <td data-label="Customer">
-                        <button
-                          type="button"
-                          onClick={() => openPersonBreakdown(row.customerName)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#059669',
-                            fontWeight: 800,
-                            textDecoration: 'underline',
-                            cursor: 'pointer',
-                            padding: 0,
-                            textAlign: 'left',
-                            fontSize: '13px'
-                          }}
-                          title={`Click to view breakdown statement for ${row.customerName}`}
-                        >
-                          👤 {row.customerName}
-                        </button>
-                      </td>
-                      <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                      <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                      <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                      <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                      <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#059669' }}>
-                        <CurrencyAmount amount={row.pendingAmount} />
-                      </td>
-                      <td data-label="Status">
-                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857' }}>
-                          Received
-                        </span>
-                      </td>
-                      <td data-label="Payment Mode">{row.mode}</td>
-                      <td data-label="Action">
-                        <button onClick={() => handleOpenEquateModal(row)} className="btn-secondary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
-                          Equate
-                        </button>
+                </thead>
+                <tbody>
+                  {receivingList.length === 0 ? (
+                    <tr>
+                      <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                        No received payments in this column.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    receivingList.map((row, idx) => (
+                      <tr key={row.id}>
+                        <td data-label="#">{idx + 1}</td>
+                        <td data-label="Date">{row.date}</td>
+                        <td data-label="Customer">
+                          <button
+                            type="button"
+                            onClick={() => openPersonBreakdown(row.customerName)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#059669',
+                              fontWeight: 800,
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                              padding: 0,
+                              textAlign: 'left',
+                              fontSize: '13px'
+                            }}
+                            title={`Click to view breakdown statement for ${row.customerName}`}
+                          >
+                            👤 {row.customerName}
+                          </button>
+                        </td>
+                        <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
+                        <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
+                        <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#059669' }}>
+                          <CurrencyAmount amount={row.pendingAmount} />
+                        </td>
+                        <td data-label="Status">
+                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857' }}>
+                            Received
+                          </span>
+                        </td>
+                        <td data-label="Payment Mode">{row.mode}</td>
+                        <td data-label="Action">
+                          <button onClick={() => handleOpenEquateModal(row)} className="btn-secondary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
+                            Equate
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        {/* COLUMN 2: PENDING PAYMENTS COLUMN (Agent Payables) */}
-        <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Clock size={20} />
+          {/* COLUMN 2: PENDING PAYMENTS COLUMN (Agent Payables) */}
+          <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column (Agent Payables)</h2>
+                  <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Dues to pay to booking agents / suppliers ({pendingList.length} items)</span>
+                </div>
               </div>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column (Agent Payables)</h2>
-                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Dues to pay to booking agents / suppliers ({pendingList.length} items)</span>
+
+              <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Payables:</span>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
+                  <CurrencyAmount amount={totalPendingVal} />
+                </span>
               </div>
             </div>
 
-            <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Payables:</span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
-                <CurrencyAmount amount={totalPendingVal} />
-              </span>
-            </div>
-          </div>
-
-          <div className="table-responsive">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>#</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Date</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Customer Name</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Brand</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Model</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Total Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Paid Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Pending Amount (₹)</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Payment Status</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Mode of Payment</th>
-                  <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingList.length === 0 ? (
+            <div className="table-responsive">
+              <table className="custom-table">
+                <thead>
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                      No pending payments in this column.
-                    </td>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>#</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Date</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Customer Name</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Brand</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Model</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Total Amount (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Paid Amount (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Pending Amount (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Payment Status</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Mode of Payment</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Action</th>
                   </tr>
-                ) : (
-                  pendingList.map((row, idx) => (
-                    <tr key={row.id}>
-                      <td data-label="#">{idx + 1}</td>
-                      <td data-label="Date">{row.date}</td>
-                      <td data-label="Customer">
-                        <button
-                          type="button"
-                          onClick={() => openPersonBreakdown(row.customerName)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ea580c',
-                            fontWeight: 800,
-                            textDecoration: 'underline',
-                            cursor: 'pointer',
-                            padding: 0,
-                            textAlign: 'left',
-                            fontSize: '13px'
-                          }}
-                          title={`Click to view breakdown statement for ${row.customerName}`}
-                        >
-                          👤 {row.customerName}
-                        </button>
-                      </td>
-                      <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                      <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                      <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                      <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                      <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#ea580c' }}>
-                        <CurrencyAmount amount={row.pendingAmount} />
-                      </td>
-                      <td data-label="Status">
-                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
-                          Pending
-                        </span>
-                      </td>
-                      <td data-label="Payment Mode">{row.mode}</td>
-                      <td data-label="Action">
-                        <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
-                          Equate
-                        </button>
+                </thead>
+                <tbody>
+                  {pendingList.length === 0 ? (
+                    <tr>
+                      <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                        No pending payments in this column.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    pendingList.map((row, idx) => (
+                      <tr key={row.id}>
+                        <td data-label="#">{idx + 1}</td>
+                        <td data-label="Date">{row.date}</td>
+                        <td data-label="Customer">
+                          <button
+                            type="button"
+                            onClick={() => openPersonBreakdown(row.customerName)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#ea580c',
+                              fontWeight: 800,
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                              padding: 0,
+                              textAlign: 'left',
+                              fontSize: '13px'
+                            }}
+                            title={`Click to view breakdown statement for ${row.customerName}`}
+                          >
+                            👤 {row.customerName}
+                          </button>
+                        </td>
+                        <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
+                        <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
+                        <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#ea580c' }}>
+                          <CurrencyAmount amount={row.pendingAmount} />
+                        </td>
+                        <td data-label="Status">
+                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
+                            Pending
+                          </span>
+                        </td>
+                        <td data-label="Payment Mode">{row.mode}</td>
+                        <td data-label="Action">
+                          <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
+                            Equate
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
