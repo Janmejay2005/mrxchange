@@ -534,12 +534,12 @@ export default function BookedAndExchange() {
       {/* Header & Breadcrumbs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Exchange</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Manage new phone pre-orders, old phone trade-in valuations, and exchange reconciliations.</p>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Booked</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Manage booked mobile pre-orders, old phone trade-in valuations, and exchange reconciliations.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Exchange</span>
+            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Booked</span>
           </div>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF
@@ -642,7 +642,7 @@ export default function BookedAndExchange() {
               transition: 'all 0.15s ease'
             }}
           >
-            📱 New Phone Bookings ({filteredExchanges.length})
+            📱 Booked ({filteredExchanges.length})
           </button>
           <button
             onClick={() => setActiveTab('exchanges')}
@@ -659,7 +659,7 @@ export default function BookedAndExchange() {
               transition: 'all 0.15s ease'
             }}
           >
-            🔄 Old Phone Exchanges ({filteredExchanges.length})
+            🔄 Exchange ({filteredExchanges.length})
           </button>
         </div>
 
@@ -815,9 +815,9 @@ export default function BookedAndExchange() {
                           <button 
                             onClick={() => handleCancelAction(row.id)}
                             style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Rejected exchange -> Move old device to Old In-hand Inventory"
+                            title="Cancel exchange -> Move old device to Old In-hand Inventory"
                           >
-                            <XCircle size={14} /> Rejected
+                            <XCircle size={14} /> Cancel
                           </button>
                         </div>
                       )}
