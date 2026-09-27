@@ -341,10 +341,12 @@ export default function ProfitExpenseAndStatistic() {
     const calculatedProfit = p.profit !== undefined && p.repair_cost === undefined ? Number(p.profit) : (sellPrice - (boughtCost + repairCost));
     return sum + calculatedProfit;
   }, 0);
-
   const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const finalProfit = totalProfit - totalExpensesAmount;
-  const roi = totalInvestment > 0 ? ((finalProfit / totalInvestment) * 100).toFixed(2) : '0.00';
+
+  // Investment Base: use total purchase cost of sold items, or total sales, or base capital fund
+  const investmentBase = totalPurchaseCost > 0 ? totalPurchaseCost : (totalSelling > 0 ? totalSelling : 100000);
+  const roi = investmentBase > 0 ? ((finalProfit / investmentBase) * 100).toFixed(2) : '0.00';
 
   // -------------------------------------------------------------
   // AGGREGATION 1: STAFF EXPENSES (Add Inventory Payers)
@@ -750,7 +752,58 @@ export default function ProfitExpenseAndStatistic() {
         </button>
       </div>
 
-      {/* ----------------- TAB: ALL OVERVIEW ----------------- */}
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="kpi-card" style={{ padding: '16px' }}>
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#e0f2fe' }}><TrendingUp size={24} color="#0284c7" /></div>
+          <div className="kpi-info">
+            <span className="kpi-title" style={{ fontSize: '12px' }}>Total Selling Amount</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>₹ {totalSelling.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: '16px' }}>
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#f3e8ff' }}><BarChart2 size={24} color="#8b5cf6" /></div>
+          <div className="kpi-info">
+            <span className="kpi-title" style={{ fontSize: '12px' }}>Total Profit</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>₹ {totalProfit.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: '16px' }}>
+          <div className="kpi-icon-wrap" style={{ backgroundColor: '#ffedd5' }}><Wallet size={24} color="#ea580c" /></div>
+          <div className="kpi-info">
+            <span className="kpi-title" style={{ fontSize: '12px' }}>Total Expenses</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c' }}>₹ {totalExpensesAmount.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: '16px' }}>
+          <div className="kpi-icon-wrap" style={{ backgroundColor: finalProfit >= 0 ? '#fce7f3' : '#fee2e2' }}>
+            <DollarSign size={24} color={finalProfit >= 0 ? '#ec4899' : '#dc2626'} />
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-title" style={{ fontSize: '12px' }}>Final Net Profit</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: finalProfit >= 0 ? '#ec4899' : '#dc2626' }}>
+              {finalProfit >= 0 ? `₹ ${finalProfit.toLocaleString()}` : `-₹ ${Math.abs(finalProfit).toLocaleString()}`}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: '16px' }}>
+          <div className="kpi-icon-wrap" style={{ backgroundColor: Number(roi) >= 0 ? '#dcfce7' : '#fee2e2' }}>
+            <Percent size={24} color={Number(roi) >= 0 ? '#16a34a' : '#dc2626'} />
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-title" style={{ fontSize: '12px' }}>Return (ROI)</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: Number(roi) >= 0 ? '#16a34a' : '#dc2626' }}>
+              {roi}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content: All Overview */}
       {activeTab === 'overview' && (
         <>
           {/* Main 5 Summary Cards */}

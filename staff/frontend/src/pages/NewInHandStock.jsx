@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
+import { deviceService } from '../services/api';
+
 export default function NewInHandStock() {
   const { user, isSuperAdmin } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
@@ -59,38 +61,52 @@ export default function NewInHandStock() {
     image_url: ''
   });
 
-  const getInitialSampleStock = () => [];
+  const [stock, setStock] = useState([]);
 
-  const fetchCombinedStock = () => {
+  const loadStock = async () => {
     try {
+      const dbDevices = await deviceService.getDevices({ status: 'NEW_IN_HAND' });
       const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const rawList = [...(Array.isArray(dbDevices) ? dbDevices : (dbDevices.data || [])), ...deliveredItems];
+
       const seenKeys = new Set();
       const combined = [];
 
-      for (const item of deliveredItems) {
-        const key = String(item.sno || item.id || `${item.brand}_${item.model}_${item.date}`);
+      for (const item of rawList) {
+        if (!item) continue;
+        const brandName = item.brand || item.newBrand || 'Generic';
+        const modelName = item.model || item.newModel || 'Device';
+        const key = String(item.sno || item.id || item.device_code || `${brandName}_${modelName}_${item.date || item.intake_date}`);
+
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
           combined.push({
             ...item,
-            sno: item.sno || key,
+            id: item.id || key,
+            sno: item.sno || item.device_code || key,
+            brand: brandName,
+            model: modelName,
+            storage: String(item.storage || item.newStorage || '128'),
+            ram: String(item.ram || item.newRam || '8'),
+            color: item.color || item.colour || item.newColor || '-',
+            purchasedBy: item.purchasedBy || item.paid_by || item.admin_name || 'Staff',
+            amount: Number(item.amount || item.purchase_amount || item.newAmount || 0),
             totalUnits: Number(item.totalUnits || item.quantity || 1),
-            soldUnits: Number(item.soldUnits || 0)
+            soldUnits: Number(item.soldUnits || 0),
+            date: item.date || item.intake_date || new Date().toISOString().split('T')[0]
           });
         }
       }
-      return combined;
+      setStock(combined);
     } catch (e) {
-      return [];
+      console.error(e);
     }
   };
 
-  const [stock, setStock] = useState(fetchCombinedStock);
-
   useEffect(() => {
-    const handleSync = () => {
-      setStock(fetchCombinedStock());
-    };
+    loadStock();
+
+    const handleSync = () => loadStock();
     window.addEventListener('storage', handleSync);
     window.addEventListener('mrx_inventory_updated', handleSync);
     return () => {
