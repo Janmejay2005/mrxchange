@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { initDatabase } from './config/db.js';
+import { initDatabase, getPool } from './config/db.js';
 import { seedInitialData } from './models/seed.js';
 import apiRouter from './routes/api.js';
 
