@@ -10,6 +10,7 @@ export default function PendingAndReceivingPayments() {
   const [toDate, setToDate] = useState('');
   const [personCustomer, setPersonCustomer] = useState('All');
   const [mobileBrand, setMobileBrand] = useState('All');
+  const [paymentModeFilter, setPaymentModeFilter] = useState('All');
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -96,6 +97,7 @@ export default function PendingAndReceivingPayments() {
     return itemList.filter((item) => {
       if (personCustomer !== 'All' && !item.customerName.toLowerCase().includes(personCustomer.toLowerCase())) return false;
       if (mobileBrand !== 'All' && item.brand !== mobileBrand) return false;
+      if (paymentModeFilter !== 'All' && String(item.mode || item.paymentType || '').toLowerCase() !== paymentModeFilter.toLowerCase()) return false;
       if (selectedDate) {
         const itemYMD = toYMD(item.date);
         const selYMD = toYMD(selectedDate);
@@ -116,7 +118,8 @@ export default function PendingAndReceivingPayments() {
         const matchCustomer = item.customerName.toLowerCase().includes(q);
         const matchBrand = item.brand.toLowerCase().includes(q);
         const matchModel = item.model.toLowerCase().includes(q);
-        if (!matchCustomer && !matchBrand && !matchModel) return false;
+        const matchMode = (item.mode || '').toLowerCase().includes(q);
+        if (!matchCustomer && !matchBrand && !matchModel && !matchMode) return false;
       }
       return true;
     });
@@ -127,6 +130,11 @@ export default function PendingAndReceivingPayments() {
 
   const totalPendingVal = pendingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
   const totalReceivedVal = receivingList.reduce((sum, item) => sum + (Number(item.paidAmount) || 0), 0);
+
+  // Card Payment Identification & Breakdown
+  const cardPaymentsList = payments.filter(item => String(item.mode || item.paymentType || '').toLowerCase() === 'card');
+  const totalCardVal = cardPaymentsList.reduce((sum, item) => sum + (Number(item.paidAmount || item.totalAmount) || 0), 0);
+  const cardPayersSet = new Set(cardPaymentsList.map(item => item.customerName));
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
@@ -277,9 +285,41 @@ export default function PendingAndReceivingPayments() {
           </select>
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
-          <button onClick={() => { setFromDate(''); setToDate(''); setPersonCustomer('All'); setMobileBrand('All'); }} className="btn-secondary">Clear Filters</button>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 800, color: '#7c3aed', display: 'block', marginBottom: '4px' }}>💳 Payment Mode</label>
+          <select className="form-control" value={paymentModeFilter} onChange={(e) => setPaymentModeFilter(e.target.value)} style={{ width: '150px', padding: '7px 12px', borderColor: '#a855f7', fontWeight: 700, color: '#7c3aed' }}>
+            <option value="All">All Modes</option>
+            <option value="Card">Card</option>
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
         </div>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
+          <button onClick={() => { setFromDate(''); setToDate(''); setPersonCustomer('All'); setMobileBrand('All'); setPaymentModeFilter('All'); }} className="btn-secondary">Clear Filters</button>
+        </div>
+      </div>
+
+      {/* Card Payment Identification & Summary Banner */}
+      <div style={{ background: '#f3e8ff', border: '1px solid #c084fc', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#7c3aed', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CreditCard size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b21a8', textTransform: 'uppercase' }}>💳 Card Payments Identification</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#581c87', marginTop: '2px' }}>
+              ₹{totalCardVal.toLocaleString('en-IN')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#7e22ce' }}>({cardPayersSet.size} Person(s) Paid via Card)</span>
+            </div>
+          </div>
+        </div>
+        <button 
+          onClick={() => setPaymentModeFilter(paymentModeFilter === 'Card' ? 'All' : 'Card')} 
+          style={{ padding: '8px 16px', background: paymentModeFilter === 'Card' ? '#581c87' : '#7c3aed', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <CreditCard size={16} /> {paymentModeFilter === 'Card' ? 'Show All Modes' : `Identify Card Payers (${cardPayersSet.size})`}
+        </button>
       </div>
 
       {/* DUAL COLUMNS SECTION: RECEIVED PAYMENTS (LEFT COLUMN) & PENDING PAYMENTS (RIGHT COLUMN) */}

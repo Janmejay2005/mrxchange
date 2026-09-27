@@ -27,8 +27,23 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Routes
 app.use('/api', apiRouter);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date() });
+app.get('/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    const pool = getPool();
+    if (pool) {
+      await pool.query('SELECT 1');
+      dbStatus = 'connected';
+    }
+  } catch (e) {
+    dbStatus = `error: ${e.message}`;
+  }
+  res.json({ 
+    status: 'healthy', 
+    database: dbStatus, 
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date() 
+  });
 });
 
 // Serve frontend static build if available

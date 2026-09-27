@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Add Inventory', path: '/old-inventory', icon: Layers },
     { label: 'Old In-hand Inventory', path: '/old-in-hand', icon: Smartphone },
+    { label: 'Booked & Exchange', path: '/booked-exchange', icon: BookmarkCheck },
     { label: 'New In-hand Inventory', path: '/new-in-hand', icon: Package },
     { label: 'Repair Inventory', path: '/repair-stock', icon: Wrench },
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
