@@ -14,11 +14,29 @@ export default function NewInHandStock() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Account Bifurcation State
+  // Account Scope Bifurcation State
   const loggedInAccountName = user?.name || user?.username || 'Jeet Khubchandani';
-  const [accountFilter, setAccountFilter] = useState(isSuperAdmin ? 'All Accounts' : loggedInAccountName);
+  const [accountFilter, setAccountFilter] = useState('All Accounts');
+
+  const accountOptions = React.useMemo(() => {
+    const list = ['All Accounts', 'Jeet Khubchandani', 'Sonal Wadwani'];
+    try {
+      const customMembers = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
+      customMembers.forEach(m => {
+        const name = m.name || m.username;
+        if (name && !list.includes(name)) list.push(name);
+      });
+    } catch (e) {}
+
+    stock.forEach(item => {
+      const owner = item.purchasedBy;
+      if (owner && owner !== 'Staff' && owner !== 'System' && !list.includes(owner)) {
+        list.push(owner);
+      }
+    });
+
+    return list;
+  }, [stock]);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -137,20 +155,21 @@ export default function NewInHandStock() {
 
   // BIFURCATION FILTERING LOGIC BY LOGGED-IN ACCOUNT
   const filteredStock = stock.filter((item) => {
-    // Account Bifurcation Check
-    if (!isSuperAdmin) {
+    // Account Scope Check
+    if (accountFilter && accountFilter !== 'All Accounts') {
       const itemOwner = (item.purchasedBy || '').toLowerCase();
-      const userOwner = (loggedInAccountName || '').toLowerCase();
-      if (itemOwner && userOwner && itemOwner !== 'staff' && itemOwner !== 'system' && !itemOwner.includes(userOwner) && !userOwner.includes(itemOwner)) {
+      const selectedOwner = accountFilter.toLowerCase();
+      const firstPartItem = itemOwner.split(' ')[0];
+      const firstPartSelected = selectedOwner.split(' ')[0];
+
+      if (
+        itemOwner &&
+        selectedOwner &&
+        !itemOwner.includes(selectedOwner) &&
+        !selectedOwner.includes(itemOwner) &&
+        (!firstPartItem || !firstPartSelected || (!itemOwner.startsWith(firstPartSelected) && !selectedOwner.startsWith(firstPartItem)))
+      ) {
         return false;
-      }
-    } else {
-      if (accountFilter && accountFilter !== 'All Accounts') {
-        const itemOwner = (item.purchasedBy || '').toLowerCase();
-        const selectedOwner = accountFilter.toLowerCase();
-        if (itemOwner && selectedOwner && !itemOwner.includes(selectedOwner) && !selectedOwner.includes(itemOwner)) {
-          return false;
-        }
       }
     }
 
@@ -365,12 +384,12 @@ export default function NewInHandStock() {
     });
     setExportModalConfig({
       isOpen: true,
-      title: `New In-hand Stock Report (${isSuperAdmin ? accountFilter : loggedInAccountName})`,
+      title: `New In-hand Stock Report (${accountFilter})`,
       headers,
       rows,
       filename: `New_In_Hand_Stock_${new Date().toISOString().slice(0, 10)}.pdf`,
       summaryInfo: [
-        { label: 'Account Scope', value: isSuperAdmin ? accountFilter : loggedInAccountName, color: '#7c3aed' },
+        { label: 'Account Scope', value: accountFilter, color: '#7c3aed' },
         { label: 'Total Available Units', value: `${totalAvailableUnits} Units`, color: '#0284c7' },
         { label: 'Total Valuation', value: `Rs. ${totalDeliveredValuation.toLocaleString()}`, color: '#059669' }
       ]
@@ -399,7 +418,7 @@ export default function NewInHandStock() {
             </span>
           </div>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-            Stock inventory bifurcated by logged-in user account ({isSuperAdmin ? accountFilter : loggedInAccountName}).
+            Stock inventory bifurcated by user account scope ({accountFilter}).
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -413,7 +432,7 @@ export default function NewInHandStock() {
       <div className="kpi-grid" style={{ marginBottom: '24px' }}>
         <KPICard 
           title="Account Scope" 
-          value={isSuperAdmin ? accountFilter : loggedInAccountName} 
+          value={accountFilter} 
           icon={Users}
           iconBg="#f3e8ff"
           iconColor="#7c3aed"
@@ -442,29 +461,16 @@ export default function NewInHandStock() {
           <label style={{ fontSize: '12px', fontWeight: 800, color: '#7c3aed', display: 'block', marginBottom: '4px' }}>
             👤 Account Scope Bifurcation
           </label>
-          {isSuperAdmin ? (
-            <select 
-              className="form-control" 
-              value={accountFilter} 
-              onChange={(e) => setAccountFilter(e.target.value)} 
-              style={{ width: '180px', padding: '7px 12px', borderColor: '#a855f7', fontWeight: 700, color: '#7c3aed' }}
-            >
-              <option value="All Accounts">All Accounts</option>
-              <option value="Jeet Khubchandani">Jeet Khubchandani</option>
-              <option value="Sonal Wadwani">Sonal Wadwani</option>
-              <option value="Rohit Kumar">Rohit Kumar</option>
-              <option value="Neha Gupta">Neha Gupta</option>
-              <option value="Aman Verma">Aman Verma</option>
-              <option value="Karan Malhotra">Karan Malhotra</option>
-              <option value="Vikram Singh">Vikram Singh</option>
-              <option value="Sunal Rao">Sunal Rao</option>
-              <option value="Ananya Roy">Ananya Roy</option>
-            </select>
-          ) : (
-            <div style={{ padding: '7px 12px', background: '#f3e8ff', color: '#7c3aed', borderRadius: '6px', fontWeight: 800, fontSize: '13px', border: '1px solid #d8b4fe' }}>
-              🔒 {loggedInAccountName}
-            </div>
-          )}
+          <select 
+            className="form-control" 
+            value={accountFilter} 
+            onChange={(e) => setAccountFilter(e.target.value)} 
+            style={{ width: '200px', padding: '7px 12px', borderColor: '#a855f7', fontWeight: 700, color: '#7c3aed' }}
+          >
+            {accountOptions.map(acc => (
+              <option key={acc} value={acc}>{acc}</option>
+            ))}
+          </select>
         </div>
 
         <div>

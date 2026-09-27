@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, Filler } from 'chart.js';
 import { Doughnut, Line } from 'react-chartjs-2';
-import { statsService } from '../services/api';
+import { statsService, deviceService } from '../services/api';
 import { KPICard, StatusBadge, CurrencyAmount } from '../components/common/UIComponents';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +37,13 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      // Calculate dynamic local inventory stock values directly
+      let dbNewHand = [];
+      try {
+        const res = await deviceService.getDevices({ status: 'NEW_IN_HAND' });
+        dbNewHand = Array.isArray(res) ? res : (res?.data || []);
+      } catch (e) {}
+
+      // Calculate dynamic local & cloud inventory stock values directly
       const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
       const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       const localNewHand = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
@@ -45,11 +51,22 @@ export default function Dashboard() {
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
 
+      const seenNewKeys = new Set();
+      const combinedNewHand = [];
+      [...dbNewHand, ...localNewHand].forEach(item => {
+        if (!item) return;
+        const key = String(item.sno || item.id || item.device_code || `${item.brand || item.newBrand}_${item.model || item.newModel}`);
+        if (!seenNewKeys.has(key)) {
+          seenNewKeys.add(key);
+          combinedNewHand.push(item);
+        }
+      });
+
       const extraOldInHand = mrxDevices.filter(d => d.status === 'OLD_IN_HAND').length;
 
       const countOldInv = localOldInv.length;
       const countOldHand = localOldHand.length + extraOldInHand;
-      const countNewHand = localNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0)), 0);
+      const countNewHand = combinedNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || item.quantity || 1) - (item.soldUnits || 0)), 0);
       const countRepair = localRepair.filter(d => d.status === 'IN_REPAIR' || !d.status).length;
       const countRejected = localRejected.filter(d => d.status === 'REJECTED' || !d.status).length;
 
