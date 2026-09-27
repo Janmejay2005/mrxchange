@@ -1015,15 +1015,30 @@ export default function OldInHandStock() {
             <form onSubmit={handleBookSubmit}>
               {/* SECTION 1: Exchange Old Phone (Pre-filled from selected old in-hand device) */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#334155', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  🔄 Selected Old Phone Details
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#334155', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🔄 Selected Old Phone Details</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCameraOpen(true)} 
+                    className="btn-secondary" 
+                    style={{ padding: '5px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px', fontWeight: 700 }}
+                  >
+                    <Camera size={14} /> {bookForm.oldImage ? 'Change Photo' : 'Photo Option'}
+                  </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
-                  <div><strong>Old Brand:</strong> {bookForm.oldBrand}</div>
-                  <div><strong>Old Model:</strong> {bookForm.oldModel}</div>
-                  <div><strong>Storage / RAM:</strong> {bookForm.oldStorage} GB / {bookForm.oldRam} GB</div>
-                  <div><strong>Evaluated By:</strong> {bookForm.oldPayBy}</div>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  {bookForm.oldImage && (
+                    <div style={{ width: '70px', height: '70px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+                      <img src={bookForm.oldImage} alt="Old Phone" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: '13px', width: '100%' }}>
+                    <div><strong>Old Brand:</strong> {bookForm.oldBrand}</div>
+                    <div><strong>Old Model:</strong> {bookForm.oldModel}</div>
+                    <div><strong>Storage / RAM:</strong> {bookForm.oldStorage} GB / {bookForm.oldRam} GB</div>
+                    <div><strong>Evaluated By:</strong> {bookForm.oldPayBy}</div>
+                  </div>
                 </div>
               </div>
 
@@ -1034,6 +1049,19 @@ export default function OldInHandStock() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  {/* Customer Name placed BEFORE Exchange Value */}
+                  <div>
+                    <label className="form-label">Customer Name *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter customer name" 
+                      value={bookForm.customerName || ''} 
+                      onChange={(e) => setBookForm({ ...bookForm, customerName: e.target.value })} 
+                      required 
+                    />
+                  </div>
+
                   <div>
                     <label className="form-label">Exchange Value (₹) *</label>
                     <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
@@ -1089,9 +1117,10 @@ export default function OldInHandStock() {
                     </select>
                   </div>
 
+                  {/* Pay By field is separate */}
                   <div>
-                    <label className="form-label">Customer Name / Pay By *</label>
-                    <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
+                    <label className="form-label">Pay By (Payer / Account) *</label>
+                    <input type="text" className="form-control" placeholder="Enter payer / account (e.g. Jeet, Sonal, Staff)" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
                   </div>
 
                   <div>

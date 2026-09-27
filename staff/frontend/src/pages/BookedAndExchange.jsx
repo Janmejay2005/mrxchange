@@ -1079,22 +1079,36 @@ export default function BookedAndExchange() {
                     ))}
                   </select>
 
-                  {/* Display Fetched Image Preview */}
-                  {bookForm.oldImage && (
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                      <img 
-                        src={bookForm.oldImage} 
-                        alt="Fetched Device" 
-                        onClick={() => setExpandedImage(bookForm.oldImage)}
-                        title="Click to view full image"
-                        style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer' }} 
-                      />
+                  {/* Display Fetched Image Preview & Camera Photo Option */}
+                  <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {bookForm.oldImage ? (
+                        <img 
+                          src={bookForm.oldImage} 
+                          alt="Fetched Device" 
+                          onClick={() => setExpandedImage(bookForm.oldImage)}
+                          title="Click to view full image"
+                          style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer' }} 
+                        />
+                      ) : (
+                        <div style={{ width: '56px', height: '56px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                          <Camera size={24} />
+                        </div>
+                      )}
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#15803d' }}>📷 Fetched Device Image (Clickable)</div>
-                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>Click photo to zoom & expand image view</div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#15803d' }}>📷 Device Photo (Clickable)</div>
+                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>{bookForm.oldImage ? 'Click photo to zoom view' : 'No image captured yet'}</div>
                       </div>
                     </div>
-                  )}
+                    <button 
+                      type="button" 
+                      onClick={() => setIsCameraOpen(true)} 
+                      className="btn-secondary" 
+                      style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '6px', fontWeight: 700 }}
+                    >
+                      <Camera size={14} /> {bookForm.oldImage ? 'Change Photo' : 'Photo Option'}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
@@ -1160,6 +1174,19 @@ export default function BookedAndExchange() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  {/* Customer Name placed BEFORE Exchange Value */}
+                  <div>
+                    <label className="form-label">Customer Name *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Enter customer name" 
+                      value={bookForm.customerName || ''} 
+                      onChange={(e) => setBookForm({ ...bookForm, customerName: e.target.value })} 
+                      required 
+                    />
+                  </div>
+
                   <div>
                     <label className="form-label">Exchange Value (₹) *</label>
                     <input type="number" className="form-control" placeholder="₹ Trade valuation" value={bookForm.exchangeValue} onChange={(e) => setBookForm({ ...bookForm, exchangeValue: e.target.value })} required />
@@ -1215,9 +1242,10 @@ export default function BookedAndExchange() {
                     </select>
                   </div>
 
+                  {/* Pay By field is separate */}
                   <div>
-                    <label className="form-label">Customer Name / Pay By *</label>
-                    <input type="text" className="form-control" placeholder="Customer name" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
+                    <label className="form-label">Pay By (Payer / Account) *</label>
+                    <input type="text" className="form-control" placeholder="Enter payer / account (e.g. Jeet, Sonal, Staff)" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
                   </div>
 
                   <div>
