@@ -922,8 +922,13 @@ export default function OldInHandStock() {
 
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {bookForm.oldImage && (
-                    <div style={{ width: '70px', height: '70px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+                    <div 
+                      onClick={() => setExpandedImage(bookForm.oldImage)}
+                      title="Click photo to zoom"
+                      style={{ width: '70px', height: '70px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #0284c7', flexShrink: 0, cursor: 'zoom-in', position: 'relative' }}
+                    >
                       <img src={bookForm.oldImage} alt="Old Phone" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', bottom: 0, inset: 'auto 0 0 0', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '9px', textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>🔍 Zoom</div>
                     </div>
                   )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: '13px', width: '100%' }}>
