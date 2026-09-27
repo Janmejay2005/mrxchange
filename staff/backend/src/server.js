@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { initDatabase } from './config/db.js';
@@ -29,6 +30,21 @@ app.use('/api', apiRouter);
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date() });
 });
+
+// Serve frontend static build if available
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads') && !req.path.startsWith('/health')) {
+      res.sendFile(path.join(frontendDistPath, 'index.html'));
+    }
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('<div style="font-family: sans-serif; text-align: center; padding: 50px;"><h1>🚀 MR.X.Change API Backend is Online</h1><p>Health endpoint: <a href="/health">/health</a></p></div>');
+  });
+}
 
 // Start Server & Initialize DB
 async function startServer() {
