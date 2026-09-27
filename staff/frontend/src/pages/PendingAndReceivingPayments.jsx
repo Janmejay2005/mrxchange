@@ -379,36 +379,35 @@ export default function PendingAndReceivingPayments() {
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table className="custom-table">
+            <div className="table-responsive" style={{ overflowX: 'auto' }}>
+              <table className="custom-table payments-compact-table" style={{ width: '100%', fontSize: '11px' }}>
                 <thead>
                   <tr>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>#</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Date</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Customer Name</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Brand</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Model</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Total Amount (₹)</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Paid Amount (₹)</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Pending Amount (₹)</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Payment Status</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Mode of Payment</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46' }}>Action</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 4px' }}>#</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Date</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Customer</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Device (Brand / Model)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Total (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Paid (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Pending (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Status</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Mode</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {receivingList.length === 0 ? (
                     <tr>
-                      <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
                         No received payments in this column.
                       </td>
                     </tr>
                   ) : (
                     receivingList.map((row, idx) => (
                       <tr key={row.id}>
-                        <td data-label="#">{idx + 1}</td>
-                        <td data-label="Date">{row.date}</td>
-                        <td data-label="Customer">
+                        <td data-label="#" style={{ padding: '8px 4px' }}>{idx + 1}</td>
+                        <td data-label="Date" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.date}</td>
+                        <td data-label="Customer" style={{ padding: '8px 6px' }}>
                           <button
                             type="button"
                             onClick={() => openPersonBreakdown(row.customerName)}
@@ -421,28 +420,27 @@ export default function PendingAndReceivingPayments() {
                               cursor: 'pointer',
                               padding: 0,
                               textAlign: 'left',
-                              fontSize: '13px'
+                              fontSize: '11px'
                             }}
                             title={`Click to view breakdown statement for ${row.customerName}`}
                           >
                             👤 {row.customerName}
                           </button>
                         </td>
-                        <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                        <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                        <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                        <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                        <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#059669' }}>
+                        <td data-label="Device" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
+                        <td data-label="Total Amount" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: '#059669' }}>
                           <CurrencyAmount amount={row.pendingAmount} />
                         </td>
-                        <td data-label="Status">
-                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857' }}>
+                        <td data-label="Status" style={{ padding: '8px 6px' }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800, background: '#ecfdf5', color: '#047857' }}>
                             Received
                           </span>
                         </td>
-                        <td data-label="Payment Mode">{row.mode}</td>
-                        <td data-label="Action">
-                          <button onClick={() => handleOpenEquateModal(row)} className="btn-secondary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
+                        <td data-label="Payment Mode" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.mode}</td>
+                        <td data-label="Action" style={{ padding: '8px 6px' }}>
+                          <button onClick={() => handleOpenEquateModal(row)} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', fontWeight: 700 }}>
                             Equate
                           </button>
                         </td>
@@ -475,36 +473,35 @@ export default function PendingAndReceivingPayments() {
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table className="custom-table">
+            <div className="table-responsive" style={{ overflowX: 'auto' }}>
+              <table className="custom-table payments-compact-table" style={{ width: '100%', fontSize: '11px' }}>
                 <thead>
                   <tr>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>#</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Date</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Customer Name</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Brand</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Model</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Total Amount (₹)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Paid Amount (₹)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Pending Amount (₹)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Payment Status</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Mode of Payment</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412' }}>Action</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 4px' }}>#</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Date</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Customer</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Device (Brand / Model)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Total (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Paid (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Pending (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Status</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Mode</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pendingList.length === 0 ? (
                     <tr>
-                      <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
                         No pending payments in this column.
                       </td>
                     </tr>
                   ) : (
                     pendingList.map((row, idx) => (
                       <tr key={row.id}>
-                        <td data-label="#">{idx + 1}</td>
-                        <td data-label="Date">{row.date}</td>
-                        <td data-label="Customer">
+                        <td data-label="#" style={{ padding: '8px 4px' }}>{idx + 1}</td>
+                        <td data-label="Date" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.date}</td>
+                        <td data-label="Customer" style={{ padding: '8px 6px' }}>
                           <button
                             type="button"
                             onClick={() => openPersonBreakdown(row.customerName)}
@@ -517,28 +514,27 @@ export default function PendingAndReceivingPayments() {
                               cursor: 'pointer',
                               padding: 0,
                               textAlign: 'left',
-                              fontSize: '13px'
+                              fontSize: '11px'
                             }}
                             title={`Click to view breakdown statement for ${row.customerName}`}
                           >
                             👤 {row.customerName}
                           </button>
                         </td>
-                        <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
-                        <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
-                        <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                        <td data-label="Paid Amount" style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                        <td data-label="Pending Amount" style={{ fontWeight: 800, color: '#ea580c' }}>
+                        <td data-label="Device" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
+                        <td data-label="Total Amount" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: '#ea580c' }}>
                           <CurrencyAmount amount={row.pendingAmount} />
                         </td>
-                        <td data-label="Status">
-                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
+                        <td data-label="Status" style={{ padding: '8px 6px' }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800, background: '#fff7ed', color: '#ea580c' }}>
                             Pending
                           </span>
                         </td>
-                        <td data-label="Payment Mode">{row.mode}</td>
-                        <td data-label="Action">
-                          <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '5px 14px', fontSize: '12px', borderRadius: '6px', fontWeight: 700 }}>
+                        <td data-label="Payment Mode" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.mode}</td>
+                        <td data-label="Action" style={{ padding: '8px 6px' }}>
+                          <button onClick={() => handleOpenEquateModal(row)} className="btn-primary" style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', fontWeight: 700 }}>
                             Equate
                           </button>
                         </td>
