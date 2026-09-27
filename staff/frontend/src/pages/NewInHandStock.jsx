@@ -744,29 +744,6 @@ export default function NewInHandStock() {
                           {isOutOfStock ? 'Sold Out' : 'Sell'}
                         </button>
 
-                        <button 
-                          type="button"
-                          disabled={isOutOfStock}
-                          onClick={() => openExchangeModal(item)} 
-                          style={{ 
-                            padding: '6px 14px', 
-                            fontSize: '12px', 
-                            borderRadius: '6px', 
-                            fontWeight: 800,
-                            backgroundColor: isOutOfStock ? '#cbd5e1' : '#f3e8ff',
-                            color: isOutOfStock ? '#64748b' : '#7c3aed',
-                            border: '1px solid #d8b4fe',
-                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            opacity: isOutOfStock ? 0.6 : 1
-                          }}
-                          title={isOutOfStock ? "Out of Stock" : "Book device for exchange"}
-                        >
-                          <RefreshCw size={13} /> Exchange
-                        </button>
-
                         <button
                           type="button"
                           onClick={() => openEditModal(item)}
