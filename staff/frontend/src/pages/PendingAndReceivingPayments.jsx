@@ -340,8 +340,8 @@ export default function PendingAndReceivingPayments() {
         </button>
       </div>
 
-      {/* DUAL COLUMNS SECTION: RECEIVED PAYMENTS (LEFT COLUMN) & PENDING PAYMENTS (RIGHT COLUMN) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+      {/* DUAL SIDE-BY-SIDE VERTICAL COLUMNS: RECEIVING PAYMENTS (LEFT VERTICAL COLUMN) & PENDING PAYMENTS (RIGHT VERTICAL COLUMN) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '24px', alignItems: 'start' }}>
         
         {/* COLUMN 1: RECEIVING PAYMENTS COLUMN (Customer Receivables) */}
         <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
