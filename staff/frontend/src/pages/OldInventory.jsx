@@ -162,13 +162,9 @@ export default function OldInventory() {
         console.error(e);
       }
 
-      const isOldInvCleared = localStorage.getItem('mrx_old_inventory_cleared') === 'true';
-      const isOldInHandCleared = localStorage.getItem('mrx_old_in_hand_cleared') === 'true';
-      const isNewInHandCleared = localStorage.getItem('mrx_new_in_hand_cleared') === 'true';
-
-      const localOldInv = isOldInvCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
-      const localOldHand = isOldInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const localNewHand = isNewInHandCleared ? [] : JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
+      const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const localNewHand = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
@@ -233,7 +229,6 @@ export default function OldInventory() {
       localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
       localStorage.setItem('mrx_sales', JSON.stringify([]));
       localStorage.setItem('mrx_devices', JSON.stringify([]));
-      localStorage.setItem('mrx_inventory_cleared', 'true');
 
       window.dispatchEvent(new Event('mrx_inventory_updated'));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
@@ -275,7 +270,6 @@ export default function OldInventory() {
       const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
       if (newStatus === 'OLD_IN_HAND') {
-        localStorage.removeItem('mrx_old_in_hand_cleared');
 
         const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
         const filtered = oldInHandStock.filter(d => String(d.id || d.device_code) !== String(deviceId || deviceObj.device_code));

@@ -486,7 +486,7 @@ export default function ProfitExpenseAndStatistic() {
     if (window.confirm('Are you sure you want to clear all expenses from the register?')) {
       setExpenses([]);
       localStorage.setItem('mrx_expenses', '[]');
-      localStorage.setItem('mrx_expenses_cleared', 'true');
+      localStorage.removeItem('mrx_expenses_cleared');
       window.dispatchEvent(new Event('mrx_inventory_updated'));
       window.dispatchEvent(new Event('storage'));
     }

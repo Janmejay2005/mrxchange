@@ -510,8 +510,8 @@ export default function OldInHandStock() {
   const handleClearInventory = () => {
     if (window.confirm('Are you sure you want to clear all devices from Old In-hand Stock inventory table?')) {
       setDevices([]);
-      localStorage.setItem('mrx_old_in_hand_cleared', 'true');
-      localStorage.removeItem('mrx_old_in_hand_stock');
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
+      localStorage.removeItem('mrx_old_in_hand_cleared');
       try {
         const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status !== 'OLD_IN_HAND');
         localStorage.setItem('mrx_devices', JSON.stringify(mrxDevices));
@@ -519,33 +519,29 @@ export default function OldInHandStock() {
         localStorage.setItem('mrx_old_inventory', JSON.stringify(mrxOldInv));
       } catch (e) {}
       window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
     }
   };
 
   const fetchOldInHandStock = async () => {
     try {
       setLoading(true);
+      localStorage.removeItem('mrx_old_in_hand_cleared');
       const cancelledItems = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status === 'OLD_IN_HAND');
       const mrxOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status === 'OLD_IN_HAND');
 
-      if (cancelledItems.length > 0 || mrxDevices.length > 0 || mrxOldInv.length > 0) {
-        localStorage.removeItem('mrx_old_in_hand_cleared');
-      }
-
-      if (localStorage.getItem('mrx_old_in_hand_cleared') === 'true') {
-        setDevices([]);
-        setLoading(false);
-        return;
-      }
-      const res = await deviceService.getDevices({
-        status: 'OLD_IN_HAND',
-        q: localSearch || globalSearch || '',
-        brand: selectedBrand,
-        from: selectedDate || '',
-        to: selectedDate || ''
-      });
-      const dataList = Array.isArray(res) ? res : (res?.data || []);
+      let dataList = [];
+      try {
+        const res = await deviceService.getDevices({
+          status: 'OLD_IN_HAND',
+          q: localSearch || globalSearch || '',
+          brand: selectedBrand,
+          from: selectedDate || '',
+          to: selectedDate || ''
+        });
+        dataList = Array.isArray(res) ? res : (res?.data || []);
+      } catch (e) {}
 
       const rawCombined = [...cancelledItems, ...mrxDevices, ...mrxOldInv, ...dataList];
       const seenFingerprints = new Set();
