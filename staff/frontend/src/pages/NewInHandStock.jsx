@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera, ShoppingBag, AlertTriangle, CheckCircle, UserCheck, Users } from 'lucide-react';
+import { Package, Plus, Home, Search, FileText, X, Edit, Trash2, Camera, ShoppingBag, AlertTriangle, CheckCircle, UserCheck, Users, RefreshCw } from 'lucide-react';
 import { CurrencyAmount, KPICard } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,29 +14,10 @@ export default function NewInHandStock() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [brand, setBrand] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   // Account Scope Bifurcation State
   const loggedInAccountName = user?.name || user?.username || 'Jeet Khubchandani';
   const [accountFilter, setAccountFilter] = useState('All Accounts');
-
-  const accountOptions = React.useMemo(() => {
-    const list = ['All Accounts', 'Jeet Khubchandani', 'Sonal Wadwani'];
-    try {
-      const customMembers = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
-      customMembers.forEach(m => {
-        const name = m.name || m.username;
-        if (name && !list.includes(name)) list.push(name);
-      });
-    } catch (e) {}
-
-    stock.forEach(item => {
-      const owner = item.purchasedBy;
-      if (owner && owner !== 'Staff' && owner !== 'System' && !list.includes(owner)) {
-        list.push(owner);
-      }
-    });
-
-    return list;
-  }, [stock]);
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -63,6 +44,30 @@ export default function NewInHandStock() {
     date: new Date().toISOString().split('T')[0]
   });
 
+  // Exchange Modal State
+  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+  const [isExchangeCameraOpen, setIsExchangeCameraOpen] = useState(false);
+  const [selectedExchangeStockItem, setSelectedExchangeStockItem] = useState(null);
+  const [exchangeForm, setExchangeForm] = useState({
+    customerName: '',
+    exchangeValue: '0',
+    newBrand: '',
+    newModel: '',
+    newStorage: '128',
+    newRam: '8',
+    newColor: '-',
+    newPayBy: loggedInAccountName,
+    purchasedAmount: '0',
+    oldBrand: 'Samsung',
+    oldModel: '',
+    oldStorage: '128',
+    oldRam: '8',
+    oldAmount: '0',
+    oldPayBy: 'Staff',
+    oldImage: '',
+    via: 'Cash'
+  });
+
   // Edit Device Modal & Camera State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -81,11 +86,49 @@ export default function NewInHandStock() {
 
   const [stock, setStock] = useState([]);
 
+  const accountOptions = React.useMemo(() => {
+    const list = ['All Accounts', 'Jeet Khubchandani', 'Sonal Wadwani'];
+    try {
+      const customMembers = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
+      customMembers.forEach(m => {
+        const name = m.name || m.username;
+        if (name && !list.includes(name)) list.push(name);
+      });
+    } catch (e) {}
+
+    stock.forEach(item => {
+      const owner = item.purchasedBy;
+      if (owner && owner !== 'Staff' && owner !== 'System' && !list.includes(owner)) {
+        list.push(owner);
+      }
+    });
+
+    return list;
+  }, [stock]);
+
   const loadStock = async () => {
     try {
       const dbDevices = await deviceService.getDevices({ status: 'NEW_IN_HAND' });
       const deliveredItems = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-      const rawList = [...(Array.isArray(dbDevices) ? dbDevices : (dbDevices.data || [])), ...deliveredItems];
+      const exchangeList = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+      const deliveredExchanges = exchangeList.filter(item => item.status === 'Delivered' || item.status === 'NEW_IN_HAND');
+
+      const formattedExchanges = deliveredExchanges.map(ex => ({
+        sno: ex.sno || ex.id || `EXCH-${ex.id}`,
+        id: ex.id || `EXCH-${ex.id}`,
+        date: ex.date || new Date().toISOString().split('T')[0],
+        brand: ex.newBrand || ex.brand || 'Generic',
+        model: ex.newModel || ex.model || 'Device',
+        storage: String(ex.newStorage || ex.storage || '128'),
+        ram: String(ex.newRam || ex.ram || '8'),
+        color: ex.newColor || ex.color || '-',
+        purchasedBy: ex.newPurchasedBy || ex.purchasedBy || ex.paid_by || 'Staff',
+        amount: Number(ex.newAmount || ex.amount || 0),
+        totalUnits: Number(ex.totalUnits || 1),
+        soldUnits: Number(ex.soldUnits || 0)
+      }));
+
+      const rawList = [...(Array.isArray(dbDevices) ? dbDevices : (dbDevices.data || [])), ...deliveredItems, ...formattedExchanges];
 
       const seenKeys = new Set();
       const combined = [];
@@ -127,9 +170,11 @@ export default function NewInHandStock() {
     const handleSync = () => loadStock();
     window.addEventListener('storage', handleSync);
     window.addEventListener('mrx_inventory_updated', handleSync);
+    window.addEventListener('mrx_exchanges_updated', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('mrx_inventory_updated', handleSync);
+      window.removeEventListener('mrx_exchanges_updated', handleSync);
     };
   }, []);
 
@@ -308,6 +353,108 @@ export default function NewInHandStock() {
 
     alert(`Successfully sold ${requestedUnits} unit(s) of "${selectedStockItem.brand} ${selectedStockItem.model}" under account "${loggedInAccountName}"! ${availableUnits - requestedUnits} unit(s) remaining in stock.`);
     setIsSellModalOpen(false);
+  };
+
+  const openExchangeModal = (item) => {
+    setSelectedExchangeStockItem(item);
+    setExchangeForm({
+      customerName: '',
+      exchangeValue: String(item.amount || 0),
+      newBrand: item.brand,
+      newModel: item.model,
+      newStorage: String(item.storage || '128'),
+      newRam: String(item.ram || '8'),
+      newColor: item.color || '-',
+      newPayBy: item.purchasedBy || loggedInAccountName,
+      purchasedAmount: String(item.amount || 0),
+      oldBrand: 'Samsung',
+      oldModel: '',
+      oldStorage: '128',
+      oldRam: '8',
+      oldAmount: '0',
+      oldPayBy: 'Staff',
+      oldImage: '',
+      via: 'Cash'
+    });
+    setIsExchangeModalOpen(true);
+  };
+
+  const handleExchangeSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedExchangeStockItem) return;
+
+    const availableUnits = Math.max(0, (selectedExchangeStockItem.totalUnits || 1) - (selectedExchangeStockItem.soldUnits || 0));
+    if (availableUnits <= 0) {
+      alert(`⚠️ Out of stock! Cannot exchange device.`);
+      return;
+    }
+
+    const oldAmt = Number(exchangeForm.oldAmount) || 0;
+    const newAmt = Number(exchangeForm.purchasedAmount) || 0;
+    const exVal = Number(exchangeForm.exchangeValue) || oldAmt;
+
+    const newExchangeEntry = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      newBrand: exchangeForm.newBrand,
+      newModel: exchangeForm.newModel,
+      newStorage: Number(exchangeForm.newStorage) || 128,
+      newRam: Number(exchangeForm.newRam) || 8,
+      newColor: exchangeForm.newColor || '-',
+      newPurchasedBy: exchangeForm.customerName || exchangeForm.newPayBy || loggedInAccountName,
+      newAmount: newAmt + exVal,
+      oldBrand: exchangeForm.oldBrand,
+      oldModel: exchangeForm.oldModel,
+      oldStorage: Number(exchangeForm.oldStorage) || 128,
+      oldRam: Number(exchangeForm.oldRam) || 8,
+      oldColor: '-',
+      oldPurchasedBy: exchangeForm.oldPayBy || 'Staff',
+      oldAmount: oldAmt,
+      oldImage: exchangeForm.oldImage || '',
+      status: 'Booked'
+    };
+
+    // 1. Add exchange record to mrx_exchanges with status 'Booked'
+    const existingExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+    localStorage.setItem('mrx_exchanges', JSON.stringify([newExchangeEntry, ...existingExchanges]));
+
+    // 2. If old phone details are provided, add to old in hand stock
+    if (exchangeForm.oldModel) {
+      const oldPhoneItem = {
+        sno: Date.now() + 1,
+        date: new Date().toISOString().split('T')[0],
+        brand: exchangeForm.oldBrand,
+        model: exchangeForm.oldModel,
+        storage: Number(exchangeForm.oldStorage) || 128,
+        ram: Number(exchangeForm.oldRam) || 8,
+        color: '-',
+        purchasedBy: exchangeForm.oldPayBy || 'Staff',
+        amount: oldAmt,
+        image_url: exchangeForm.oldImage || '',
+        status: 'OLD_IN_HAND'
+      };
+      const existingOldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([oldPhoneItem, ...existingOldStock]));
+    }
+
+    // 3. Mark unit sold/transferred out of current New In Hand stock into Booked & Exchange
+    const updatedStock = stock.map(item => {
+      if (String(item.sno) === String(selectedExchangeStockItem.sno)) {
+        return {
+          ...item,
+          soldUnits: (item.soldUnits || 0) + 1
+        };
+      }
+      return item;
+    });
+
+    saveStockToStorage(updatedStock);
+    window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    window.dispatchEvent(new Event('mrx_inventory_updated'));
+    window.dispatchEvent(new Event('storage'));
+
+    alert(`Device "${exchangeForm.newBrand} ${exchangeForm.newModel}" placed on Booked for Exchange! Transferred to Booked & Exchange tab.`);
+    setIsExchangeModalOpen(false);
   };
 
   const openEditModal = (item) => {
@@ -597,6 +744,29 @@ export default function NewInHandStock() {
                           {isOutOfStock ? 'Sold Out' : 'Sell'}
                         </button>
 
+                        <button 
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => openExchangeModal(item)} 
+                          style={{ 
+                            padding: '6px 14px', 
+                            fontSize: '12px', 
+                            borderRadius: '6px', 
+                            fontWeight: 800,
+                            backgroundColor: isOutOfStock ? '#cbd5e1' : '#f3e8ff',
+                            color: isOutOfStock ? '#64748b' : '#7c3aed',
+                            border: '1px solid #d8b4fe',
+                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            opacity: isOutOfStock ? 0.6 : 1
+                          }}
+                          title={isOutOfStock ? "Out of Stock" : "Book device for exchange"}
+                        >
+                          <RefreshCw size={13} /> Exchange
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => openEditModal(item)}
@@ -778,6 +948,204 @@ export default function NewInHandStock() {
           </div>
         </div>
       )}
+
+      {/* Book New Device for Exchange Modal */}
+      {isExchangeModalOpen && selectedExchangeStockItem && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '640px', borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#7c3aed', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RefreshCw size={20} /> Book Device for Exchange
+                </h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                  Device will be transferred to <strong>Booked & Exchange</strong> tab until delivered.
+                </p>
+              </div>
+              <button onClick={() => setIsExchangeModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <form onSubmit={handleExchangeSubmit}>
+              {/* New Device Details (ReadOnly summary) */}
+              <div style={{ background: '#f5f3ff', padding: '12px 16px', borderRadius: '10px', border: '1px solid #ddd6fe', marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#6d28d9', textTransform: 'uppercase', marginBottom: '4px' }}>New Device to Book</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: '#4c1d95' }}>
+                  📱 {exchangeForm.newBrand} {exchangeForm.newModel} ({exchangeForm.newStorage} GB / {exchangeForm.newRam} GB)
+                </div>
+                <div style={{ fontSize: '12px', color: '#6d28d9', marginTop: '2px' }}>
+                  Purchased Amount: ₹{Number(exchangeForm.purchasedAmount).toLocaleString('en-IN')} | Owner: {exchangeForm.newPayBy}
+                </div>
+              </div>
+
+              {/* Customer Name & Exchange Value (Customer Name BEFORE Exchange Value) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#0f172a' }}>Customer Name *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter customer name"
+                    value={exchangeForm.customerName}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, customerName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#7c3aed' }}>Exchange Value (₹) *</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="₹ Exchange valuation"
+                    value={exchangeForm.exchangeValue}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, exchangeValue: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Pay By */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 700 }}>Pay By (Account) *</label>
+                <select
+                  className="form-control"
+                  value={exchangeForm.newPayBy}
+                  onChange={(e) => setExchangeForm({ ...exchangeForm, newPayBy: e.target.value })}
+                >
+                  <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                  <option value="Sonal Wadwani">Sonal Wadwani</option>
+                  <option value="Staff">Staff</option>
+                </select>
+              </div>
+
+              {/* Old Phone Details Trade-in Section */}
+              <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '14px', marginTop: '14px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  🔄 Old Phone Details (Trade-in)
+                </h4>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label className="form-label">Old Phone Brand</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Samsung, Apple"
+                      value={exchangeForm.oldBrand}
+                      onChange={(e) => setExchangeForm({ ...exchangeForm, oldBrand: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Old Phone Model</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Galaxy S21"
+                      value={exchangeForm.oldModel}
+                      onChange={(e) => setExchangeForm({ ...exchangeForm, oldModel: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label className="form-label">Storage (GB)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={exchangeForm.oldStorage}
+                      onChange={(e) => setExchangeForm({ ...exchangeForm, oldStorage: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">RAM (GB)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={exchangeForm.oldRam}
+                      onChange={(e) => setExchangeForm({ ...exchangeForm, oldRam: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Trade Amount (₹)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={exchangeForm.oldAmount}
+                      onChange={(e) => setExchangeForm({ ...exchangeForm, oldAmount: e.target.value, exchangeValue: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Old Phone Photo Option */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#0f172a' }}>Old Phone Photo Option</label>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsExchangeCameraOpen(true)}
+                      className="btn-secondary"
+                      style={{ padding: '8px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#7c3aed', borderColor: '#c084fc' }}
+                    >
+                      <Camera size={16} /> Take Photo
+                    </button>
+                    <label
+                      className="btn-secondary"
+                      style={{ padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                      📁 Upload Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setExchangeForm(prev => ({ ...prev, oldImage: reader.result }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {exchangeForm.oldImage && (
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={exchangeForm.oldImage}
+                          alt="Old Phone Preview"
+                          style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #7c3aed' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExchangeForm(prev => ({ ...prev, oldImage: '' }))}
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button type="button" onClick={() => setIsExchangeModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', backgroundColor: '#7c3aed', borderColor: '#7c3aed', fontWeight: 800 }}>
+                  Book for Exchange
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Exchange Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isExchangeCameraOpen}
+        onClose={() => setIsExchangeCameraOpen(false)}
+        onCapture={(dataUrl) => setExchangeForm(prev => ({ ...prev, oldImage: dataUrl }))}
+      />
 
       {/* Edit Device Modal */}
       {isEditModalOpen && (
