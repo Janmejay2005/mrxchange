@@ -268,129 +268,11 @@ export default function OldInHandStock() {
     }
 
     setIsBookModalOpen(false);
-    alert(`New device "${bookForm.newBrand} ${bookForm.newModel}" booked! Row updated with Deliver and Rejected options.`);
-  };
+    window.dispatchEvent(new Event('mrx_exchanges_updated'));
+    window.dispatchEvent(new Event('mrx_inventory_updated'));
+    window.dispatchEvent(new Event('storage'));
 
-  const handleDeliverAction = (d) => {
-    // Add item to mrx_new_in_hand_stock & mrx_pending_payments
-    const newStockItem = {
-      sno: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      brand: d.newBrand || d.brand,
-      model: d.newModel || d.model,
-      storage: d.newStorage || d.storage,
-      ram: d.newRam || d.ram,
-      color: d.newColor || d.colour,
-      purchasedBy: d.newPurchasedBy || d.paid_by,
-      amount: d.newAmount || d.purchase_amount,
-      procedure: 'Sell'
-    };
-
-    const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
-    localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
-
-    // Pending payment entry
-    const totalAmt = Number(d.newAmount || 0);
-    const paidAmt = Number(d.purchase_amount || 0);
-    const pendingAmt = Math.max(0, totalAmt - paidAmt);
-
-    const pendingPaymentItem = {
-      id: `EXCH-PAY-${Date.now()}`,
-      date: d.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      customerName: d.newPurchasedBy || 'Customer',
-      brand: d.newBrand || d.brand,
-      model: d.newModel || d.model,
-      imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-      totalAmount: totalAmt,
-      paidAmount: paidAmt,
-      pendingAmount: pendingAmt,
-      status: pendingAmt === 0 ? 'Received' : 'Pending',
-      mode: 'Exchange Trade-in',
-      remarks: `Delivered from Old In-hand Stock`
-    };
-
-    const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-    localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingPaymentItem, ...existingPending]));
-    window.dispatchEvent(new Event('mrx_pending_payments_updated'));
-
-    // Clear old mobile details and set status to 'Delivered'
-    const updatedDevices = devices.map(item => {
-      if (String(item.id) === String(d.id)) {
-        return {
-          ...item,
-          status: 'Delivered',
-          oldRemoved: true
-        };
-      }
-      return item;
-    });
-
-    setDevices(updatedDevices);
-    try {
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
-      window.dispatchEvent(new Event('mrx_inventory_updated'));
-      window.dispatchEvent(new Event('storage'));
-    } catch (e) {}
-
-    // Update mrx_exchanges if exchangeId exists
-    if (d.exchangeId) {
-      try {
-        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
-        const updatedExchanges = storedExchanges.map(ex => {
-          if (String(ex.id) === String(d.exchangeId)) {
-            return {
-              ...ex,
-              status: 'Delivered',
-              oldBrand: '-',
-              oldModel: '-',
-              oldStorage: '-',
-              oldRam: '-',
-              oldColor: '-',
-              oldPurchasedBy: '-',
-              oldAmount: 0
-            };
-          }
-          return ex;
-        });
-        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
-        window.dispatchEvent(new Event('mrx_exchanges_updated'));
-      } catch (e) {}
-    }
-
-    alert(`Device "${d.newBrand || d.brand} ${d.newModel || d.model}" marked as Delivered! Old mobile details removed and Sell button activated.`);
-  };
-
-  const handleRejectAction = (d) => {
-    // Revert row back to original old mobile phone data
-    const updatedDevices = devices.map(item => {
-      if (String(item.id) === String(d.id)) {
-        const { status, exchangeId, newBrand, newModel, newStorage, newRam, newColor, newPurchasedBy, newAmount, exchangeValue, oldRemoved, ...rest } = item;
-        return {
-          ...rest,
-          status: 'OLD_IN_HAND'
-        };
-      }
-      return item;
-    });
-
-    setDevices(updatedDevices);
-    try {
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedDevices));
-      window.dispatchEvent(new Event('mrx_inventory_updated'));
-      window.dispatchEvent(new Event('storage'));
-    } catch (e) {}
-
-    // Remove from mrx_exchanges if exchangeId exists
-    if (d.exchangeId) {
-      try {
-        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
-        const updatedExchanges = storedExchanges.filter(ex => String(ex.id) !== String(d.exchangeId));
-        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
-        window.dispatchEvent(new Event('mrx_exchanges_updated'));
-      } catch (e) {}
-    }
-
-    alert(`Booking Rejected! Old mobile device restored with Exchange and Delete options.`);
+    alert(`Device exchange for "${bookForm.newBrand} ${bookForm.newModel}" booked! Data shifted to Booked & Exchange tab for Deliver and Cancel actions.`);
   };
 
   const openSellModal = (device) => {
@@ -858,34 +740,21 @@ export default function OldInHandStock() {
                         <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
-                      ) : isDelivered ? (
-                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle size={14} /> Delivered ✔️
-                        </span>
-                      ) : isBooked ? (
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
-                          <button 
-                            onClick={() => handleDeliverAction(d)}
-                            style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Deliver new phone -> Remove old phone details & enable Sell button"
-                          >
-                            <CheckCircle size={14} /> Deliver
-                          </button>
-                          <button 
-                            onClick={() => handleRejectAction(d)}
-                            style={{ background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Cancel booking -> Restore old phone details with Exchange option"
-                          >
-                            <XCircle size={14} /> Cancel
-                          </button>
-                        </div>
                       ) : (
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                           <button
                             type="button"
+                            onClick={() => handleOpenSellModal(d)}
+                            style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
+                            title="Sell mobile device"
+                          >
+                            Sell
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenBookModal(d)}
-                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
-                            title="Book New Device for exchange"
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
+                            title="Exchange mobile device (Transfers to Booked & Exchange)"
                           >
                             Exchange
                           </button>
