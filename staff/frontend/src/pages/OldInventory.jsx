@@ -336,12 +336,23 @@ export default function OldInventory() {
     }
     return true;
   }).sort((a, b) => {
-    const brandA = (a.brand || '').trim().toLowerCase();
-    const brandB = (b.brand || '').trim().toLowerCase();
-    if (brandA !== brandB) return brandA.localeCompare(brandB);
-    const modelA = (a.model || '').trim().toLowerCase();
-    const modelB = (b.model || '').trim().toLowerCase();
-    return modelA.localeCompare(modelB);
+    // Recent added data appears on top (newest first), older at bottom
+    const getTimestamp = (item) => {
+      const val = item.intake_date || item.created_at || item.date || item.timestamp;
+      if (val) {
+        const parsed = new Date(val).getTime();
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      if (item.id) {
+        const num = typeof item.id === 'number' ? item.id : parseInt(String(item.id).replace(/\D/g, ''), 10);
+        if (!isNaN(num) && num > 0) return num;
+      }
+      return 0;
+    };
+    const timeA = getTimestamp(a);
+    const timeB = getTimestamp(b);
+    if (timeA !== timeB) return timeB - timeA;
+    return String(b.id || b.device_code || '').localeCompare(String(a.id || a.device_code || ''));
   });
 
   const isAllSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedIds.includes(String(d.id)));

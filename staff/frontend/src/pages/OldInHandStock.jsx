@@ -507,9 +507,29 @@ export default function OldInHandStock() {
     alert(`Successfully sold "${selectedSellDevice.newBrand || selectedSellDevice.brand} ${selectedSellDevice.newModel || selectedSellDevice.model}"! Status updated to Sold ✔️.`);
   };
 
+  const handleClearInventory = () => {
+    if (window.confirm('Are you sure you want to clear all devices from Old In-hand Stock inventory table?')) {
+      setDevices([]);
+      localStorage.setItem('mrx_old_in_hand_cleared', 'true');
+      localStorage.removeItem('mrx_old_in_hand_stock');
+      try {
+        const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status !== 'OLD_IN_HAND');
+        localStorage.setItem('mrx_devices', JSON.stringify(mrxDevices));
+        const mrxOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status !== 'OLD_IN_HAND');
+        localStorage.setItem('mrx_old_inventory', JSON.stringify(mrxOldInv));
+      } catch (e) {}
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+    }
+  };
+
   const fetchOldInHandStock = async () => {
     try {
       setLoading(true);
+      if (localStorage.getItem('mrx_old_in_hand_cleared') === 'true') {
+        setDevices([]);
+        setLoading(false);
+        return;
+      }
       const res = await deviceService.getDevices({
         status: 'OLD_IN_HAND',
         q: localSearch || globalSearch || '',
@@ -589,12 +609,23 @@ export default function OldInHandStock() {
     }
     return true;
   }).sort((a, b) => {
-    const brandA = (a.brand || '').trim().toLowerCase();
-    const brandB = (b.brand || '').trim().toLowerCase();
-    if (brandA !== brandB) return brandA.localeCompare(brandB);
-    const modelA = (a.model || '').trim().toLowerCase();
-    const modelB = (b.model || '').trim().toLowerCase();
-    return modelA.localeCompare(modelB);
+    // Recent added data appears on top (newest first), older at bottom
+    const getTimestamp = (item) => {
+      const val = item.intake_date || item.created_at || item.date || item.timestamp;
+      if (val) {
+        const parsed = new Date(val).getTime();
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      if (item.id) {
+        const num = typeof item.id === 'number' ? item.id : parseInt(String(item.id).replace(/\D/g, ''), 10);
+        if (!isNaN(num) && num > 0) return num;
+      }
+      return 0;
+    };
+    const timeA = getTimestamp(a);
+    const timeB = getTimestamp(b);
+    if (timeA !== timeB) return timeB - timeA;
+    return String(b.id || b.device_code || '').localeCompare(String(a.id || a.device_code || ''));
   });
   const uniqueModelsCount = new Set(
     filteredDevices
@@ -704,18 +735,43 @@ export default function OldInHandStock() {
           />
         </div>
 
-        <select 
-          className="form-control" 
-          style={{ width: '180px' }}
-          value={selectedBrand}
-          onChange={(e) => setSelectedBrand(e.target.value)}
-        >
-          <option value="All Brands">All Brands</option>
-          <option value="Apple">Apple</option>
-          <option value="Samsung">Samsung</option>
-          <option value="OnePlus">OnePlus</option>
-          <option value="Xiaomi">Xiaomi</option>
-        </select>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            type="button"
+            onClick={handleClearInventory}
+            className="btn-secondary"
+            style={{ 
+              backgroundColor: '#fef2f2', 
+              color: '#ef4444', 
+              borderColor: '#fca5a5',
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: '600',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Clear table data"
+          >
+            <Trash2 size={14} color="#ef4444" />
+            Clear Inventory
+          </button>
+
+          <select 
+            className="form-control" 
+            style={{ width: '180px' }}
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}
+          >
+            <option value="All Brands">All Brands</option>
+            <option value="Apple">Apple</option>
+            <option value="Samsung">Samsung</option>
+            <option value="OnePlus">OnePlus</option>
+            <option value="Xiaomi">Xiaomi</option>
+          </select>
+        </div>
       </div>
 
       {/* Table: Brand, Model, Storage, RAM, Color Name, Paid Amount, Purchased By, Date Added, Action (Sell) */}
