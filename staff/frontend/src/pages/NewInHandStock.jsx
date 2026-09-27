@@ -139,18 +139,16 @@ export default function NewInHandStock() {
   const filteredStock = stock.filter((item) => {
     // Account Bifurcation Check
     if (!isSuperAdmin) {
-      // Non-superadmin staff see ONLY stock attributed to their logged-in account
       const itemOwner = (item.purchasedBy || '').toLowerCase();
       const userOwner = (loggedInAccountName || '').toLowerCase();
-      if (!itemOwner.includes(userOwner) && !userOwner.includes(itemOwner)) {
+      if (itemOwner && userOwner && itemOwner !== 'staff' && itemOwner !== 'system' && !itemOwner.includes(userOwner) && !userOwner.includes(itemOwner)) {
         return false;
       }
     } else {
-      // Superadmin can filter by account or view All Accounts
-      if (accountFilter !== 'All Accounts') {
+      if (accountFilter && accountFilter !== 'All Accounts') {
         const itemOwner = (item.purchasedBy || '').toLowerCase();
         const selectedOwner = accountFilter.toLowerCase();
-        if (!itemOwner.includes(selectedOwner) && !selectedOwner.includes(itemOwner)) {
+        if (itemOwner && selectedOwner && !itemOwner.includes(selectedOwner) && !selectedOwner.includes(itemOwner)) {
           return false;
         }
       }

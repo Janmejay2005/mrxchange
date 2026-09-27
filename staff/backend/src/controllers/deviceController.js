@@ -21,17 +21,11 @@ export async function getDevices(req, res) {
     let conditions = ['1=1'];
     let params = [];
 
-    const userRole = req.user?.role;
     let targetStatus = status;
-
-    // Staff constraint: Staff only gets OLD_IN_HAND for in-hand requests
-    if (userRole === 'STAFF' && (status === 'IN_HAND' || status === 'NEW_IN_HAND')) {
-      targetStatus = 'OLD_IN_HAND';
-    }
 
     if (targetStatus && targetStatus !== 'ALL') {
       if (targetStatus === 'IN_HAND') {
-        conditions.push('(d.status = "OLD_IN_HAND" OR d.status = "NEW_IN_HAND" OR d.status = "IN_HAND")');
+        conditions.push("(d.status = 'OLD_IN_HAND' OR d.status = 'NEW_IN_HAND' OR d.status = 'IN_HAND')");
       } else {
         conditions.push('d.status = ?');
         params.push(targetStatus);

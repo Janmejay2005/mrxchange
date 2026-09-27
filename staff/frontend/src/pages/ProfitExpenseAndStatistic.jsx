@@ -484,6 +484,8 @@ export default function ProfitExpenseAndStatistic() {
         { label: 'Total Sales', value: `Rs. ${totalSelling.toLocaleString()}`, color: '#0284c7' }
       ]
     });
+  };
+
   const handleClearExpenses = () => {
     if (window.confirm('Are you sure you want to clear all expenses from the register?')) {
       setExpenses([]);
