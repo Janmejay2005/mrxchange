@@ -33,7 +33,14 @@ export default function PendingAndReceivingPayments() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const samplePayments = [];
+  // Person Breakdown Modal State
+  const [selectedPersonForBreakdown, setSelectedPersonForBreakdown] = useState(null);
+  const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
+
+  const openPersonBreakdown = (customerName) => {
+    setSelectedPersonForBreakdown(customerName || 'Customer');
+    setIsPersonModalOpen(true);
+  };
 
   const getStoredPayments = () => {
     try {
@@ -135,6 +142,17 @@ export default function PendingAndReceivingPayments() {
   const cardPaymentsList = payments.filter(item => String(item.mode || item.paymentType || '').toLowerCase() === 'card');
   const totalCardVal = cardPaymentsList.reduce((sum, item) => sum + (Number(item.paidAmount || item.totalAmount) || 0), 0);
   const cardPayersSet = new Set(cardPaymentsList.map(item => item.customerName));
+
+  // Selected Person Statement Breakdown
+  const personTransactions = React.useMemo(() => {
+    if (!selectedPersonForBreakdown) return [];
+    const target = selectedPersonForBreakdown.toLowerCase().trim();
+    return payments.filter(p => (p.customerName || '').toLowerCase().includes(target) || (p.equatedBy || '').toLowerCase().includes(target));
+  }, [payments, selectedPersonForBreakdown]);
+
+  const personTotalAmount = personTransactions.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
+  const personPaidAmount = personTransactions.reduce((sum, item) => sum + (Number(item.paidAmount) || 0), 0);
+  const personPendingAmount = personTransactions.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
 
   const handleEquateSubmit = (e) => {
     e.preventDefault();
@@ -375,7 +393,26 @@ export default function PendingAndReceivingPayments() {
                     <tr key={row.id}>
                       <td data-label="#">{idx + 1}</td>
                       <td data-label="Date">{row.date}</td>
-                      <td data-label="Customer" style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</td>
+                      <td data-label="Customer">
+                        <button
+                          type="button"
+                          onClick={() => openPersonBreakdown(row.customerName)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#059669',
+                            fontWeight: 800,
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            padding: 0,
+                            textAlign: 'left',
+                            fontSize: '13px'
+                          }}
+                          title={`Click to view breakdown statement for ${row.customerName}`}
+                        >
+                          👤 {row.customerName}
+                        </button>
+                      </td>
                       <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
                       <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
                       <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
@@ -452,7 +489,26 @@ export default function PendingAndReceivingPayments() {
                     <tr key={row.id}>
                       <td data-label="#">{idx + 1}</td>
                       <td data-label="Date">{row.date}</td>
-                      <td data-label="Customer" style={{ fontWeight: 700, color: '#0f172a' }}>{row.customerName}</td>
+                      <td data-label="Customer">
+                        <button
+                          type="button"
+                          onClick={() => openPersonBreakdown(row.customerName)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ea580c',
+                            fontWeight: 800,
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            padding: 0,
+                            textAlign: 'left',
+                            fontSize: '13px'
+                          }}
+                          title={`Click to view breakdown statement for ${row.customerName}`}
+                        >
+                          👤 {row.customerName}
+                        </button>
+                      </td>
                       <td data-label="Brand" style={{ fontWeight: 600 }}>{row.brand}</td>
                       <td data-label="Model" style={{ fontWeight: 700 }}>{row.model}</td>
                       <td data-label="Total Amount" style={{ fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
@@ -479,6 +535,125 @@ export default function PendingAndReceivingPayments() {
           </div>
         </div>
       </div>
+
+      {/* Person Pay Breakdown Statement Modal */}
+      {isPersonModalOpen && selectedPersonForBreakdown && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '760px', borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  👤 Person Pay Breakdown: <span style={{ color: '#0284c7' }}>{selectedPersonForBreakdown}</span>
+                </h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                  Detailed statement of all receivables, paid amounts, and balance dues for <strong>{selectedPersonForBreakdown}</strong>.
+                </p>
+              </div>
+              <button onClick={() => setIsPersonModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {/* KPI Cards Summary for this Person */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Total Transactions</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                  ₹{personTotalAmount.toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{personTransactions.length} Record(s)</div>
+              </div>
+
+              <div style={{ background: '#ecfdf5', padding: '14px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>Total Received / Paid</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#059669', marginTop: '4px' }}>
+                  ₹{personPaidAmount.toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: '11px', color: '#047857', marginTop: '2px' }}>Collected to date</div>
+              </div>
+
+              <div style={{ background: '#fff7ed', padding: '14px', borderRadius: '12px', border: '1px solid #fed7aa' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#c2410c', textTransform: 'uppercase' }}>Remaining Pending Balance</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#ea580c', marginTop: '4px' }}>
+                  ₹{personPendingAmount.toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: '11px', color: '#c2410c', marginTop: '2px' }}>Dues pending</div>
+              </div>
+            </div>
+
+            {/* Breakdown Table for this Person */}
+            <div className="table-responsive" style={{ marginBottom: '18px' }}>
+              <table className="custom-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Device / Item</th>
+                    <th>Total (₹)</th>
+                    <th>Paid (₹)</th>
+                    <th>Pending (₹)</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {personTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                        No records found for {selectedPersonForBreakdown}.
+                      </td>
+                    </tr>
+                  ) : (
+                    personTransactions.map((item, idx) => (
+                      <tr key={item.id}>
+                        <td>{idx + 1}</td>
+                        <td>{item.date}</td>
+                        <td style={{ fontWeight: 700, color: '#0f172a' }}>{item.brand} {item.model}</td>
+                        <td>₹{Number(item.totalAmount || 0).toLocaleString()}</td>
+                        <td style={{ color: '#059669', fontWeight: 700 }}>₹{Number(item.paidAmount || 0).toLocaleString()}</td>
+                        <td style={{ color: Number(item.pendingAmount) > 0 ? '#ea580c' : '#059669', fontWeight: 800 }}>
+                          ₹{Number(item.pendingAmount || 0).toLocaleString()}
+                        </td>
+                        <td>{item.mode || 'Cash'}</td>
+                        <td>
+                          <span style={{
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            background: Number(item.pendingAmount) <= 0 ? '#ecfdf5' : '#fff7ed',
+                            color: Number(item.pendingAmount) <= 0 ? '#047857' : '#ea580c'
+                          }}>
+                            {Number(item.pendingAmount) <= 0 ? 'Received' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsPersonModalOpen(false);
+                              handleOpenEquateModal(item);
+                            }}
+                            className="btn-primary"
+                            style={{ padding: '4px 12px', fontSize: '11px', borderRadius: '6px' }}
+                          >
+                            Equate
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button type="button" onClick={() => setIsPersonModalOpen(false)} className="btn-secondary" style={{ padding: '8px 20px' }}>
+                Close Statement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Equate Mobile Modal with Amount Breakdown */}
       {isEquateModalOpen && (
