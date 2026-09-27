@@ -268,6 +268,30 @@ export default function OldInHandStock() {
       console.error(err);
     }
 
+    // Create Pending Payment entry under the Pay By / Evaluator person's name with Purchased Amount
+    const paidOutAmount = Number(bookForm.purchasedAmount) || Number(bookForm.exchangeValue) || 0;
+    if (paidOutAmount > 0) {
+      const personPayableEntry = {
+        id: `EXCH-PAYABLE-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        customerName: bookForm.oldPayBy || 'Staff Evaluator',
+        brand: bookForm.oldBrand || 'Generic',
+        model: bookForm.oldModel || 'Trade-in Device',
+        totalAmount: paidOutAmount,
+        paidAmount: 0,
+        pendingAmount: paidOutAmount,
+        status: 'Pending',
+        mode: bookForm.via || 'Cash',
+        equatedBy: 'Jeet'
+      };
+
+      try {
+        const existingPayments = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+        localStorage.setItem('mrx_pending_payments', JSON.stringify([personPayableEntry, ...existingPayments]));
+        window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      } catch (e) {}
+    }
+
     setIsBookModalOpen(false);
     window.dispatchEvent(new Event('mrx_exchanges_updated'));
     window.dispatchEvent(new Event('mrx_inventory_updated'));

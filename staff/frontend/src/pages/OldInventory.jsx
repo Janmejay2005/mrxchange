@@ -345,6 +345,7 @@ export default function OldInventory() {
 
   // Filtered devices list based on selected Brand & selectedDate
   const filteredDevices = devices.filter(d => {
+    if (d.status && d.status !== 'OLD_INVENTORY') return false;
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
     if (selectedDate) {
       const devYMD = toYMD(d.intake_date || d.created_at || d.date);

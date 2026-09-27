@@ -359,7 +359,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Old mobile details removed and Sell option activated.`);
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-Hand Stock.`);
   };
 
   const openSellModal = (row) => {
@@ -809,13 +809,9 @@ export default function BookedAndExchange() {
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
                       ) : row.status === 'Delivered' ? (
-                        <button 
-                          onClick={() => openSellModal(row)}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <ShoppingBag size={14} /> Sell
-                        </button>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Delivered (In New Stock)
+                        </span>
                       ) : (
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <button 
@@ -894,13 +890,9 @@ export default function BookedAndExchange() {
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
                       ) : row.status === 'Delivered' ? (
-                        <button 
-                          onClick={() => openSellModal(row)}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <ShoppingBag size={14} /> Sell
-                        </button>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Delivered (In New Stock)
+                        </span>
                       ) : (
                         <>
                           <button
@@ -1013,13 +1005,9 @@ export default function BookedAndExchange() {
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
                       ) : row.status === 'Delivered' ? (
-                        <button 
-                          onClick={() => openSellModal(row)}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <ShoppingBag size={14} /> Sell
-                        </button>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Delivered (In New Stock)
+                        </span>
                       ) : (
                         <>
                           <button

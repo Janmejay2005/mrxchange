@@ -331,21 +331,32 @@ export default function ProfitExpenseAndStatistic() {
   const totalInvestment = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount) || 0), 0);
 
   // 2. Selling = Data sum from selling devices in new in hand inventory
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price) || 0), 0);
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price || p.totalAmount) || 0), 0);
 
-  // 3. Profit = Sold price from new in hand - (repair cost + bought cost)
+  // 3. Profit = Mobile sold Price - (New Phone Exchanged price - old phone price) for exchange phones, or Sold Price - (Bought Cost + Repair Cost)
   const totalProfit = filteredProfits.reduce((sum, p) => {
-    const sellPrice = Number(p.selling || p.selling_price) || 0;
-    const boughtCost = Number(p.purchase || p.purchase_amount) || 0;
+    const sellPrice = Number(p.selling || p.selling_price || p.totalAmount) || 0;
+    const oldPhonePrice = Number(p.oldAmount || p.oldPrice || p.purchase || p.purchase_amount) || 0;
+    const newPhoneExchangedPrice = Number(p.newAmount || p.exchangeValue || p.purchasedAmount || p.purchase || p.purchase_amount) || 0;
     const repairCost = Number(p.repair_cost || p.repairCost) || 0;
-    const calculatedProfit = p.profit !== undefined && p.repair_cost === undefined ? Number(p.profit) : (sellPrice - (boughtCost + repairCost));
+
+    let calculatedProfit = 0;
+    if (p.isExchange || (p.oldAmount && p.newAmount)) {
+      calculatedProfit = sellPrice - (newPhoneExchangedPrice - oldPhonePrice);
+    } else {
+      calculatedProfit = p.profit !== undefined && p.repair_cost === undefined 
+        ? Number(p.profit) 
+        : (sellPrice - (oldPhonePrice + repairCost));
+    }
     return sum + calculatedProfit;
   }, 0);
+
+  // EBITDA / Final Net Profit = Total Profit from all sold mobiles - Business Expenses
   const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const finalProfit = totalProfit - totalExpensesAmount;
 
-  // Investment Base: use total purchase cost of sold items, or total sales, or base capital fund
-  const investmentBase = totalPurchaseCost > 0 ? totalPurchaseCost : (totalSelling > 0 ? totalSelling : 100000);
+  // Investment Base for ROI calculation
+  const investmentBase = totalInvestment > 0 ? totalInvestment : (totalSelling > 0 ? totalSelling : 100000);
   const roi = investmentBase > 0 ? ((finalProfit / investmentBase) * 100).toFixed(2) : '0.00';
 
   // -------------------------------------------------------------
