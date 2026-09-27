@@ -744,16 +744,8 @@ export default function OldInHandStock() {
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                           <button
                             type="button"
-                            onClick={() => handleOpenSellModal(d)}
-                            style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
-                            title="Sell mobile device"
-                          >
-                            Sell
-                          </button>
-                          <button
-                            type="button"
                             onClick={() => handleOpenBookModal(d)}
-                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
                             title="Exchange mobile device (Transfers to Booked & Exchange)"
                           >
                             Exchange
