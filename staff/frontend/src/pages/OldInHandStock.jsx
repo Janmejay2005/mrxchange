@@ -163,11 +163,28 @@ export default function OldInHandStock() {
   const handleDeleteDevice = async (id) => {
     if (window.confirm('Are you sure you want to delete this device from Old In-hand stock?')) {
       try {
-        setDevices(prev => prev.filter(d => String(d.id) !== String(id)));
-        const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-        const updated = stored.filter(item => String(item.id) !== String(id));
-        localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
+        const idStr = String(id);
+        
+        // 1. Add to blacklisted deleted IDs list
+        const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+        if (!deletedIds.includes(idStr)) {
+          deletedIds.push(idStr);
+          localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(deletedIds));
+        }
 
+        // 2. Clean all local storage keys
+        ['mrx_old_in_hand_stock', 'mrx_devices', 'mrx_old_inventory', 'mrx_inventory'].forEach(key => {
+          try {
+            const list = JSON.parse(localStorage.getItem(key) || '[]');
+            const updated = list.filter(item => String(item.id) !== idStr && String(item.device_code) !== idStr);
+            localStorage.setItem(key, JSON.stringify(updated));
+          } catch (e) {}
+        });
+
+        // 3. Update UI state
+        setDevices(prev => prev.filter(d => String(d.id) !== idStr && String(d.device_code) !== idStr));
+
+        // 4. Send delete call to backend API
         try {
           await deviceService.deleteDevice(id);
         } catch (apiErr) {
@@ -466,7 +483,17 @@ export default function OldInHandStock() {
         dataList = Array.isArray(res) ? res : (res?.data || []);
       } catch (e) {}
 
-      const rawCombined = [...cancelledItems, ...mrxDevices, ...mrxOldInv, ...dataList];
+      const deletedIds = new Set(JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]').map(String));
+
+      const rawCombined = [...cancelledItems, ...mrxDevices, ...mrxOldInv, ...dataList].filter(item => {
+        if (!item) return false;
+        const idStr = String(item.id || '');
+        const codeStr = String(item.device_code || '');
+        if ((idStr && deletedIds.has(idStr)) || (codeStr && deletedIds.has(codeStr))) {
+          return false;
+        }
+        return true;
+      });
       const seenFingerprints = new Set();
       const allInHand = [];
 
