@@ -160,13 +160,27 @@ export default function OldInHandStock() {
     alert('Device details and photo updated successfully!');
   };
 
-  const handleDeleteDevice = (id) => {
+  const handleDeleteDevice = async (id) => {
     if (window.confirm('Are you sure you want to delete this device from Old In-hand stock?')) {
-      setDevices(prev => prev.filter(d => String(d.id) !== String(id)));
-      const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
-      const updated = stored.filter(item => String(item.id) !== String(id));
-      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
-      alert('Device deleted successfully!');
+      try {
+        setDevices(prev => prev.filter(d => String(d.id) !== String(id)));
+        const stored = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+        const updated = stored.filter(item => String(item.id) !== String(id));
+        localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updated));
+
+        try {
+          await deviceService.deleteDevice(id);
+        } catch (apiErr) {
+          console.warn('Backend API delete offline/fallback:', apiErr);
+        }
+
+        window.dispatchEvent(new Event('mrx_inventory_updated'));
+        window.dispatchEvent(new Event('storage'));
+        alert('Device deleted successfully!');
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Failed to delete device');
+      }
     }
   };
 
@@ -776,14 +790,30 @@ export default function OldInHandStock() {
                           <CheckCircle size={14} /> Sold ✔️
                         </span>
                       ) : (
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             type="button"
                             onClick={() => handleOpenBookModal(d)}
-                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}
                             title="Exchange mobile device (Transfers to Booked & Exchange)"
                           >
                             Exchange
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(d)}
+                            style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Edit device specs"
+                          >
+                            <Edit size={13} /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDevice(d.id)}
+                            style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Delete device"
+                          >
+                            <Trash2 size={13} /> Delete
                           </button>
                         </div>
                       )}

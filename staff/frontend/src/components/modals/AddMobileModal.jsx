@@ -218,16 +218,16 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               </div>
             )}
 
-            {/* Row 1: Remark & Model */}
+            {/* Row 1: Mobile Name & Model */}
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Remark</label>
+                <label className="form-label">Mobile Name *</label>
                 <input 
                   type="text"
                   className="form-control"
-                  placeholder="Enter remarks or brand details"
+                  placeholder="e.g. Apple, Samsung, OnePlus"
                   value={formData.brand}
-                  onChange={(e) => setFormData({ ...formData, brand: e.target.value, remarks: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
