@@ -218,38 +218,17 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
               </div>
             )}
 
-            {/* Row 1: Brand & Model */}
+            {/* Row 1: Remark & Model */}
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Mobile Brand *</label>
-                <select 
+                <label className="form-label">Remark</label>
+                <input 
+                  type="text"
                   className="form-control"
+                  placeholder="Enter remarks or brand details"
                   value={formData.brand}
-                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                >
-                  <option value="">Select Brand</option>
-                  <option value="Apple">Apple</option>
-                  <option value="Samsung">Samsung</option>
-                  <option value="Google Pixel">Google Pixel</option>
-                  <option value="OnePlus">OnePlus</option>
-                  <option value="Xiaomi">Xiaomi</option>
-                  <option value="Vivo">Vivo</option>
-                  <option value="Oppo">Oppo</option>
-                  <option value="Realme">Realme</option>
-                  <option value="Nothing">Nothing</option>
-                  <option value="Motorola">Motorola</option>
-                  <option value="Other">Other</option>
-                </select>
-                {formData.brand === 'Other' && (
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="Enter Custom Brand Name *" 
-                    style={{ marginTop: '8px' }}
-                    value={formData.customBrand || ''}
-                    onChange={(e) => setFormData({ ...formData, customBrand: e.target.value })}
-                  />
-                )}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value, remarks: e.target.value })}
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Mobile Model *</label>
