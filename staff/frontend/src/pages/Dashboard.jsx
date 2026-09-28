@@ -15,7 +15,18 @@ import {
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, Filler } from 'chart.js';
 import { Doughnut, Line } from 'react-chartjs-2';
-import { statsService, deviceService } from '../services/api';
+import { statsService, deviceService, saleService, expenseService } from '../services/api';
+
+const matchesAdmin = (itemAdmin, selAdmin) => {
+  if (!selAdmin || selAdmin === 'All Admins' || selAdmin === 'All Super Admins') return true;
+  if (!itemAdmin) return false;
+  const itemLower = String(itemAdmin).toLowerCase();
+  const selLower = String(selAdmin).toLowerCase();
+  if (itemLower === selLower) return true;
+  if (selLower.includes('jeet') && itemLower.includes('jeet')) return true;
+  if (selLower.includes('sonal') && itemLower.includes('sonal')) return true;
+  return false;
+};
 import { KPICard, StatusBadge, CurrencyAmount } from '../components/common/UIComponents';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -101,13 +112,56 @@ export default function Dashboard() {
       });
 
       if (isSuperAdmin) {
-        const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
-        const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
-        
-        const totalSalesVal = localSales.reduce((sum, s) => sum + (Number(s.soldPrice || s.totalAmount || s.amount) || 0), 0);
-        const totalExpensesVal = localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-        const grossProfitVal = localSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
+        let allSales = [];
+        let allExpensesList = [];
+        let allDevList = [];
+
+        try {
+          const [sRes, eRes, dRes] = await Promise.all([
+            saleService.getSales().catch(() => ({ data: [] })),
+            expenseService.getExpenses().catch(() => ({ data: [] })),
+            deviceService.getDevices().catch(() => [])
+          ]);
+          allSales = sRes?.data || JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+          allExpensesList = eRes?.data || JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+          
+          const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+          const localDev = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+          const apiDev = Array.isArray(dRes) ? dRes : (dRes?.data || []);
+          allDevList = [...localOldInv, ...localDev, ...apiDev];
+        } catch (e) {
+          allSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+          allExpensesList = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+          allDevList = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+        }
+
+        // Apply admin filter if selected
+        const filteredSales = allSales.filter(s => matchesAdmin(s.sold_by || s.soldBy || s.admin, selectedAdmin));
+        const filteredExpensesList = allExpensesList.filter(e => matchesAdmin(e.admin_name || e.admin, selectedAdmin));
+        const filteredDevicesList = allDevList.filter(d => matchesAdmin(d.paid_by || d.purchasedBy || d.admin, selectedAdmin));
+
+        const totalSalesVal = filteredSales.reduce((sum, s) => sum + (Number(s.selling || s.selling_price || s.soldPrice || s.totalAmount) || 0), 0);
+        const totalExpensesVal = filteredExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+        const grossProfitVal = filteredSales.reduce((sum, s) => {
+          const sellPrice = Number(s.selling || s.selling_price || s.soldPrice || s.totalAmount) || 0;
+          const buyCost = Number(s.purchase || s.purchase_amount || s.oldAmount) || 0;
+          const repairCost = Number(s.repair_cost || s.repairCost) || 0;
+          let calculatedProfit = 0;
+          if (s.profit !== undefined && s.profit !== null && Number(s.profit) !== 0) {
+            calculatedProfit = Number(s.profit);
+          } else {
+            calculatedProfit = sellPrice - (buyCost + repairCost);
+          }
+          return sum + calculatedProfit;
+        }, 0);
+
         const netProfitVal = grossProfitVal - totalExpensesVal;
+
+        const totalInvestmentVal = filteredDevicesList.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount) || 0), 0);
+
+        const investmentBase = totalInvestmentVal > 0 ? totalInvestmentVal : (totalSalesVal > 0 ? totalSalesVal : 100000);
+        const roiVal = Number(((netProfitVal / investmentBase) * 100).toFixed(2));
 
         setFinanceStats({
           kpis: {
@@ -116,8 +170,8 @@ export default function Dashboard() {
             total_expenses: totalExpensesVal,
             net_profit: netProfitVal,
             profit_margin: totalSalesVal > 0 ? Number(((netProfitVal / totalSalesVal) * 100).toFixed(2)) : 0,
-            total_investment: 0,
-            roi: 0,
+            total_investment: totalInvestmentVal,
+            roi: roiVal,
             expense_ratio: totalSalesVal > 0 ? Number(((totalExpensesVal / totalSalesVal) * 100).toFixed(2)) : 0
           },
           admin_performance: []

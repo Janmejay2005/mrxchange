@@ -162,11 +162,46 @@ export default function BookedAndExchange() {
   const getStoredExchanges = () => {
     try {
       const storedStr = localStorage.getItem('mrx_exchanges');
-      if (storedStr !== null) {
-        return JSON.parse(storedStr);
+      const storedExchanges = storedStr ? JSON.parse(storedStr) : [];
+      const storedOldHandBooked = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]').filter(d => d.status === 'Booked' || d.status === 'BOOKED');
+
+      const formattedOldHand = storedOldHandBooked.map(d => ({
+        id: d.exchangeId || d.id || `EXCH-${Date.now()}`,
+        date: d.intake_date || d.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        newBrand: d.newBrand || d.brand,
+        newModel: d.newModel || d.model,
+        newStorage: d.newStorage || d.storage || 128,
+        newRam: d.newRam || d.ram || 8,
+        newColor: d.newColor || d.colour || '-',
+        newPurchasedBy: d.newPurchasedBy || 'Customer',
+        newAmount: Number(d.newAmount || d.purchase_amount || 0),
+        oldBrand: d.brand,
+        oldModel: d.model,
+        oldStorage: d.storage || 128,
+        oldRam: d.ram || 8,
+        oldColor: d.colour || '-',
+        oldPurchasedBy: d.paid_by || 'Staff',
+        oldAmount: Number(d.purchase_amount || d.amount || 0),
+        oldImage: d.image_url || '',
+        platform: d.platform || 'Store',
+        exchangeValue: Number(d.purchase_amount || d.amount || 0),
+        status: d.status || 'Booked'
+      }));
+
+      const combined = [...storedExchanges, ...formattedOldHand];
+      if (combined.length > 0) {
+        const seenMap = new Map();
+        for (const item of combined) {
+          if (!item) continue;
+          const key = String(item.id || `${item.newBrand}_${item.newModel}_${item.oldBrand}_${item.oldModel}`);
+          if (!seenMap.has(key)) {
+            seenMap.set(key, item);
+          }
+        }
+        return Array.from(seenMap.values());
       }
     } catch (e) {}
-    return [];
+    return defaultExchanges;
   };
 
   const [exchanges, setExchanges] = useState(getStoredExchanges);
@@ -178,9 +213,11 @@ export default function BookedAndExchange() {
 
     window.addEventListener('storage', syncExchanges);
     window.addEventListener('mrx_exchanges_updated', syncExchanges);
+    window.addEventListener('mrx_inventory_updated', syncExchanges);
     return () => {
       window.removeEventListener('storage', syncExchanges);
       window.removeEventListener('mrx_exchanges_updated', syncExchanges);
+      window.removeEventListener('mrx_inventory_updated', syncExchanges);
     };
   }, []);
 
@@ -256,6 +293,7 @@ export default function BookedAndExchange() {
     const oldAmt = Number(bookForm.oldAmount) || 0;
     const newAmt = Number(bookForm.purchasedAmount) || 0;
     const exVal = Number(bookForm.exchangeValue) || oldAmt;
+    const custName = bookForm.customerName || bookForm.newPayBy || 'Customer';
 
     const newEntry = {
       id: Date.now(),
@@ -265,7 +303,7 @@ export default function BookedAndExchange() {
       newStorage: Number(bookForm.newStorage) || 256,
       newRam: Number(bookForm.newRam) || 12,
       newColor: bookForm.newColor || 'Standard',
-      newPurchasedBy: bookForm.newPayBy || 'Customer',
+      newPurchasedBy: bookForm.newPayBy || custName,
       newAmount: newAmt + exVal,
       oldBrand: bookForm.oldBrand,
       oldModel: bookForm.oldModel,
@@ -280,13 +318,73 @@ export default function BookedAndExchange() {
 
     const updated = [newEntry, ...exchanges];
     setExchanges(updated);
+
     try {
       localStorage.setItem('mrx_exchanges', JSON.stringify(updated));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (err) {
       console.error(err);
     }
+
+    // 1. Automatically push entry to Pending & Receiving Payments (mrx_pending_payments)
+    const pendingAmt = Math.max(0, newAmt - exVal);
+    const pendingPaymentItem = {
+      id: `EXCH-BOOK-${Date.now()}`,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: custName,
+      brand: bookForm.newBrand || 'Device',
+      model: bookForm.newModel || 'Model',
+      imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
+      totalAmount: newAmt,
+      paidAmount: exVal,
+      pendingAmount: pendingAmt,
+      status: pendingAmt === 0 ? 'Received' : 'Pending',
+      mode: 'Exchange Booking',
+      remarks: `Booked: ${bookForm.newBrand} ${bookForm.newModel} (Pay by: ${bookForm.newPayBy || custName})`
+    };
+
+    try {
+      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingPaymentItem, ...existingPending]));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {
+      console.error(e);
+    }
+
+    // 2. Mark old in-hand device as Booked / Transferred from Old In-hand inventory
+    try {
+      const oldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+      const updatedOldStock = oldStock.map(dev => {
+        if (
+          (bookForm.oldBrand && dev.brand?.toLowerCase() === bookForm.oldBrand.toLowerCase()) &&
+          (bookForm.oldModel && dev.model?.toLowerCase() === bookForm.oldModel.toLowerCase())
+        ) {
+          return { ...dev, status: 'Booked' };
+        }
+        return dev;
+      });
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(updatedOldStock));
+
+      const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+      const updatedOldInv = oldInv.map(dev => {
+        if (
+          (bookForm.oldBrand && dev.brand?.toLowerCase() === bookForm.oldBrand.toLowerCase()) &&
+          (bookForm.oldModel && dev.model?.toLowerCase() === bookForm.oldModel.toLowerCase())
+        ) {
+          return { ...dev, status: 'Booked' };
+        }
+        return dev;
+      });
+      localStorage.setItem('mrx_old_inventory', JSON.stringify(updatedOldInv));
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+
     setIsModalOpen(false);
+    alert(`Booking submitted successfully! Created pending payment entry of ₹${pendingAmt.toLocaleString()} for Jeet & Sonal to equate.`);
   };
 
   const handleDeliverAction = (id) => {

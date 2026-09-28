@@ -85,13 +85,86 @@ export default function Booked() {
     }
   };
 
-  const [bookedList, setBookedList] = useState([
+  const sampleBookings = [
     { id: 1, bookingId: 'BK-1001', date: '2026-09-15', bookedBy: 'Jeet Khubchandani', customerName: 'Rajesh Mehta', customerPhone: '+91 98250 12345', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 256, ram: 8, color: 'Natural Titanium', bookedAmount: 125000, viaMode: 'UPI', viaId: 'rajesh@upi', platform: 'Store', status: 'Booked' },
     { id: 2, bookingId: 'BK-1002', date: '2026-09-14', bookedBy: 'Sonal Wadwani', customerName: 'Anita Shah', customerPhone: '+91 98980 67890', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 512, ram: 12, color: 'Titanium Gray', bookedAmount: 118000, viaMode: 'Card', viaId: 'HDFC-4821', platform: 'Online', status: 'Booked' },
-    { id: 3, bookingId: 'BK-1003', date: '2026-09-13', bookedBy: 'Jeet Khubchandani', customerName: 'Vikas Sharma', customerPhone: '+91 97123 45678', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Obsidian', bookedAmount: 92000, viaMode: 'Cash', viaId: '-', platform: 'Store', status: 'Booked' },
-    { id: 4, bookingId: 'BK-1004', date: '2026-09-12', bookedBy: 'Rohit Kumar', customerName: 'Kunal Patel', customerPhone: '+91 99090 11223', brand: 'OnePlus', model: 'OnePlus 12', storage: 512, ram: 16, color: 'Flowy Emerald', bookedAmount: 64999, viaMode: 'UPI', viaId: 'kunal@okhdfcbank', platform: 'Store', status: 'Booked' },
-    { id: 5, bookingId: 'BK-1005', date: '2026-09-11', bookedBy: 'Sonal Wadwani', customerName: 'Priya Joshi', customerPhone: '+91 98799 44556', brand: 'Vivo', model: 'X100 Pro', storage: 512, ram: 16, color: 'Sunset Orange', bookedAmount: 89999, viaMode: 'Card', viaId: 'ICICI-9012', platform: 'Online', status: 'Booked' }
-  ]);
+    { id: 3, bookingId: 'BK-1003', date: '2026-09-13', bookedBy: 'Jeet Khubchandani', customerName: 'Vikas Sharma', customerPhone: '+91 97123 45678', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Obsidian', bookedAmount: 92000, viaMode: 'Cash', viaId: '-', platform: 'Store', status: 'Booked' }
+  ];
+
+  const getStoredBookedList = () => {
+    try {
+      const localExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+      const localOldInHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]').filter(d => d.status === 'Booked' || d.status === 'BOOKED');
+
+      const formattedExchanges = localExchanges.map(ex => ({
+        id: ex.id,
+        bookingId: ex.bookingId || ex.id || `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: ex.date || new Date().toISOString().split('T')[0],
+        bookedBy: ex.newPurchasedBy || ex.oldPurchasedBy || ex.bookedBy || 'Staff',
+        customerName: ex.customerName || ex.newPurchasedBy || 'Customer',
+        customerPhone: ex.customerPhone || '-',
+        brand: ex.newBrand || ex.brand || 'Generic',
+        model: ex.newModel || ex.model || 'Device',
+        storage: ex.newStorage || ex.storage || 128,
+        ram: ex.newRam || ex.ram || 8,
+        color: ex.newColor || ex.color || '-',
+        bookedAmount: Number(ex.newAmount || ex.exchangeValue || ex.purchasedAmount || 0),
+        exchangeValue: Number(ex.oldAmount || ex.exchangeValue || 0),
+        viaMode: ex.via || ex.viaMode || 'Cash',
+        viaId: ex.accountId || '-',
+        platform: ex.platform || 'Store',
+        status: ex.status || 'Booked'
+      }));
+
+      const formattedOldHand = localOldInHand.map(d => ({
+        id: d.id || `BK-${d.exchangeId || Date.now()}`,
+        bookingId: d.exchangeId || d.id || `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: d.intake_date || d.date || new Date().toISOString().split('T')[0],
+        bookedBy: d.newPurchasedBy || d.paid_by || 'Staff',
+        customerName: d.newPurchasedBy || 'Customer',
+        customerPhone: '-',
+        brand: d.newBrand || d.brand,
+        model: d.newModel || d.model,
+        storage: d.newStorage || d.storage || 128,
+        ram: d.newRam || d.ram || 8,
+        color: d.newColor || d.colour || '-',
+        bookedAmount: Number(d.newAmount || d.purchase_amount || 0),
+        exchangeValue: Number(d.purchase_amount || d.amount || 0),
+        viaMode: 'Cash',
+        viaId: '-',
+        platform: d.platform || 'Store',
+        status: d.status || 'Booked'
+      }));
+
+      const allCombined = [...formattedExchanges, ...formattedOldHand];
+      if (allCombined.length > 0) {
+        const seenMap = new Map();
+        for (const b of allCombined) {
+          if (!b) continue;
+          const key = String(b.bookingId || b.id || `${b.brand}_${b.model}_${b.bookedAmount}`);
+          if (!seenMap.has(key)) {
+            seenMap.set(key, b);
+          }
+        }
+        return Array.from(seenMap.values());
+      }
+    } catch (e) {}
+    return sampleBookings;
+  };
+
+  const [bookedList, setBookedList] = useState(getStoredBookedList);
+
+  React.useEffect(() => {
+    const syncBookings = () => setBookedList(getStoredBookedList());
+    window.addEventListener('storage', syncBookings);
+    window.addEventListener('mrx_exchanges_updated', syncBookings);
+    window.addEventListener('mrx_inventory_updated', syncBookings);
+    return () => {
+      window.removeEventListener('storage', syncBookings);
+      window.removeEventListener('mrx_exchanges_updated', syncBookings);
+      window.removeEventListener('mrx_inventory_updated', syncBookings);
+    };
+  }, []);
 
   const toYMD = (val) => {
     if (!val) return '';

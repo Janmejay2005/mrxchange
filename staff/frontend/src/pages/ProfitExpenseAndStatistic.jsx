@@ -331,22 +331,22 @@ export default function ProfitExpenseAndStatistic() {
   const totalInvestment = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount) || 0), 0);
 
   // 2. Selling = Data sum from selling devices in new in hand inventory
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price || p.totalAmount) || 0), 0);
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
 
   // 3. Profit = Mobile sold Price - (New Phone Exchanged price - old phone price) for exchange phones, or Sold Price - (Bought Cost + Repair Cost)
   const totalProfit = filteredProfits.reduce((sum, p) => {
-    const sellPrice = Number(p.selling || p.selling_price || p.totalAmount) || 0;
+    const sellPrice = Number(p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0;
     const oldPhonePrice = Number(p.oldAmount || p.oldPrice || p.purchase || p.purchase_amount) || 0;
-    const newPhoneExchangedPrice = Number(p.newAmount || p.exchangeValue || p.purchasedAmount || p.purchase || p.purchase_amount) || 0;
+    const newPhoneExchangedPrice = Number(p.newAmount || p.exchangeValue || p.purchasedAmount) || 0;
     const repairCost = Number(p.repair_cost || p.repairCost) || 0;
 
     let calculatedProfit = 0;
     if (p.isExchange || (p.oldAmount && p.newAmount)) {
       calculatedProfit = sellPrice - (newPhoneExchangedPrice - oldPhonePrice);
+    } else if (p.profit !== undefined && p.profit !== null && Number(p.profit) !== 0) {
+      calculatedProfit = Number(p.profit);
     } else {
-      calculatedProfit = p.profit !== undefined && p.repair_cost === undefined 
-        ? Number(p.profit) 
-        : (sellPrice - (oldPhonePrice + repairCost));
+      calculatedProfit = sellPrice - (oldPhonePrice + repairCost);
     }
     return sum + calculatedProfit;
   }, 0);
