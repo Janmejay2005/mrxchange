@@ -511,6 +511,7 @@ export default function OldInHandStock() {
   };
 
   const filteredDevices = devices.filter(d => {
+    if (d.status === 'Booked' || d.status === 'BOOKED' || d.status === 'Delivered' || d.status === 'Sold') return false;
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
     if (selectedDate) {
       const devYMD = toYMD(d.intake_date || d.created_at || d.date);
