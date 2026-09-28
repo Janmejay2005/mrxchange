@@ -181,7 +181,7 @@ export default function OldInHandStock() {
       oldAmount: amt,
       oldPayBy: device.paid_by || 'Staff',
       oldImage: device.image_url || (device.images && device.images[0]) || '',
-      exchangeValue: String(amt),
+      exchangeValue: '',
       newBrand: 'Apple',
       customBrand: '',
       newModel: '',

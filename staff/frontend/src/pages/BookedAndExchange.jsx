@@ -184,7 +184,7 @@ export default function BookedAndExchange() {
         oldAmount: Number(d.purchase_amount || d.amount || 0),
         oldImage: d.image_url || '',
         platform: d.platform || 'Store',
-        exchangeValue: Number(d.purchase_amount || d.amount || 0),
+        exchangeValue: (d.exchangeValue !== undefined && d.exchangeValue !== null && d.exchangeValue !== '') ? Number(d.exchangeValue) : Number(d.purchase_amount || d.amount || 0),
         status: d.status || 'Booked'
       }));
 
