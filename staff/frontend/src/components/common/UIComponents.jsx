@@ -27,13 +27,15 @@ export function StatusBadge({ status }) {
 }
 
 export function CurrencyAmount({ amount }) {
+  const num = Number(amount) || 0;
+  const isNeg = num < 0;
   const formatted = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0
-  }).format(amount || 0);
+  }).format(Math.abs(num));
 
-  return <span style={{ fontWeight: 600 }}>{formatted}</span>;
+  return <span style={{ fontWeight: 600, color: isNeg ? '#dc2626' : 'inherit' }}>{isNeg ? `-${formatted}` : formatted}</span>;
 }
 
 export function KPICard({ title, value, subtext, isPositive, icon: Icon, iconBg = '#e0f2fe', iconColor = '#0284c7' }) {

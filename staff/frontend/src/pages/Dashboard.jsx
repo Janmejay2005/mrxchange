@@ -319,28 +319,30 @@ export default function Dashboard() {
             </div>
 
             <div className="kpi-card" onClick={() => navigate('/central-ledger')} style={{ cursor: 'pointer' }}>
-              <div className="kpi-icon-wrap" style={{ backgroundColor: '#e0f2fe' }}>
-                <PieChart size={24} color="#0284c7" />
+              <div className="kpi-icon-wrap" style={{ backgroundColor: (financeStats?.kpis?.net_profit ?? 0) < 0 ? '#fee2e2' : '#e0f2fe' }}>
+                <PieChart size={24} color={(financeStats?.kpis?.net_profit ?? 0) < 0 ? '#dc2626' : '#0284c7'} />
               </div>
               <div className="kpi-info">
                 <span className="kpi-title">Net Profit</span>
-                <span className="kpi-value" style={{ color: '#0284c7' }}>
-                  ₹{(financeStats?.kpis?.net_profit ?? 0).toLocaleString('en-IN')}
+                <span className="kpi-value" style={{ color: (financeStats?.kpis?.net_profit ?? 0) < 0 ? '#dc2626' : '#0284c7' }}>
+                  {(financeStats?.kpis?.net_profit ?? 0) < 0 
+                    ? `-₹${Math.abs(financeStats?.kpis?.net_profit ?? 0).toLocaleString('en-IN')}` 
+                    : `₹${(financeStats?.kpis?.net_profit ?? 0).toLocaleString('en-IN')}`}
                 </span>
-                <span className="kpi-subtext" style={{ color: '#10b981', fontWeight: 'bold' }}>
-                  Margin: {financeStats?.kpis?.profit_margin ?? 0}%
+                <span className="kpi-subtext" style={{ color: (financeStats?.kpis?.net_profit ?? 0) < 0 ? '#dc2626' : '#10b981', fontWeight: 'bold' }}>
+                  {(financeStats?.kpis?.net_profit ?? 0) < 0 ? 'Net Loss (Expenses exceed gross profit)' : `Margin: ${financeStats?.kpis?.profit_margin ?? 0}%`}
                 </span>
               </div>
             </div>
 
             <div className="kpi-card" onClick={() => navigate('/investments')} style={{ cursor: 'pointer' }}>
-              <div className="kpi-icon-wrap" style={{ backgroundColor: '#f5f3ff' }}>
-                <TrendingUp size={24} color="#7c3aed" />
+              <div className="kpi-icon-wrap" style={{ backgroundColor: (financeStats?.kpis?.roi ?? 0) < 0 ? '#fee2e2' : '#f5f3ff' }}>
+                <TrendingUp size={24} color={(financeStats?.kpis?.roi ?? 0) < 0 ? '#dc2626' : '#7c3aed'} />
               </div>
               <div className="kpi-info">
                 <span className="kpi-title">Capital ROI</span>
-                <span className="kpi-value" style={{ color: '#7c3aed' }}>
-                  +{financeStats?.kpis?.roi ?? 0}%
+                <span className="kpi-value" style={{ color: (financeStats?.kpis?.roi ?? 0) < 0 ? '#dc2626' : '#7c3aed' }}>
+                  {(financeStats?.kpis?.roi ?? 0) > 0 ? `+${financeStats?.kpis?.roi}%` : `${financeStats?.kpis?.roi ?? 0}%`}
                 </span>
                 <span className="kpi-subtext" style={{ color: '#64748b' }}>
                   Invested: ₹{(financeStats?.kpis?.total_investment ?? 0).toLocaleString('en-IN')}
