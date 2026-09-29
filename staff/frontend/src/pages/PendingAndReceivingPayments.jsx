@@ -137,13 +137,13 @@ export default function PendingAndReceivingPayments() {
     if (item.type === 'AGENT_PAYABLE') return true;
     if (item.type === 'CUSTOMER_RECEIVABLE') return false;
     const idStr = String(item.id || '');
-    return idStr.startsWith('EXCH-PAYABLE') || idStr.startsWith('AGENT-');
+    return idStr.startsWith('EXCH-') || idStr.startsWith('AGENT-') || item.recordCategory === 'BOOK_EXCHANGE';
   };
 
-  // COLUMN 1: Receiving Payments Column (Customer receivables from sold phones in New In-Hand Stock)
+  // COLUMN 1: Receiving Payments Column (Customer receivables from Sell New Mobile)
   const receivingList = applyFilters(payments.filter(item => !isAgentPayableItem(item)));
 
-  // COLUMN 2: Pending Payments Column (Agent Payables - dues to evaluators/staff from Old In-Hand Exchange)
+  // COLUMN 2: Pending Payments Column (Agent Payables - Book New Device for Exchange)
   const pendingList = applyFilters(payments.filter(item => isAgentPayableItem(item) && Number(item.pendingAmount) > 0));
 
   const totalPendingVal = pendingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
@@ -180,12 +180,12 @@ export default function PendingAndReceivingPayments() {
       const maxRemaining = Math.max(0, currentTotal - existingPaid);
 
       if (existingPaid >= currentTotal && currentTotal > 0) {
-        alert('This payment is already fully completed (₹0 remaining). Paid amount cannot exceed total amount.');
+        alert('This payment is already fully completed (₹0 remaining). Paid amount cannot exceed total price.');
         return;
       }
 
       if (newPayAmt > maxRemaining && currentTotal > 0) {
-        alert(`Paid amount cannot be greater than Total Amount! Maximum remaining payable amount is ₹${maxRemaining.toLocaleString()}.`);
+        alert(`Paid amount cannot be greater than Total Price! Maximum remaining payable amount is ₹${maxRemaining.toLocaleString()}.`);
         return;
       }
 
@@ -208,33 +208,36 @@ export default function PendingAndReceivingPayments() {
         return p;
       });
       savePaymentsToStorage(updatedList);
-      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Record updated and balanced.`);
+      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Paid Amount equated to Total Price.`);
     } else {
+      const isBookExch = equateForm.recordCategory === 'BOOK_EXCHANGE';
       const enteredTotal = Number(equateForm.pendingPayment) || newPayAmt;
       const initialPaid = Math.min(newPayAmt, enteredTotal);
       const calculatedPending = Math.max(0, enteredTotal - initialPaid);
 
       const newPayEntry = {
-        id: `PAY-${Date.now()}`,
+        id: isBookExch ? `EXCH-PAY-${Date.now()}` : `PAY-${Date.now()}`,
         date: equateForm.date,
-        customerName: equateForm.customerName || 'Customer',
+        customerName: equateForm.customerName || (isBookExch ? 'Payer / Account' : 'Customer'),
         brand: 'General',
-        model: 'Payment Record',
+        model: isBookExch ? 'Exchange Book Device' : 'Sell New Mobile Entry',
         totalAmount: enteredTotal,
         paidAmount: initialPaid,
         pendingAmount: calculatedPending,
         status: calculatedPending <= 0 ? 'Received' : 'Pending',
+        type: isBookExch ? 'AGENT_PAYABLE' : 'CUSTOMER_RECEIVABLE',
+        recordCategory: isBookExch ? 'BOOK_EXCHANGE' : 'SELL_MOBILE',
         mode: 'Cash',
         equatedBy: equateForm.equatedBy || 'Jeet'
       };
       savePaymentsToStorage([newPayEntry, ...payments]);
-      alert(`Payment added successfully for ${equateForm.customerName || 'Customer'}!`);
+      alert(`Payment record created successfully for ${equateForm.customerName || 'Account'}!`);
     }
     setIsEquateModalOpen(false);
   };
 
   const handleExportPdf = () => {
-    const headers = ['#', 'Date', 'Customer', 'Device Model', 'Total (Rs)', 'Paid (Rs)', 'Pending (Rs)', 'Status', 'Mode'];
+    const headers = ['#', 'Date', 'Customer / Pay By', 'Device Model', 'Total Price (Rs)', 'Paid Amount (Rs)', 'Pending (Rs)', 'Status', 'Mode'];
     const allFiltered = [...receivingList, ...pendingList];
     const rows = allFiltered.map((item, idx) => [
       idx + 1,
@@ -266,7 +269,7 @@ export default function PendingAndReceivingPayments() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a' }}>Pending and Receiving Payments</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Dual-column breakdown for received payments and pending customer receivables.</p>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Dual-column breakdown for Sell New Mobile receivables and Book New Device for Exchange payables.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
@@ -289,7 +292,7 @@ export default function PendingAndReceivingPayments() {
           <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ width: '160px', padding: '7px 12px' }} />
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Person / Customer</label>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'block', marginBottom: '4px' }}>Person / Account</label>
           <select className="form-control" value={personCustomer} onChange={(e) => setPersonCustomer(e.target.value)} style={{ width: '150px', padding: '7px 12px' }}>
             <option>All</option>
             <option>Jeet Khubchandani</option>
@@ -370,7 +373,7 @@ export default function PendingAndReceivingPayments() {
         `}</style>
 
         <div className="payments-grid">
-          {/* COLUMN 1: RECEIVING PAYMENTS COLUMN (Customer Receivables) */}
+          {/* COLUMN 1: RECEIVING PAYMENT COLUMN (Sell New Mobile) */}
           <div className="card-container" style={{ borderTop: '4px solid #059669', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #a7f3d0', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -378,8 +381,10 @@ export default function PendingAndReceivingPayments() {
                   <CheckCircle size={20} />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payments Column</h2>
-                  <span style={{ fontSize: '12px', color: '#047857', fontWeight: 600 }}>Customer receivables to collect after sales ({receivingList.length} items)</span>
+                  <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#065f46', margin: 0 }}>Receiving Payment: Sell New Mobile</h2>
+                  <span style={{ fontSize: '11px', color: '#047857', fontWeight: 700 }}>
+                    Equate Paid Amount to Total Selling Price ({receivingList.length} items)
+                  </span>
                 </div>
               </div>
 
@@ -405,10 +410,10 @@ export default function PendingAndReceivingPayments() {
                   <tr>
                     <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 4px' }}>#</th>
                     <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Date</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Customer</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Device (Brand / Model)</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Total (₹)</th>
-                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Paid (₹)</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Customer Name *</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Device Model</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Total Selling Price (₹) *</th>
+                    <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Paid Amount (₹) *</th>
                     <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Pending (₹)</th>
                     <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Status</th>
                     <th style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '8px 6px' }}>Mode</th>
@@ -419,7 +424,7 @@ export default function PendingAndReceivingPayments() {
                   {receivingList.length === 0 ? (
                     <tr>
                       <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
-                        No customer receivables in this column.
+                        No Sell New Mobile records in Receiving Payment.
                       </td>
                     </tr>
                   ) : (
@@ -427,7 +432,7 @@ export default function PendingAndReceivingPayments() {
                       <tr key={row.id}>
                         <td data-label="#" style={{ padding: '8px 4px' }}>{idx + 1}</td>
                         <td data-label="Date" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.date}</td>
-                        <td data-label="Customer" style={{ padding: '8px 6px' }}>
+                        <td data-label="Customer Name *" style={{ padding: '8px 6px' }}>
                           <button
                             type="button"
                             onClick={() => openPersonBreakdown(row.customerName)}
@@ -447,10 +452,10 @@ export default function PendingAndReceivingPayments() {
                             👤 {row.customerName}
                           </button>
                         </td>
-                        <td data-label="Device" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
-                        <td data-label="Total Amount" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                        <td data-label="Paid Amount" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: row.pendingAmount > 0 ? '#dc2626' : '#059669' }}>
+                        <td data-label="Device Model" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
+                        <td data-label="Total Selling Price (₹) *" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount (₹) *" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount (₹)" style={{ padding: '8px 6px', fontWeight: 800, color: row.pendingAmount > 0 ? '#dc2626' : '#059669' }}>
                           <CurrencyAmount amount={row.pendingAmount} />
                         </td>
                         <td data-label="Status" style={{ padding: '8px 6px' }}>
@@ -479,7 +484,7 @@ export default function PendingAndReceivingPayments() {
             </div>
           </div>
 
-          {/* COLUMN 2: PENDING PAYMENTS COLUMN (Agent Payables) */}
+          {/* COLUMN 2: PENDING PAYMENT COLUMN (Book New Device for Exchange) */}
           <div className="card-container" style={{ borderTop: '4px solid #ea580c', background: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #fed7aa', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -487,14 +492,16 @@ export default function PendingAndReceivingPayments() {
                   <Clock size={20} />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payments Column (Agent Payables)</h2>
-                  <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>Dues to pay to booking agents / suppliers ({pendingList.length} items)</span>
+                  <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#9a3412', margin: 0 }}>Pending Payment: Book New Device for Exchange</h2>
+                  <span style={{ fontSize: '11px', color: '#c2410c', fontWeight: 700 }}>
+                    Pay By (Payer / Account) *, Purchased Amount (Paid ₹) * ({pendingList.length} items)
+                  </span>
                 </div>
               </div>
 
               <div style={{ background: '#fff7ed', padding: '8px 16px', borderRadius: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>Total Pending Payables:</span>
-                <span style={{ fontSize: '16px', fontWeight: 800, color: '#c2410c' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#ea580c' }}>Total Pending Dues:</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#c2410c' }}>
                   <CurrencyAmount amount={totalPendingVal} />
                 </span>
               </div>
@@ -506,10 +513,10 @@ export default function PendingAndReceivingPayments() {
                   <tr>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 4px' }}>#</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Date</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Pay By (Person)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Device (Brand / Model)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Total (₹)</th>
-                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Paid (₹)</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Pay By (Payer / Account) *</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Device Model</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Purchased Amount (Paid ₹) *</th>
+                    <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Paid Amount (₹) *</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Pending (₹)</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Status</th>
                     <th style={{ backgroundColor: '#fff7ed', color: '#9a3412', padding: '8px 6px' }}>Mode</th>
@@ -520,7 +527,7 @@ export default function PendingAndReceivingPayments() {
                   {pendingList.length === 0 ? (
                     <tr>
                       <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
-                        No pending payments in this column.
+                        No Book New Device for Exchange records in Pending Payment.
                       </td>
                     </tr>
                   ) : (
@@ -528,7 +535,7 @@ export default function PendingAndReceivingPayments() {
                       <tr key={row.id}>
                         <td data-label="#" style={{ padding: '8px 4px' }}>{idx + 1}</td>
                         <td data-label="Date" style={{ padding: '8px 6px', fontSize: '11px' }}>{row.date}</td>
-                        <td data-label="Customer" style={{ padding: '8px 6px' }}>
+                        <td data-label="Pay By (Payer / Account) *" style={{ padding: '8px 6px' }}>
                           <button
                             type="button"
                             onClick={() => openPersonBreakdown(row.customerName)}
@@ -548,10 +555,10 @@ export default function PendingAndReceivingPayments() {
                             👤 {row.customerName}
                           </button>
                         </td>
-                        <td data-label="Device" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
-                        <td data-label="Total Amount" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
-                        <td data-label="Paid Amount" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
-                        <td data-label="Pending Amount" style={{ padding: '8px 6px', fontWeight: 800, color: '#ea580c' }}>
+                        <td data-label="Device Model" style={{ padding: '8px 6px', fontWeight: 700 }}>{row.brand} {row.model}</td>
+                        <td data-label="Purchased Amount (Paid ₹) *" style={{ padding: '8px 6px', fontWeight: 700 }}><CurrencyAmount amount={row.totalAmount} /></td>
+                        <td data-label="Paid Amount (₹) *" style={{ padding: '8px 6px', fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={row.paidAmount} /></td>
+                        <td data-label="Pending Amount (₹)" style={{ padding: '8px 6px', fontWeight: 800, color: '#ea580c' }}>
                           <CurrencyAmount amount={row.pendingAmount} />
                         </td>
                         <td data-label="Status" style={{ padding: '8px 6px' }}>
@@ -582,7 +589,7 @@ export default function PendingAndReceivingPayments() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  👤 Person Pay Breakdown: <span style={{ color: '#0284c7' }}>{selectedPersonForBreakdown}</span>
+                  👤 Statement Breakdown: <span style={{ color: '#0284c7' }}>{selectedPersonForBreakdown}</span>
                 </h2>
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
                   Detailed statement of all receivables, paid amounts, and balance dues for <strong>{selectedPersonForBreakdown}</strong>.
@@ -626,9 +633,9 @@ export default function PendingAndReceivingPayments() {
                     <th>#</th>
                     <th>Date</th>
                     <th>Device / Item</th>
-                    <th>Total (₹)</th>
-                    <th>Paid (₹)</th>
-                    <th>Pending (₹)</th>
+                    <th>Total Price (₹)</th>
+                    <th>Paid Amount (₹)</th>
+                    <th>Pending Amount (₹)</th>
                     <th>Mode</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -694,18 +701,26 @@ export default function PendingAndReceivingPayments() {
         </div>
       )}
 
-      {/* Equate Mobile Modal with Amount Breakdown */}
+      {/* Equate Mobile Payment Modal */}
       {isEquateModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
+          <div className="modal-card" style={{ maxWidth: '540px', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ width: 42, height: 42, borderRadius: '12px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 42, height: 42, borderRadius: '12px', backgroundColor: selectedPayment && isAgentPayableItem(selectedPayment) ? '#fff7ed' : '#e0f2fe', color: selectedPayment && isAgentPayableItem(selectedPayment) ? '#ea580c' : '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ShoppingCart size={22} />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Equate Mobile Payment</h2>
-                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Review calculation breakdown & enter new pay amount.</p>
+                  <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    {selectedPayment 
+                      ? (isAgentPayableItem(selectedPayment) ? 'Equate: Book New Device for Exchange' : 'Equate: Sell New Mobile') 
+                      : 'Add Payment Entry'}
+                  </h2>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    {selectedPayment 
+                      ? 'Equate Paid Amount to Total Selling Price / Purchased Amount.' 
+                      : 'Enter new payment details for tracking & equating.'}
+                  </p>
                 </div>
               </div>
               <button onClick={() => setIsEquateModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
@@ -716,34 +731,37 @@ export default function PendingAndReceivingPayments() {
               const modalTotal = Number(selectedPayment.totalAmount) || 0;
               const modalPaid = Math.min(modalTotal, Number(selectedPayment.paidAmount) || 0);
               const modalPending = Math.max(0, modalTotal - modalPaid);
+              const isExch = isAgentPayableItem(selectedPayment);
 
               return (
-                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
+                <div style={{ background: isExch ? '#fff7ed' : '#f8fafc', padding: '14px', borderRadius: '12px', border: `1px solid ${isExch ? '#fed7aa' : '#e2e8f0'}`, marginBottom: '18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: isExch ? '#c2410c' : '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       📊 Amount Calculation Breakdown
                     </div>
                     {modalPending === 0 && modalTotal > 0 && (
                       <span style={{ fontSize: '11px', fontWeight: 800, background: '#dcfce7', color: '#16a34a', padding: '3px 8px', borderRadius: '6px' }}>
-                        Fully Paid (₹0 Pending)
+                        Fully Equated (₹0 Pending)
                       </span>
                     )}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
                     <div style={{ background: '#ffffff', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Total Amount</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 700 }}>
+                        {isExch ? 'Purchased Amount (Paid ₹)' : 'Total Selling Price (₹)'} *
+                      </div>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
                         <CurrencyAmount amount={modalTotal} />
                       </div>
                     </div>
                     <div style={{ background: '#ecfdf5', padding: '8px', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
-                      <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600 }}>Paid Amount</div>
+                      <div style={{ fontSize: '10px', color: '#047857', fontWeight: 700 }}>Paid Amount (₹) *</div>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
                         <CurrencyAmount amount={modalPaid} />
                       </div>
                     </div>
                     <div style={{ background: '#fff7ed', padding: '8px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
-                      <div style={{ fontSize: '11px', color: '#c2410c', fontWeight: 600 }}>Pending Amount</div>
+                      <div style={{ fontSize: '10px', color: '#c2410c', fontWeight: 700 }}>Pending Amount (₹)</div>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#ea580c', marginTop: '2px' }}>
                         <CurrencyAmount amount={modalPending} />
                       </div>
@@ -754,13 +772,55 @@ export default function PendingAndReceivingPayments() {
             })()}
 
             <form onSubmit={handleEquateSubmit}>
-              {/* Customer Name */}
+              {!selectedPayment && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Record Type *</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEquateForm({ ...equateForm, recordCategory: 'SELL_MOBILE' })}
+                      style={{
+                        padding: '9px',
+                        borderRadius: '8px',
+                        border: equateForm.recordCategory !== 'BOOK_EXCHANGE' ? '2px solid #059669' : '1px solid #cbd5e1',
+                        background: equateForm.recordCategory !== 'BOOK_EXCHANGE' ? '#ecfdf5' : '#ffffff',
+                        color: equateForm.recordCategory !== 'BOOK_EXCHANGE' ? '#059669' : '#475569',
+                        fontWeight: 700,
+                        fontSize: '12px'
+                      }}
+                    >
+                      Sell New Mobile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEquateForm({ ...equateForm, recordCategory: 'BOOK_EXCHANGE' })}
+                      style={{
+                        padding: '9px',
+                        borderRadius: '8px',
+                        border: equateForm.recordCategory === 'BOOK_EXCHANGE' ? '2px solid #ea580c' : '1px solid #cbd5e1',
+                        background: equateForm.recordCategory === 'BOOK_EXCHANGE' ? '#fff7ed' : '#ffffff',
+                        color: equateForm.recordCategory === 'BOOK_EXCHANGE' ? '#ea580c' : '#475569',
+                        fontWeight: 700,
+                        fontSize: '12px'
+                      }}
+                    >
+                      Book Device Exchange
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Name Field (Dynamic: Customer Name vs Pay By / Account) */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Customer Name *</label>
+                <label className="form-label" style={{ fontWeight: 700 }}>
+                  {selectedPayment && isAgentPayableItem(selectedPayment) 
+                    ? 'Pay By (Payer / Account) * (Name for equating)' 
+                    : (equateForm.recordCategory === 'BOOK_EXCHANGE' ? 'Pay By (Payer / Account) * (Name for equating)' : 'Customer Name *')}
+                </label>
                 <input 
                   type="text" 
                   className="form-control" 
-                  placeholder="Enter customer name" 
+                  placeholder={selectedPayment && isAgentPayableItem(selectedPayment) ? 'Enter Payer / Account name' : 'Enter customer name'} 
                   value={equateForm.customerName} 
                   onChange={(e) => setEquateForm({ ...equateForm, customerName: e.target.value })} 
                   required 
@@ -778,7 +838,7 @@ export default function PendingAndReceivingPayments() {
 
               {/* Installment vs Complete Toggle */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Payment Mode</label>
+                <label className="form-label">Payment Type</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
                     type="button"
@@ -820,7 +880,7 @@ export default function PendingAndReceivingPayments() {
                       cursor: 'pointer'
                     }}
                   >
-                    <CheckCircle size={15} /> Complete
+                    <CheckCircle size={15} /> Complete (Equate Total)
                   </button>
                 </div>
               </div>
@@ -828,11 +888,11 @@ export default function PendingAndReceivingPayments() {
               {/* New Pay & Date */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
                 <div>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>New Pay (₹) *</label>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#0284c7' }}>Paid Amount (₹) *</label>
                   <input 
                     type="number" 
                     className="form-control" 
-                    placeholder="₹ Enter new pay" 
+                    placeholder="₹ Enter paid amount to equate" 
                     value={equateForm.newPay} 
                     onChange={(e) => setEquateForm({ ...equateForm, newPay: e.target.value })} 
                     required 
@@ -851,7 +911,7 @@ export default function PendingAndReceivingPayments() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsEquateModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Save Equated</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Save & Equate</button>
               </div>
             </form>
           </div>
