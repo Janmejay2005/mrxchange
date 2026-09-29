@@ -342,6 +342,7 @@ export default function NewInHandStock() {
       pendingAmount: pendAmt,
       status: payStatus,
       type: 'CUSTOMER_RECEIVABLE',
+      recordCategory: 'SELL_MOBILE',
       source: 'NEW_IN_HAND_SALE',
       mode: sellForm.paymentType || 'Cash'
     };

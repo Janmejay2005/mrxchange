@@ -371,6 +371,8 @@ export default function OldInHandStock() {
       paidAmount: pdAmt,
       pendingAmount: pendAmt,
       status: payStatus,
+      type: 'CUSTOMER_RECEIVABLE',
+      recordCategory: 'SELL_MOBILE',
       mode: sellForm.paymentType || 'Cash'
     };
 
