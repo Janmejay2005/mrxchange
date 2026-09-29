@@ -326,33 +326,7 @@ export default function BookedAndExchange() {
       console.error(err);
     }
 
-    // 1. Automatically push entry to Pending & Receiving Payments (mrx_pending_payments)
-    const pendingAmt = Math.max(0, newAmt - exVal);
-    const pendingPaymentItem = {
-      id: `EXCH-BOOK-${Date.now()}`,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      customerName: custName,
-      brand: bookForm.newBrand || 'Device',
-      model: bookForm.newModel || 'Model',
-      imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-      totalAmount: newAmt,
-      paidAmount: exVal,
-      pendingAmount: pendingAmt,
-      status: pendingAmt === 0 ? 'Received' : 'Pending',
-      mode: 'Exchange Booking',
-      remarks: `Booked: ${bookForm.newBrand} ${bookForm.newModel} (Pay by: ${bookForm.newPayBy || custName})`
-    };
-
-    try {
-      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
-      localStorage.setItem('mrx_pending_payments', JSON.stringify([pendingPaymentItem, ...existingPending]));
-      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
-      window.dispatchEvent(new Event('storage'));
-    } catch (e) {
-      console.error(e);
-    }
-
-    // 2. Mark old in-hand device as Booked / Transferred from Old In-hand inventory
+    // 1. Mark old in-hand device as Booked / Transferred from Old In-hand inventory
     try {
       const oldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
       const updatedOldStock = oldStock.map(dev => {
@@ -384,7 +358,7 @@ export default function BookedAndExchange() {
     }
 
     setIsModalOpen(false);
-    alert(`Booking submitted successfully! Created pending payment entry of ₹${pendingAmt.toLocaleString()} for Jeet & Sonal to equate.`);
+    alert(`Booking submitted successfully! Shifted to Booked & Exchange tab. Pending & Receiving Payment entry will be generated ONLY when Delivered.`);
   };
 
   const handleDeliverAction = (id) => {
@@ -406,15 +380,16 @@ export default function BookedAndExchange() {
       const existingNewStock = JSON.parse(localStorage.getItem('mrx_new_in_hand_stock') || '[]');
       localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([newStockItem, ...existingNewStock]));
 
-      // Create Pending Payment entry from Exchange Deliver
+      // Create Pending Payment entry from Exchange Deliver ONLY
       const totalAmt = Number(itemToDeliver.newAmount || 0);
       const paidAmt = Number(itemToDeliver.oldAmount || 0);
       const pendingAmt = Math.max(0, totalAmt - paidAmt);
 
       const pendingPaymentItem = {
         id: `EXCH-PAY-${Date.now()}`,
+        exchangeId: itemToDeliver.id,
         date: itemToDeliver.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        customerName: itemToDeliver.newPurchasedBy || 'Customer',
+        customerName: itemToDeliver.newPurchasedBy || itemToDeliver.oldPurchasedBy || 'Account',
         brand: itemToDeliver.newBrand,
         model: itemToDeliver.newModel,
         imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
@@ -422,6 +397,8 @@ export default function BookedAndExchange() {
         paidAmount: paidAmt,
         pendingAmount: pendingAmt,
         status: pendingAmt === 0 ? 'Received' : 'Pending',
+        type: 'AGENT_PAYABLE',
+        recordCategory: 'BOOK_EXCHANGE',
         mode: 'Exchange Trade-in',
         remarks: `Delivered from Exchange`
       };
@@ -457,7 +434,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Transferred to New In-Hand Stock.`);
+    alert(`Device "${itemToDeliver?.newBrand} ${itemToDeliver?.newModel}" marked as Delivered! Added to Pending & Receiving Payments and New In-Hand Stock.`);
   };
 
   const openSellModal = (row) => {
@@ -557,6 +534,15 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_inventory_updated'));
     }
 
+    // Clean up any Pending & Receiving payments if this exchange was cancelled
+    try {
+      const existingPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+      const cleanedPending = existingPending.filter(p => p.exchangeId !== id && p.id !== `EXCH-BOOK-${id}`);
+      localStorage.setItem('mrx_pending_payments', JSON.stringify(cleanedPending));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
     const updated = exchanges.filter(item => item.id !== id);
     setExchanges(updated);
     try {
@@ -564,7 +550,7 @@ export default function BookedAndExchange() {
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
     } catch (e) {}
     setActiveMenuId(null);
-    alert(`Exchange Rejected! Old trade-in device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" transferred directly to Old In-hand Inventory.`);
+    alert(`Exchange Cancelled! Old trade-in device "${itemToCancel?.oldBrand} ${itemToCancel?.oldModel}" returned to Old In-Hand Stock. Pending payment entry stopped/removed.`);
     navigate('/old-in-hand');
   };
 
