@@ -209,7 +209,7 @@ export default function ProfitExpenseAndStatistic() {
         remarks: expenseForm.remarks || 'Business expense'
       };
       await expenseService.createExpense(expPayload);
-      alert('Expense added successfully & synced across all devices!');
+      alert('Expense added successfully & synced!');
       setIsExpenseModalOpen(false);
       setExpenseForm({
         date: new Date().toISOString().split('T')[0],
@@ -217,6 +217,8 @@ export default function ProfitExpenseAndStatistic() {
         type: 'Shop Rent',
         remarks: ''
       });
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
+      window.dispatchEvent(new Event('storage'));
       await loadData();
     } catch (err) {
       alert('Failed to add expense: ' + (err.message || 'Server error'));
@@ -497,12 +499,22 @@ export default function ProfitExpenseAndStatistic() {
     });
   };
 
+  const handleDeleteExpense = (id) => {
+    if (window.confirm('Are you sure you want to delete this expense entry?')) {
+      const updated = expenses.filter(e => String(e.id) !== String(id));
+      setExpenses(updated);
+      localStorage.setItem('mrx_expenses', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
   const handleClearExpenses = () => {
     if (window.confirm('Are you sure you want to clear all expenses from the register?')) {
       setExpenses([]);
       localStorage.setItem('mrx_expenses', '[]');
       localStorage.removeItem('mrx_expenses_cleared');
-      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
       window.dispatchEvent(new Event('storage'));
     }
   };
@@ -1017,7 +1029,7 @@ export default function ProfitExpenseAndStatistic() {
                 }}
                 title="Clear expense register data"
               >
-                <Trash2 size={14} color="#ef4444" /> Clear Inventory
+                <Trash2 size={14} color="#ef4444" /> Clear Expenses
               </button>
               <button onClick={() => setIsExpenseModalOpen(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Plus size={16} /> Add Expense
@@ -1038,11 +1050,12 @@ export default function ProfitExpenseAndStatistic() {
                   <th>Expense Type</th>
                   <th>Amount (₹)</th>
                   <th>Remarks / Description</th>
+                  <th style={{ textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredExpenses.length === 0 ? (
-                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No expenses found.</td></tr>
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No expenses found.</td></tr>
                 ) : (
                   filteredExpenses.map((exp, idx) => (
                     <tr key={exp.id || idx}>
@@ -1058,6 +1071,16 @@ export default function ProfitExpenseAndStatistic() {
                         <CurrencyAmount amount={exp.amount} />
                       </td>
                       <td style={{ color: '#64748b' }}>{exp.remarks || '-'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(exp.id)}
+                          style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Delete expense entry"
+                        >
+                          <Trash2 size={13} /> Delete
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

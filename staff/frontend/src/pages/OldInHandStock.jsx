@@ -449,15 +449,15 @@ export default function OldInHandStock() {
 
   const handleClearInventory = () => {
     if (window.confirm('Are you sure you want to clear all devices from Old In-hand Stock inventory table?')) {
+      const allCurrentIds = devices.map(d => String(d.id || d.device_code)).filter(Boolean);
+      const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+      const combinedDeleted = Array.from(new Set([...deletedIds, ...allCurrentIds]));
+      localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(combinedDeleted));
+
       setDevices([]);
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
-      localStorage.removeItem('mrx_old_in_hand_cleared');
-      try {
-        const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]').filter(d => d.status !== 'OLD_IN_HAND');
-        localStorage.setItem('mrx_devices', JSON.stringify(mrxDevices));
-        const mrxOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]').filter(d => d.status !== 'OLD_IN_HAND');
-        localStorage.setItem('mrx_old_inventory', JSON.stringify(mrxOldInv));
-      } catch (e) {}
+      localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
       window.dispatchEvent(new Event('mrx_inventory_updated'));
       window.dispatchEvent(new Event('storage'));
     }

@@ -48,11 +48,13 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      let dbNewHand = [];
+      let dbAllDevices = [];
       try {
-        const res = await deviceService.getDevices({ status: 'NEW_IN_HAND' });
-        dbNewHand = Array.isArray(res) ? res : (res?.data || []);
+        const res = await deviceService.getDevices();
+        dbAllDevices = Array.isArray(res) ? res : (res?.data || []);
       } catch (e) {}
+
+      const deletedIds = new Set(JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]').map(String));
 
       // Calculate dynamic local & cloud inventory stock values directly
       const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
@@ -62,24 +64,72 @@ export default function Dashboard() {
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
 
-      const seenNewKeys = new Set();
-      const combinedNewHand = [];
-      [...dbNewHand, ...localNewHand].forEach(item => {
+      // 1. Add Inventory (OLD_INVENTORY)
+      const seenOldInv = new Set();
+      const combinedOldInv = [];
+      [...localOldInv, ...mrxDevices.filter(d => d.status === 'OLD_INVENTORY'), ...dbAllDevices.filter(d => d.status === 'OLD_INVENTORY')].forEach(item => {
         if (!item) return;
-        const key = String(item.sno || item.id || item.device_code || `${item.brand || item.newBrand}_${item.model || item.newModel}`);
-        if (!seenNewKeys.has(key)) {
-          seenNewKeys.add(key);
+        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}_${item.purchase_amount}_${item.date || item.intake_date}`);
+        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenOldInv.has(idStr)) {
+          seenOldInv.add(idStr);
+          combinedOldInv.push(item);
+        }
+      });
+
+      // 2. Old In-hand Stock (OLD_IN_HAND)
+      const seenOldHand = new Set();
+      const combinedOldHand = [];
+      [...localOldHand, ...mrxDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'OLD_HAND'), ...dbAllDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'OLD_HAND')].forEach(item => {
+        if (!item) return;
+        if (item.status === 'Booked' || item.status === 'BOOKED' || item.status === 'Delivered' || item.status === 'Sold') return;
+        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}_${item.purchase_amount}_${item.date || item.intake_date}`);
+        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenOldHand.has(idStr)) {
+          seenOldHand.add(idStr);
+          combinedOldHand.push(item);
+        }
+      });
+
+      // 3. New In-hand Stock (NEW_IN_HAND)
+      const seenNewHand = new Set();
+      const combinedNewHand = [];
+      [...localNewHand, ...mrxDevices.filter(d => d.status === 'NEW_IN_HAND'), ...dbAllDevices.filter(d => d.status === 'NEW_IN_HAND')].forEach(item => {
+        if (!item) return;
+        const idStr = String(item.sno || item.id || item.device_code || `${item.brand || item.newBrand}_${item.model || item.newModel}`);
+        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenNewHand.has(idStr)) {
+          seenNewHand.add(idStr);
           combinedNewHand.push(item);
         }
       });
 
-      const extraOldInHand = mrxDevices.filter(d => d.status === 'OLD_IN_HAND').length;
+      // 4. Repair Stock (IN_REPAIR)
+      const seenRepair = new Set();
+      const combinedRepair = [];
+      [...localRepair, ...mrxDevices.filter(d => d.status === 'IN_REPAIR'), ...dbAllDevices.filter(d => d.status === 'IN_REPAIR')].forEach(item => {
+        if (!item) return;
+        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}`);
+        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenRepair.has(idStr)) {
+          seenRepair.add(idStr);
+          combinedRepair.push(item);
+        }
+      });
 
-      const countOldInv = localOldInv.length;
-      const countOldHand = localOldHand.length + extraOldInHand;
+      // 5. Rejected Stock (REJECTED)
+      const seenRejected = new Set();
+      const combinedRejected = [];
+      [...localRejected, ...mrxDevices.filter(d => d.status === 'REJECTED'), ...dbAllDevices.filter(d => d.status === 'REJECTED')].forEach(item => {
+        if (!item) return;
+        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}`);
+        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenRejected.has(idStr)) {
+          seenRejected.add(idStr);
+          combinedRejected.push(item);
+        }
+      });
+
+      const countOldInv = combinedOldInv.length;
+      const countOldHand = combinedOldHand.length;
       const countNewHand = combinedNewHand.reduce((sum, item) => sum + Math.max(0, (item.totalUnits || item.quantity || 1) - (item.soldUnits || 0)), 0);
-      const countRepair = localRepair.filter(d => d.status === 'IN_REPAIR' || !d.status).length;
-      const countRejected = localRejected.filter(d => d.status === 'REJECTED' || !d.status).length;
+      const countRepair = combinedRepair.length;
+      const countRejected = combinedRejected.length;
 
       const totalMobiles = countOldInv + countOldHand + countNewHand + countRepair + countRejected;
       const inHandTotal = countOldHand + countNewHand;

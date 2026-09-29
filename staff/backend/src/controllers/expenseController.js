@@ -75,24 +75,16 @@ export async function createExpense(req, res) {
     const pool = getPool();
     const { category, amount, expense_date, admin_name = 'Admin23', recipient, remarks } = req.body;
 
-    if (!category || !amount) {
-      return res.status(400).json({ success: false, message: 'Category and amount are required' });
-    }
-
-    const validCategories = ['SALARY', 'REPAIRING_COST', 'OTHER'];
-    if (!validCategories.includes(category.toUpperCase())) {
-      return res.status(400).json({ success: false, message: 'Category must be SALARY, REPAIRING_COST, or OTHER' });
-    }
+    const formattedCategory = (category || 'OTHER').toUpperCase().replace(/[^A_Z0-9]/gi, '_');
 
     const expenseId = uuidv4();
     const date = expense_date || new Date().toISOString().split('T')[0];
     const code = `EXP-${Date.now().toString().slice(-6)}`;
 
-    // Insert into expenses table
     await pool.query(`
       INSERT INTO expenses (id, expense_code, category, amount, expense_date, admin_name, recipient, remarks)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [expenseId, code, category.toUpperCase(), parseFloat(amount), date, admin_name, recipient || null, remarks || null]);
+    `, [expenseId, code, formattedCategory, parseFloat(amount), date, admin_name, recipient || null, remarks || null]);
 
     // Insert into central ledger transactions
     await pool.query(`

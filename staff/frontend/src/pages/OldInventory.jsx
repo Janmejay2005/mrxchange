@@ -135,14 +135,58 @@ export default function OldInventory() {
       return;
     }
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected device(s) from inventory?`)) {
+      const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+      const updatedDeleted = Array.from(new Set([...deletedIds, ...selectedIds.map(String)]));
+      localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(updatedDeleted));
+
       for (const id of selectedIds) {
-        await deviceService.deleteDevice(id);
+        try {
+          await deviceService.deleteDevice(id);
+        } catch (e) {}
       }
+
+      ['mrx_old_inventory', 'mrx_old_in_hand_stock', 'mrx_devices', 'mrx_inventory'].forEach(key => {
+        try {
+          const list = JSON.parse(localStorage.getItem(key) || '[]');
+          const updated = list.filter(item => !selectedIds.includes(String(item.id)) && !selectedIds.includes(String(item.device_code)));
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch (e) {}
+      });
+
       setDevices(prev => prev.filter(d => !selectedIds.includes(String(d.id))));
       setSelectedIds([]);
       window.dispatchEvent(new Event('mrx_inventory_updated'));
       window.dispatchEvent(new Event('storage'));
       alert(`${selectedIds.length} device(s) deleted permanently!`);
+    }
+  };
+
+  const handleSingleDelete = async (id, e) => {
+    if (e) e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this device from Add Inventory?')) {
+      const idStr = String(id);
+      const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+      if (!deletedIds.includes(idStr)) {
+        deletedIds.push(idStr);
+        localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(deletedIds));
+      }
+
+      try {
+        await deviceService.deleteDevice(id);
+      } catch (err) {}
+
+      ['mrx_old_inventory', 'mrx_old_in_hand_stock', 'mrx_devices', 'mrx_inventory'].forEach(key => {
+        try {
+          const list = JSON.parse(localStorage.getItem(key) || '[]');
+          const updated = list.filter(item => String(item.id) !== idStr && String(item.device_code) !== idStr);
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch (err) {}
+      });
+
+      setDevices(prev => prev.filter(d => String(d.id) !== idStr && String(d.device_code) !== idStr));
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('storage'));
+      alert('Device deleted permanently!');
     }
   };
 
@@ -169,6 +213,8 @@ export default function OldInventory() {
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
 
+      const deletedIds = new Set(JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]').map(String));
+
       const rawCombined = [
         ...localOldInv,
         ...localOldHand,
@@ -177,7 +223,15 @@ export default function OldInventory() {
         ...localRejected,
         ...mrxDevices,
         ...dataList
-      ];
+      ].filter(item => {
+        if (!item) return false;
+        const idStr = String(item.id || '');
+        const codeStr = String(item.device_code || '');
+        if ((idStr && deletedIds.has(idStr)) || (codeStr && deletedIds.has(codeStr))) {
+          return false;
+        }
+        return true;
+      });
 
       const seenFingerprints = new Set();
       const inventoryDevices = [];
@@ -609,32 +663,42 @@ export default function OldInventory() {
                   <td data-label="Date Added">{device.intake_date ? String(device.intake_date).slice(0, 10) : 'Today'}</td>
                   <td data-label="Status">
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
-                    <select
-                      value={device.status || 'OLD_INVENTORY'}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => { e.stopPropagation(); handleStatusChange(device, e.target.value); }}
-                      className="form-control"
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        borderRadius: '6px',
-                        backgroundColor: 
-                          device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#e0f2fe' :
-                          device.status === 'IN_REPAIR' ? '#fef3c7' :
-                          device.status === 'REJECTED' ? '#fee2e2' : '#f1f5f9',
-                        color: 
-                          device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#0284c7' :
-                          device.status === 'IN_REPAIR' ? '#d97706' :
-                          device.status === 'REJECTED' ? '#dc2626' : '#475569',
-                        border: '1px solid #cbd5e1'
-                      }}
-                    >
-                      <option value="OLD_INVENTORY">Add Inventory</option>
-                      <option value="OLD_IN_HAND">Old In-Hand</option>
-                      <option value="IN_REPAIR">Repair</option>
-                      <option value="REJECTED">Rejected Stock</option>
-                    </select>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <select
+                          value={device.status || 'OLD_INVENTORY'}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => { e.stopPropagation(); handleStatusChange(device, e.target.value); }}
+                          className="form-control"
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            borderRadius: '6px',
+                            backgroundColor: 
+                              device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#e0f2fe' :
+                              device.status === 'IN_REPAIR' ? '#fef3c7' :
+                              device.status === 'REJECTED' ? '#fee2e2' : '#f1f5f9',
+                            color: 
+                              device.status === 'OLD_IN_HAND' || device.status === 'IN_HAND' ? '#0284c7' :
+                              device.status === 'IN_REPAIR' ? '#d97706' :
+                              device.status === 'REJECTED' ? '#dc2626' : '#475569',
+                            border: '1px solid #cbd5e1'
+                          }}
+                        >
+                          <option value="OLD_INVENTORY">Add Inventory</option>
+                          <option value="OLD_IN_HAND">Old In-Hand</option>
+                          <option value="IN_REPAIR">Repair</option>
+                          <option value="REJECTED">Rejected Stock</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={(e) => handleSingleDelete(device.id, e)}
+                          style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                          title="Delete device permanently"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                   </td>
                 </tr>
               ))
