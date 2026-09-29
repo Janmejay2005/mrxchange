@@ -131,7 +131,7 @@ export default function Dashboard() {
       const countRepair = combinedRepair.length;
       const countRejected = combinedRejected.length;
 
-      const totalMobiles = countOldInv + countOldHand + countNewHand + countRepair + countRejected;
+      const totalMobiles = countOldInv + countOldHand + countNewHand;
       const inHandTotal = countOldHand + countNewHand;
 
       setStats({
