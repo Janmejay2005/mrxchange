@@ -834,14 +834,6 @@ export default function OldInHandStock() {
                           >
                             <Edit size={13} /> Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDevice(d.id)}
-                            style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Delete device"
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
                         </div>
                       )}
                     </td>

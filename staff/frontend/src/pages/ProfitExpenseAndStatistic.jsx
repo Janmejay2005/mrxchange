@@ -239,8 +239,8 @@ export default function ProfitExpenseAndStatistic() {
   };
 
   const matchesAdmin = (itemAdmin, selAdmin) => {
-    if (selAdmin === 'All Super Admins') return true;
-    if (!itemAdmin) return false;
+    if (!selAdmin || selAdmin === 'All Admins' || selAdmin === 'All Super Admins' || selAdmin === 'ALL') return true;
+    if (!itemAdmin) return true;
     const itemLower = String(itemAdmin).toLowerCase();
     const selLower = String(selAdmin).toLowerCase();
     if (itemLower === selLower) return true;
@@ -249,8 +249,9 @@ export default function ProfitExpenseAndStatistic() {
     return false;
   };
 
-  const filteredProfits = phoneProfits.filter(p => {
-    if (!matchesAdmin(p.admin, selectedAdmin)) return false;
+  const filteredProfits = (phoneProfits || []).filter(p => {
+    if (!p) return false;
+    if (!matchesAdmin(p.admin || p.sold_by || p.soldBy, selectedAdmin)) return false;
     if (selectedDate) {
       const pYMD = toYMD(p.date);
       const selYMD = toYMD(selectedDate);
@@ -275,28 +276,30 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  const filteredExpenses = expenses.filter(e => {
-    if (!matchesAdmin(e.admin, selectedAdmin)) return false;
+  const filteredExpenses = (expenses || []).filter(e => {
+    if (!e) return false;
+    if (!matchesAdmin(e.admin || e.admin_name, selectedAdmin)) return false;
     if (selectedDate) {
-      const eYMD = toYMD(e.date);
+      const eYMD = toYMD(e.date || e.expense_date);
       const selYMD = toYMD(selectedDate);
       if (eYMD && selYMD && eYMD !== selYMD) return false;
     }
     if (fromDate) {
-      const eYMD = toYMD(e.date);
+      const eYMD = toYMD(e.date || e.expense_date);
       const fYMD = toYMD(fromDate);
       if (eYMD && fYMD && eYMD < fYMD) return false;
     }
     if (toDate) {
-      const eYMD = toYMD(e.date);
+      const eYMD = toYMD(e.date || e.expense_date);
       const tYMD = toYMD(toDate);
       if (eYMD && tYMD && eYMD > tYMD) return false;
     }
     const q = (globalSearch || '').trim().toLowerCase();
     if (q) {
-      const matchType = (e.type || '').toLowerCase().includes(q);
+      const matchType = (e.type || e.category || '').toLowerCase().includes(q);
       const matchRemarks = (e.remarks || '').toLowerCase().includes(q);
-      if (!matchType && !matchRemarks) return false;
+      const matchAdmin = (e.admin || e.admin_name || '').toLowerCase().includes(q);
+      if (!matchType && !matchRemarks && !matchAdmin) return false;
     }
     return true;
   });
@@ -329,33 +332,33 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  // 1. Investment = Total amount of devices entered in Add Inventory
-  const totalInvestment = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount) || 0), 0);
+  // 1. PV (Purchase Value / Paid Amount from Add Inventory)
+  const totalPV = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0), 0);
+  const totalInvestment = totalPV;
 
-  // 2. Selling = Data sum from selling devices in new in hand inventory
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
+  // 2. Selling Revenue (PPU)
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
 
-  // 3. Profit = Mobile sold Price - (New Phone Exchanged price - old phone price) for exchange phones, or Sold Price - (Bought Cost + Repair Cost)
+  // 3. Profit Formula = PPU - (PV + BEV)
   const totalProfit = filteredProfits.reduce((sum, p) => {
-    const sellPrice = Number(p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0;
-    const oldPhonePrice = Number(p.oldAmount || p.oldPrice || p.purchase || p.purchase_amount) || 0;
-    const newPhoneExchangedPrice = Number(p.newAmount || p.exchangeValue || p.purchasedAmount) || 0;
-    const repairCost = Number(p.repair_cost || p.repairCost) || 0;
+    const ppu = Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0;
+    const pv = Number(p.pv || p.oldAmount || p.purchase_amount || p.purchase) || 0;
+    const bev = Number(p.bev || p.exchangeValue || p.newAmount) || 0;
+    const units = Number(p.units || p.unit || 1);
 
-    let calculatedProfit = 0;
-    if (p.isExchange || (p.oldAmount && p.newAmount)) {
-      calculatedProfit = sellPrice - (newPhoneExchangedPrice - oldPhonePrice);
-    } else if (p.profit !== undefined && p.profit !== null && Number(p.profit) !== 0) {
-      calculatedProfit = Number(p.profit);
+    let unitProfit = 0;
+    if (p.unitProfit !== undefined && p.unitProfit !== null && !isNaN(p.unitProfit)) {
+      unitProfit = Number(p.unitProfit);
     } else {
-      calculatedProfit = sellPrice - (oldPhonePrice + repairCost);
+      unitProfit = ppu - (pv + bev);
     }
-    return sum + calculatedProfit;
+    return sum + (unitProfit * units);
   }, 0);
 
-  // EBITDA / Final Net Profit = Total Profit from all sold mobiles - Business Expenses
-  const totalExpensesAmount = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  const finalProfit = totalProfit - totalExpensesAmount;
+  // 4. Expenses = PV (Purchased Amounts) + Operational Expenses (Rent, Salary, etc.)
+  const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const totalExpensesAmount = totalPV + operationalExpenses;
+  const finalProfit = totalProfit - operationalExpenses;
 
   // Investment Base for ROI calculation
   const investmentBase = totalInvestment > 0 ? totalInvestment : (totalSelling > 0 ? totalSelling : 100000);
