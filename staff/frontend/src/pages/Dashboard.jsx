@@ -219,7 +219,23 @@ export default function Dashboard() {
           const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
           const localDev = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
           const apiDev = Array.isArray(dRes) ? dRes : (dRes?.data || []);
-          allDevList = [...localOldInv, ...localDev, ...apiDev];
+          
+          const seenDevMap = new Map();
+          [...localOldInv, ...localDev, ...apiDev].forEach(item => {
+            if (!item) return;
+            const b = (item.brand || item.oldBrand || '').trim().toLowerCase();
+            const m = (item.model || item.oldModel || '').trim().toLowerCase();
+            const amt = Number(item.purchase_amount || item.amount || item.paidAmount || 0);
+            const p = (item.paid_by || item.purchasedBy || item.paidBy || item.admin || '').trim().toLowerCase();
+            const d = item.intake_date || item.created_at || item.date || '';
+            const key = item.id || item.device_code 
+              ? `id_${item.id || item.device_code}`
+              : `fp_${b}_${m}_${amt}_${p}_${d}`;
+            if (!seenDevMap.has(key)) {
+              seenDevMap.set(key, item);
+            }
+          });
+          allDevList = Array.from(seenDevMap.values());
         } catch (e) {
           allSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
           allExpensesList = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');

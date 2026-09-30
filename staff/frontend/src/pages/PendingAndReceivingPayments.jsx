@@ -75,16 +75,22 @@ export default function PendingAndReceivingPayments() {
   };
 
   const [payments, setPayments] = useState(getStoredPayments);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handleSync = () => {
       setPayments(getStoredPayments());
+      setRefreshKey(prev => prev + 1);
     };
     window.addEventListener('storage', handleSync);
     window.addEventListener('mrx_pending_payments_updated', handleSync);
+    window.addEventListener('mrx_investments_updated', handleSync);
+    window.addEventListener('mrx_inventory_updated', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('mrx_pending_payments_updated', handleSync);
+      window.removeEventListener('mrx_investments_updated', handleSync);
+      window.removeEventListener('mrx_inventory_updated', handleSync);
     };
   }, []);
 
@@ -200,25 +206,61 @@ export default function PendingAndReceivingPayments() {
     const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
     const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
     const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
     
-    const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+    // Deduplicate allIntake devices across localStorage keys
+    const seenIntakeMap = new Map();
+    [...localDevices, ...localOldInv, ...localOldHand].forEach(item => {
+      if (!item) return;
+      const b = (item.brand || item.oldBrand || '').trim().toLowerCase();
+      const m = (item.model || item.oldModel || '').trim().toLowerCase();
+      const amt = Number(item.paid_amount || item.paidAmount || item.purchase_amount || item.amount || 0);
+      const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
+      const d = item.intake_date || item.created_at || item.date || '';
+      const key = item.id || item.device_code 
+        ? `id_${item.id || item.device_code}`
+        : `fp_${b}_${m}_${amt}_${p}_${d}`;
+      if (!seenIntakeMap.has(key)) {
+        seenIntakeMap.set(key, { ...item, purchase_amount: amt, paid_amount: amt, paidAmount: amt });
+      }
+    });
+    const allIntake = Array.from(seenIntakeMap.values());
     
-    const totalProfitEarned = localSales.reduce((sum, s) => {
-      const sellPrice = Number(s.sellPrice || s.price_per_unit || s.amount || 0);
-      const buyPrice = Number(s.purchase_amount || s.amount || 0);
-      return sum + Math.max(0, sellPrice - buyPrice);
+    const totalExpenses = localExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const totalGrossProfit = localSales.reduce((sum, s) => {
+      if (!s) return sum;
+      const sellPrice = Number(s.selling || s.selling_price || s.soldPrice || s.sellPrice || s.totalAmount || s.price_per_unit || s.unitPrice || s.ppu || 0);
+      const buyPrice = Number(s.purchase || s.paid_amount || s.paidAmount || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || s.amount || 0);
+      const repairCost = Number(s.repair_cost || s.repairCost || 0);
+      const bevCost = Number(s.bev || s.exchangeValue || s.newAmount || 0);
+      
+      let profit = 0;
+      if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
+        profit = Number(s.profit);
+      } else {
+        profit = sellPrice - (buyPrice + repairCost + bevCost);
+      }
+      return sum + profit;
     }, 0);
+
+    const totalNetProfit = Math.max(0, totalGrossProfit - totalExpenses);
     
     const partnerData = superAdmins.map(adminName => {
       const shortName = adminName.split(' ')[0].toLowerCase();
       
       const capitalInv = localInvestments
-        .filter(inv => (inv.investor_name || inv.admin_name || '').toLowerCase().includes(shortName))
-        .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+        .filter(inv => {
+          const matchAdmin = (inv.investor_name || inv.admin_name || '').toLowerCase().includes(shortName);
+          // Exclude auto-generated device intake investment records to prevent double counting with deviceInv
+          const isDeviceInvRecord = String(inv.id || '').startsWith('inv_dev_') || inv.investment_type === 'INVENTORY';
+          return matchAdmin && !isDeviceInvRecord;
+        })
+        .reduce((sum, inv) => sum + (Number(inv.amount || inv.paid_amount || inv.paidAmount) || 0), 0);
         
       const deviceInv = allIntake
-        .filter(d => (d.paid_by || d.purchasedBy || '').toLowerCase().includes(shortName))
-        .reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+        .filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName))
+        .reduce((sum, d) => sum + (Number(d.paid_amount || d.paidAmount || d.purchase_amount || d.amount) || 0), 0);
         
       const totalInvested = capitalInv + deviceInv;
       return {
@@ -235,7 +277,7 @@ export default function PendingAndReceivingPayments() {
       const sharePct = combinedTotalInvestment > 0 
         ? Number(((p.totalInvested / combinedTotalInvestment) * 100).toFixed(1)) 
         : 50.0;
-      const profitEarned = Math.round(totalProfitEarned * (sharePct / 100));
+      const profitEarned = Math.round(totalNetProfit * (sharePct / 100));
       const totalValuation = p.totalInvested + profitEarned;
       
       return {
@@ -245,7 +287,7 @@ export default function PendingAndReceivingPayments() {
         totalValuation
       };
     });
-  }, [payments]);
+  }, [payments, refreshKey]);
 
   // Card Payment Identification & Breakdown
   const cardPaymentsList = payments.filter(item => String(item.mode || item.paymentType || '').toLowerCase() === 'card');
@@ -1238,18 +1280,48 @@ export default function PendingAndReceivingPayments() {
               const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
 
               const capitalItems = localInvestments.filter(inv => (inv.investor_name || inv.admin_name || '').toLowerCase().includes(shortName));
-              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
-              const intakeItems = allIntake.filter(d => (d.paid_by || d.purchasedBy || '').toLowerCase().includes(shortName));
+              
+              const seenMapModal = new Map();
+              [...localDevices, ...localOldInv, ...localOldHand].forEach(item => {
+                if (!item) return;
+                const b = (item.brand || item.oldBrand || '').trim().toLowerCase();
+                const m = (item.model || item.oldModel || '').trim().toLowerCase();
+                const amt = Number(item.purchase_amount || item.amount || 0);
+                const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
+                const d = item.intake_date || item.created_at || item.date || '';
+                const key = item.id || item.device_code 
+                  ? `id_${item.id || item.device_code}`
+                  : `fp_${b}_${m}_${amt}_${p}_${d}`;
+                if (!seenMapModal.has(key)) {
+                  seenMapModal.set(key, item);
+                }
+              });
+              const allIntake = Array.from(seenMapModal.values());
+              const intakeItems = allIntake.filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName));
+
+              const localExpensesModal = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+              const totExpensesModal = localExpensesModal.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
               const totCap = capitalItems.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
               const totIntake = intakeItems.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
               const totInv = totCap + totIntake;
               const totGrossProfit = localSales.reduce((sum, s) => {
-                const sellPrice = Number(s.sellPrice || s.price_per_unit || s.amount || 0);
-                const buyPrice = Number(s.purchase_amount || s.amount || 0);
-                return sum + Math.max(0, sellPrice - buyPrice);
+                if (!s) return sum;
+                const sellPrice = Number(s.selling || s.selling_price || s.soldPrice || s.sellPrice || s.totalAmount || s.price_per_unit || s.unitPrice || s.ppu || 0);
+                const buyPrice = Number(s.purchase || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || s.amount || 0);
+                const repairCost = Number(s.repair_cost || s.repairCost || 0);
+                const bevCost = Number(s.bev || s.exchangeValue || s.newAmount || 0);
+                
+                let profit = 0;
+                if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
+                  profit = Number(s.profit);
+                } else {
+                  profit = sellPrice - (buyPrice + repairCost + bevCost);
+                }
+                return sum + profit;
               }, 0);
-              const profitEarned = Math.round(totGrossProfit * 0.5);
+              const totNetProfit = Math.max(0, totGrossProfit - totExpensesModal);
+              const profitEarned = Math.round(totNetProfit * 0.5);
 
               return (
                 <div>

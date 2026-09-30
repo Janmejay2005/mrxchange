@@ -235,6 +235,37 @@ export default function MembersSuperAdmin() {
     } : m));
   };
 
+  const handleClearAllData = () => {
+    if (window.confirm('⚠️ Are you sure you want to clear ALL test/dummy data (Inventory, Sales, Expenses, Investments, Payments, Repairs)? This will reset the application to a completely clean state.')) {
+      const keysToClear = [
+        'mrx_devices',
+        'mrx_old_inventory',
+        'mrx_old_in_hand_stock',
+        'mrx_new_in_hand_stock',
+        'mrx_sales',
+        'mrx_expenses',
+        'mrx_investments',
+        'mrx_pending_payments',
+        'mrx_repair_stock',
+        'mrx_rejected_stock',
+        'mrx_exchanges',
+        'mrx_expense_evaluations',
+        'mrx_deleted_device_ids'
+      ];
+      keysToClear.forEach(k => localStorage.removeItem(k));
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_sales_updated'));
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
+      window.dispatchEvent(new Event('mrx_investments_updated'));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('storage'));
+
+      alert('✅ All dummy and test data has been cleared! The system is now completely fresh.');
+      window.location.reload();
+    }
+  };
+
   return (
     <div>
       {/* Header & Breadcrumb */}
@@ -245,10 +276,10 @@ export default function MembersSuperAdmin() {
             Jeet Khubchandani & Sonal Wadwani Super Admin Control • Add team members, set usernames/passwords, and grant tab access permissions.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-            <Home size={14} /> / <span style={{ color: '#0284c7', fontWeight: 600 }}>Members</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={handleClearAllData} className="btn-secondary" style={{ padding: '10px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#ef4444', backgroundColor: '#fef2f2', borderColor: '#fca5a5' }} title="Clear all dummy & test data to start fresh">
+            <Trash2 size={16} /> Reset All System Data
+          </button>
           <button onClick={openAddModal} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
             <Plus size={18} /> (+Add Member)
           </button>
@@ -456,8 +487,23 @@ export default function MembersSuperAdmin() {
                 return newPayer.includes(shortName) || oldPayer.includes(shortName);
               });
 
-              // Filter intake entries where staff paid
-              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+              // Filter intake entries where staff paid (deduplicated across stock keys)
+              const seenMapIntake = new Map();
+              [...localDevices, ...localOldInv, ...localOldHand].forEach(item => {
+                if (!item) return;
+                const b = (item.brand || item.oldBrand || '').trim().toLowerCase();
+                const m = (item.model || item.oldModel || '').trim().toLowerCase();
+                const amt = Number(item.purchase_amount || item.amount || 0);
+                const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
+                const d = item.intake_date || item.created_at || item.date || '';
+                const key = item.id || item.device_code 
+                  ? `id_${item.id || item.device_code}`
+                  : `fp_${b}_${m}_${amt}_${p}_${d}`;
+                if (!seenMapIntake.has(key)) {
+                  seenMapIntake.set(key, item);
+                }
+              });
+              const allIntake = Array.from(seenMapIntake.values());
               const intakeRecords = allIntake.filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName));
 
               const totalExchangePurchasedAmount = exchangeRecords.reduce((sum, ex) => sum + (Number(ex.newAmount || ex.purchasedAmount) || 0), 0);
@@ -622,7 +668,22 @@ export default function MembersSuperAdmin() {
               const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
               const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
 
-              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+              const seenMapMember = new Map();
+              [...localDevices, ...localOldInv, ...localOldHand].forEach(item => {
+                if (!item) return;
+                const b = (item.brand || item.oldBrand || '').trim().toLowerCase();
+                const m = (item.model || item.oldModel || '').trim().toLowerCase();
+                const amt = Number(item.purchase_amount || item.amount || 0);
+                const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
+                const d = item.intake_date || item.created_at || item.date || '';
+                const key = item.id || item.device_code 
+                  ? `id_${item.id || item.device_code}`
+                  : `fp_${b}_${m}_${amt}_${p}_${d}`;
+                if (!seenMapMember.has(key)) {
+                  seenMapMember.set(key, item);
+                }
+              });
+              const allIntake = Array.from(seenMapMember.values());
               const memberIntakes = allIntake.filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName));
               const memberExpenses = localExpenses.filter(e => (e.admin || e.recipient || '').toLowerCase().includes(shortName));
 

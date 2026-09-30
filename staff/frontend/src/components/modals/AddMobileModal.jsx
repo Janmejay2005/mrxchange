@@ -85,6 +85,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    if (loading) return;
     setError('');
 
     const effectiveBrand = (formData.brand === 'Other' ? formData.customBrand : formData.brand) || 'Apple';
@@ -103,6 +104,24 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       ? 'Sonal Wadwani'
       : 'Jeet Khubchandani';
 
+    // Duplicate Check: Check if exact same device already exists in Add Inventory
+    const existingOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+    const existingDevs = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+    const isDuplicate = [...existingOldInv, ...existingDevs].some(item => {
+      if (!item) return false;
+      const bMatch = (item.brand || item.oldBrand || '').trim().toLowerCase() === effectiveBrand.trim().toLowerCase();
+      const mMatch = (item.model || item.oldModel || '').trim().toLowerCase() === effectiveModel.trim().toLowerCase();
+      const stMatch = (Number(item.storage) || 128) === (Number(formData.storage) || 128);
+      const ramMatch = (Number(item.ram) || 6) === (Number(formData.ram) || 6);
+      const amtMatch = Math.abs((Number(item.purchase_amount || item.amount) || 0) - pAmount) < 1;
+      return bMatch && mMatch && stMatch && ramMatch && amtMatch;
+    });
+
+    if (isDuplicate) {
+      setError(`Duplicate Mobile Entry! A device "${effectiveBrand} ${effectiveModel} (${formData.storage || 128}GB)" with Purchase Amount ₹${pAmount.toLocaleString('en-IN')} already exists in Add Inventory.`);
+      return;
+    }
+
     const localDeviceObj = {
       id: `dev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       device_code: `MRX-${Date.now().toString().slice(-5)}`,
@@ -113,7 +132,12 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       colour: formData.colour || 'Midnight Black',
       condition: 'Good',
       purchase_amount: pAmount,
+      paid_amount: pAmount,
+      paidAmount: pAmount,
+      amount: pAmount,
       paid_by: selectedPayer,
+      purchasedBy: selectedPayer,
+      paidBy: selectedPayer,
       intake_date: formData.date || new Date().toISOString().split('T')[0],
       status: 'OLD_INVENTORY',
       remarks: formData.remarks || '',
@@ -133,7 +157,12 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
         model: effectiveModel,
         status: 'OLD_INVENTORY',
         paid_by: selectedPayer,
+        purchasedBy: selectedPayer,
+        paidBy: selectedPayer,
         purchase_amount: pAmount,
+        paid_amount: pAmount,
+        paidAmount: pAmount,
+        amount: pAmount,
         image_url: mainImageUrl,
         image_data: mainImageUrl,
         images: allImagesList

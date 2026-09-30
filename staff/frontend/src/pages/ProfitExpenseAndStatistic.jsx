@@ -742,8 +742,8 @@ export default function ProfitExpenseAndStatistic() {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', marginTop: '18px' }}>
-          <button onClick={() => { setSelectedAdmin('All Super Admins'); setFromDate(''); setToDate(''); }} className="btn-secondary">Clear</button>
-          <button className="btn-primary">Apply</button>
+          <button onClick={() => { setSelectedAdmin('All Super Admins'); setFromDate(''); setToDate(''); loadData(); }} className="btn-secondary">Clear</button>
+          <button onClick={() => loadData()} className="btn-primary">Apply</button>
         </div>
       </div>
 

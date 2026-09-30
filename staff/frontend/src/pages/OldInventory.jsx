@@ -13,6 +13,8 @@ import {
 import { deviceService } from '../services/api';
 import { CurrencyAmount } from '../components/common/UIComponents';
 import AddMobileModal from '../components/modals/AddMobileModal';
+import MobileHistoryModal from '../components/modals/MobileHistoryModal';
+import BookMobileModal from '../components/modals/BookMobileModal';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 import { useOutletContext, useNavigate } from 'react-router-dom';
@@ -39,6 +41,9 @@ export default function OldInventory() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [bookingDevice, setBookingDevice] = useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [popupDevice, setPopupDevice] = useState(null); // Image click popup device state
 
   const [exportModalConfig, setExportModalConfig] = useState({
@@ -217,10 +222,6 @@ export default function OldInventory() {
 
       const rawCombined = [
         ...localOldInv,
-        ...localOldHand,
-        ...localNewHand,
-        ...localRepair,
-        ...localRejected,
         ...mrxDevices,
         ...dataList
       ].filter(item => {
@@ -228,6 +229,11 @@ export default function OldInventory() {
         const idStr = String(item.id || '');
         const codeStr = String(item.device_code || '');
         if ((idStr && deletedIds.has(idStr)) || (codeStr && deletedIds.has(codeStr))) {
+          return false;
+        }
+        const s = String(item.status || item.device_status || '').toUpperCase();
+        if (s && s !== 'OLD_INVENTORY') return false;
+        if (item.isExchanged || item.is_exchanged || s === 'EXCHANGED' || s === 'BOOKED' || s === 'SOLD' || s === 'OLD_IN_HAND' || s === 'IN_REPAIR' || s === 'REJECTED' || s === 'DELIVERED') {
           return false;
         }
         return true;
@@ -323,6 +329,12 @@ export default function OldInventory() {
       
       const oldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
 
+      if (newStatus === 'Booked' || newStatus === 'BOOKED') {
+        setBookingDevice(deviceObj);
+        setIsBookingModalOpen(true);
+        return;
+      }
+
       if (newStatus === 'OLD_IN_HAND') {
 
         const oldInHandStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
@@ -399,7 +411,10 @@ export default function OldInventory() {
 
   // Filtered devices list based on selected Brand & selectedDate
   const filteredDevices = devices.filter(d => {
-    if (d.status && d.status !== 'OLD_INVENTORY') return false;
+    const s = String(d.status || d.device_status || '').toUpperCase();
+    if (s && s !== 'OLD_INVENTORY') return false;
+    if (d.isExchanged || d.is_exchanged || s === 'EXCHANGED' || s === 'BOOKED' || s === 'SOLD' || s === 'OLD_IN_HAND' || s === 'IN_REPAIR' || s === 'REJECTED' || s === 'DELIVERED') return false;
+
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
     if (selectedDate) {
       const devYMD = toYMD(d.intake_date || d.created_at || d.date);
@@ -485,6 +500,9 @@ export default function OldInventory() {
           <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px' }}>
               <Plus size={18} /> Add Mobile
+            </button>
+            <button onClick={() => setIsHistoryModalOpen(true)} className="btn-secondary" style={{ padding: '10px 20px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#f8fafc', fontWeight: 700 }}>
+              <FileText size={18} color="#0284c7" /> 📜 Mobile Intake History
             </button>
           </div>
         </div>
@@ -664,6 +682,27 @@ export default function OldInventory() {
                   <td data-label="Status">
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setBookingDevice(device); setIsBookingModalOpen(true); }}
+                          style={{
+                            background: '#e0f2fe',
+                            color: '#0369a1',
+                            border: '1px solid #7dd3fc',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                          title="Book this mobile for customer"
+                        >
+                          📖 Book
+                        </button>
+
                         <select
                           value={device.status || 'OLD_INVENTORY'}
                           onClick={(e) => e.stopPropagation()}
@@ -686,6 +725,7 @@ export default function OldInventory() {
                           }}
                         >
                           <option value="OLD_INVENTORY">Add Inventory</option>
+                          <option value="Booked">📖 Book Mobile</option>
                           <option value="OLD_IN_HAND">Old In-Hand</option>
                           <option value="IN_REPAIR">Repair</option>
                           <option value="REJECTED">Rejected Stock</option>
@@ -958,6 +998,20 @@ export default function OldInventory() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchInventory}
+      />
+
+      {/* Mobile Intake History Audit Log Modal */}
+      <MobileHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
+
+      {/* Book Mobile Modal for Add Inventory */}
+      <BookMobileModal
+        isOpen={isBookingModalOpen}
+        onClose={() => { setIsBookingModalOpen(false); setBookingDevice(null); }}
+        device={bookingDevice}
+        onBookingSuccess={fetchInventory}
       />
     </div>
   );
