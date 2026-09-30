@@ -34,18 +34,17 @@ const ALL_APPLICATION_TABS = [
 
 const INITIAL_MEMBERS = [
   { id: '1', name: 'Jeet Khubchandani', username: 'Jeet@1', email: 'jeet@mrxchange.com', phone: '+91 98765 43210', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-01-10', avatar: 'JK', allowedTabs: ['*'] },
-  { id: '2', name: 'Sonal Wadwani', username: 'Sonal@1', email: 'sonal@mrxchange.com', phone: '+91 98765 12345', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-03-15', avatar: 'SW', allowedTabs: ['*'] },
-  { id: '3', name: 'Rohit Kumar', username: 'Rohit@1', email: 'rohit@mrxchange.com', phone: '+91 98123 45678', role: 'STAFF', status: 'ACTIVE', joinedDate: '2025-05-20', avatar: 'RK', allowedTabs: ['/dashboard', '/old-inventory', '/old-in-hand', '/booked-exchange'] },
-  { id: '4', name: 'Neha Gupta', username: 'Neha@1', email: 'neha@mrxchange.com', phone: '+91 97890 12345', role: 'STAFF', status: 'ACTIVE', joinedDate: '2025-06-01', avatar: 'NG', allowedTabs: ['/dashboard', '/booked-exchange', '/new-in-hand'] },
-  { id: '5', name: 'Aman Verma', username: 'Aman@1', email: 'aman@mrxchange.com', phone: '+91 96543 21098', role: 'STAFF', status: 'INACTIVE', joinedDate: '2025-07-12', avatar: 'AV', allowedTabs: ['/dashboard', '/repair-stock'] }
+  { id: '2', name: 'Sonal Wadwani', username: 'Sonal@1', email: 'sonal@mrxchange.com', phone: '+91 98765 12345', role: 'SUPERADMIN', status: 'ACTIVE', joinedDate: '2025-03-15', avatar: 'SW', allowedTabs: ['*'] }
 ];
 
 export default function MembersSuperAdmin() {
   const { globalSearch } = useOutletContext() || {};
   const [members, setMembers] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
-      return stored.length > 0 ? stored : INITIAL_MEMBERS;
+      const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_member_ids') || '[]');
+      const stored = localStorage.getItem('mrx_team_members');
+      let currentMembers = stored !== null ? JSON.parse(stored) : INITIAL_MEMBERS;
+      return currentMembers.filter(m => !deletedIds.includes(String(m.id)) && !deletedIds.includes(String(m.name)));
     } catch (e) {
       return INITIAL_MEMBERS;
     }
@@ -53,6 +52,14 @@ export default function MembersSuperAdmin() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
+
+  // Staff Account Dashboard Modal State
+  const [selectedStaffForDashboard, setSelectedStaffForDashboard] = useState(null);
+  const [isStaffDashboardOpen, setIsStaffDashboardOpen] = useState(false);
+
+  // Member Payout Statement Modal State
+  const [selectedMemberForPayout, setSelectedMemberForPayout] = useState(null);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
 
   // 2-Step Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,7 +77,10 @@ export default function MembersSuperAdmin() {
   });
 
   useEffect(() => {
-    localStorage.setItem('mrx_team_members', JSON.stringify(members));
+    try {
+      localStorage.setItem('mrx_team_members', JSON.stringify(members));
+      window.dispatchEvent(new Event('mrx_team_members_updated'));
+    } catch (e) {}
   }, [members]);
 
   const filteredMembers = members.filter(m => {
@@ -197,7 +207,24 @@ export default function MembersSuperAdmin() {
       return;
     }
     if (window.confirm(`Are you sure you want to remove "${name}" from team members?`)) {
-      setMembers(prev => prev.filter(m => m.id !== id));
+      setMembers(prev => {
+        const updated = prev.filter(m => String(m.id) !== String(id));
+        try {
+          localStorage.setItem('mrx_team_members', JSON.stringify(updated));
+          const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_member_ids') || '[]');
+          if (!deletedIds.includes(String(id))) {
+            deletedIds.push(String(id));
+          }
+          if (name && !deletedIds.includes(String(name))) {
+            deletedIds.push(String(name));
+          }
+          localStorage.setItem('mrx_deleted_member_ids', JSON.stringify(deletedIds));
+          window.dispatchEvent(new Event('mrx_team_members_updated'));
+          window.dispatchEvent(new Event('storage'));
+        } catch (e) {}
+        return updated;
+      });
+      alert(`Member "${name}" removed successfully.`);
     }
   };
 
@@ -364,6 +391,20 @@ export default function MembersSuperAdmin() {
                         <Edit size={14} /> Edit Access
                       </button>
                       <button 
+                        onClick={() => { setSelectedStaffForDashboard(m); setIsStaffDashboardOpen(true); }} 
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f5f3ff', color: '#7c3aed', border: '1px solid #c4b5fd', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                        title={`View purchased amounts & exchange pop-up account statements for ${m.name}`}
+                      >
+                        📊 Staff Dashboard
+                      </button>
+                      <button 
+                        onClick={() => { setSelectedMemberForPayout(m); setIsPayoutModalOpen(true); }} 
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                        title="Click to view member payout and earnings statement"
+                      >
+                        💰 Payout Statement
+                      </button>
+                      <button 
                         onClick={() => handleDeleteMember(m.id, m.name)} 
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
                       >
@@ -377,6 +418,303 @@ export default function MembersSuperAdmin() {
           </tbody>
         </table>
       </div>
+
+      {/* Staff Account Dashboard Modal */}
+      {isStaffDashboardOpen && selectedStaffForDashboard && (
+        <div className="modal-overlay" onClick={() => setIsStaffDashboardOpen(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '820px', borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#7c3aed', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>
+                  {selectedStaffForDashboard.avatar || selectedStaffForDashboard.name.charAt(0)}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#5b21b6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    📊 Staff Account Dashboard: <span style={{ color: '#7c3aed' }}>{selectedStaffForDashboard.name}</span>
+                  </h2>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                    Purchased Amount Given & Account Statement for "Book New Device for Exchange" & Intakes.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsStaffDashboardOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {(() => {
+              const staffName = selectedStaffForDashboard.name;
+              const shortName = staffName.split(' ')[0].toLowerCase();
+              const localExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+              const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+              const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+              const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+              const localPending = JSON.parse(localStorage.getItem('mrx_pending_payments') || '[]');
+
+              // Filter exchange entries where staff was payer / account
+              const exchangeRecords = localExchanges.filter(ex => {
+                const newPayer = (ex.newPurchasedBy || '').toLowerCase();
+                const oldPayer = (ex.oldPurchasedBy || '').toLowerCase();
+                return newPayer.includes(shortName) || oldPayer.includes(shortName);
+              });
+
+              // Filter intake entries where staff paid
+              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+              const intakeRecords = allIntake.filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName));
+
+              const totalExchangePurchasedAmount = exchangeRecords.reduce((sum, ex) => sum + (Number(ex.newAmount || ex.purchasedAmount) || 0), 0);
+              const totalIntakePurchasedAmount = intakeRecords.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+              const combinedPurchasedAmountGiven = totalExchangePurchasedAmount + totalIntakePurchasedAmount;
+              const totalTxCount = exchangeRecords.length + intakeRecords.length;
+              const avgSpend = totalTxCount > 0 ? Math.round(combinedPurchasedAmountGiven / totalTxCount) : 0;
+
+              return (
+                <div>
+                  {/* Summary Metric Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+                    <div style={{ background: '#f5f3ff', padding: '14px', borderRadius: '12px', border: '1px solid #ddd6fe' }}>
+                      <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Total Purchased Amount Given (₹)
+                      </span>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: '#5b21b6', marginTop: '4px' }}>
+                        ₹{combinedPurchasedAmountGiven.toLocaleString('en-IN')}
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>Across Exchange & Intakes</span>
+                    </div>
+
+                    <div style={{ background: '#e0f2fe', padding: '14px', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                      <span style={{ fontSize: '11px', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Book Device Exchange Count
+                      </span>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
+                        {exchangeRecords.length} <span style={{ fontSize: '12px', fontWeight: 600 }}>Bookings</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>From Book New Device Pop-up</span>
+                    </div>
+
+                    <div style={{ background: '#ecfdf5', padding: '14px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                      <span style={{ fontSize: '11px', color: '#047857', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Average Spend per Transaction
+                      </span>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: '#059669', marginTop: '4px' }}>
+                        ₹{avgSpend.toLocaleString('en-IN')}
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>{totalTxCount} Total Transactions</span>
+                    </div>
+                  </div>
+
+                  {/* Section 1: Book New Device for Exchange Transactions */}
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🔄 Book New Device for Exchange Pop-up Account History ({exchangeRecords.length} Entries)
+                  </h4>
+                  <div className="table-responsive" style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '20px' }}>
+                    <table className="custom-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Booking Date</th>
+                          <th>New Device Model</th>
+                          <th>Customer Name</th>
+                          <th style={{ textAlign: 'right' }}>Purchased Amount (Paid ₹) *</th>
+                          <th style={{ textAlign: 'right' }}>Exchange Value (₹)</th>
+                          <th>Payer / Account</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {exchangeRecords.length === 0 ? (
+                          <tr><td colSpan="8" style={{ textAlign: 'center', padding: '18px', color: '#94a3b8' }}>No Book New Device for Exchange transactions recorded for {staffName}.</td></tr>
+                        ) : (
+                          exchangeRecords.map((ex, idx) => (
+                            <tr key={ex.id || idx}>
+                              <td>{idx + 1}</td>
+                              <td>{ex.date || 'Today'}</td>
+                              <td style={{ fontWeight: 700, color: '#0f172a' }}>{ex.newBrand} {ex.newModel}</td>
+                              <td>{ex.customerName || ex.newPurchasedBy || 'Customer'}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#7c3aed' }}>
+                                ₹{Number(ex.newAmount || ex.purchasedAmount || 0).toLocaleString()}
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>
+                                ₹{Number(ex.exchangeValue || ex.oldAmount || 0).toLocaleString()}
+                              </td>
+                              <td style={{ fontWeight: 700 }}>{ex.newPurchasedBy || staffName}</td>
+                              <td>
+                                <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 800, background: ex.status === 'Delivered' ? '#dcfce7' : '#fef3c7', color: ex.status === 'Delivered' ? '#15803d' : '#d97706' }}>
+                                  {ex.status || 'Booked'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Section 2: Device Intake Purchases */}
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📦 Device Intake Purchased Amounts ({intakeRecords.length} Devices)
+                  </h4>
+                  <div className="table-responsive" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    <table className="custom-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Intake Date</th>
+                          <th>Device Brand & Model</th>
+                          <th>RAM / Storage</th>
+                          <th style={{ textAlign: 'right' }}>Purchased Amount (Paid ₹) *</th>
+                          <th>Paid By (Payer)</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {intakeRecords.length === 0 ? (
+                          <tr><td colSpan="7" style={{ textAlign: 'center', padding: '18px', color: '#94a3b8' }}>No intake purchases recorded under {staffName}.</td></tr>
+                        ) : (
+                          intakeRecords.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{idx + 1}</td>
+                              <td>{item.intake_date || item.date || 'Today'}</td>
+                              <td style={{ fontWeight: 700 }}>{item.brand} {item.model}</td>
+                              <td>{item.ram || '8'}GB / {item.storage || '128'}GB</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#059669' }}>
+                                ₹{Number(item.purchase_amount || item.amount || 0).toLocaleString()}
+                              </td>
+                              <td style={{ fontWeight: 700 }}>{item.paid_by || staffName}</td>
+                              <td><span style={{ padding: '2px 8px', borderRadius: '10px', background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>{item.status || 'OLD_INVENTORY'}</span></td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Member Payout & Earnings Statement Modal */}
+      {isPayoutModalOpen && selectedMemberForPayout && (
+        <div className="modal-overlay" onClick={() => setIsPayoutModalOpen(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px', borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: 42, height: 42, borderRadius: '50%', background: selectedMemberForPayout.role === 'SUPERADMIN' ? '#8b5cf6' : '#0284c7', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>
+                  {selectedMemberForPayout.avatar || selectedMemberForPayout.name.charAt(0)}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Member Payout Statement: <span style={{ color: '#0284c7' }}>{selectedMemberForPayout.name}</span>
+                  </h2>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                    Role: {selectedMemberForPayout.role} • Account: {selectedMemberForPayout.username || selectedMemberForPayout.email} • Joined: {selectedMemberForPayout.joinedDate}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsPayoutModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {(() => {
+              const memberName = selectedMemberForPayout.name;
+              const shortName = memberName.split(' ')[0].toLowerCase();
+              const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+              const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+              const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+              const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+
+              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+              const memberIntakes = allIntake.filter(d => (d.paid_by || d.purchasedBy || d.paidBy || '').toLowerCase().includes(shortName));
+              const memberExpenses = localExpenses.filter(e => (e.admin || e.recipient || '').toLowerCase().includes(shortName));
+
+              const totalIntakePaid = memberIntakes.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+              const totalExpensesPaid = memberExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+              const totalPayoutEarned = totalIntakePaid + totalExpensesPaid;
+
+              return (
+                <div>
+                  {/* Summary Metric Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ background: '#e0f2fe', padding: '12px', borderRadius: '10px', border: '1px solid #bae6fd' }}>
+                      <span style={{ fontSize: '11px', color: '#0369a1', fontWeight: 700 }}>Total Intake Devices</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7' }}>{memberIntakes.length} Units</div>
+                    </div>
+                    <div style={{ background: '#ecfdf5', padding: '12px', borderRadius: '10px', border: '1px solid #a7f3d0' }}>
+                      <span style={{ fontSize: '11px', color: '#047857', fontWeight: 700 }}>Total Payout Amount (₹)</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#059669' }}>₹{totalPayoutEarned.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div style={{ background: '#f5f3ff', padding: '12px', borderRadius: '10px', border: '1px solid #ddd6fe' }}>
+                      <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 700 }}>Super Admin Evaluation</span>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b21b6', marginTop: '4px' }}>Evaluated by Jeet & Sonal ✔️</div>
+                    </div>
+                  </div>
+
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>📦 Member Device Intakes & Paid Out Transactions</h4>
+                  <div className="table-responsive" style={{ maxHeight: '240px', overflowY: 'auto', marginBottom: '16px' }}>
+                    <table className="custom-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Intake Date</th>
+                          <th>Device Brand & Model</th>
+                          <th>RAM / Storage</th>
+                          <th style={{ textAlign: 'right' }}>Paid Amount (₹)</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {memberIntakes.length === 0 ? (
+                          <tr><td colSpan="6" style={{ textAlign: 'center', padding: '16px', color: '#94a3b8' }}>No device intake entries logged for {memberName}.</td></tr>
+                        ) : (
+                          memberIntakes.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{idx + 1}</td>
+                              <td>{item.intake_date || item.date || 'Today'}</td>
+                              <td style={{ fontWeight: 700 }}>{item.brand} {item.model}</td>
+                              <td>{item.ram || '8'}GB / {item.storage || '128'}GB</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#059669' }}>₹{Number(item.purchase_amount || item.amount || 0).toLocaleString()}</td>
+                              <td><span style={{ padding: '2px 8px', borderRadius: '10px', background: '#dcfce7', color: '#15803d', fontWeight: 700 }}>Paid ✔️</span></td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {memberExpenses.length > 0 && (
+                    <>
+                      <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>💸 Expenses & Salary Disbursement Statements</h4>
+                      <div className="table-responsive" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                        <table className="custom-table" style={{ fontSize: '11px' }}>
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Date</th>
+                              <th>Category</th>
+                              <th>Remarks</th>
+                              <th style={{ textAlign: 'right' }}>Disbursed Amount (₹)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {memberExpenses.map((e, idx) => (
+                              <tr key={idx}>
+                                <td>{idx + 1}</td>
+                                <td>{e.date}</td>
+                                <td><span style={{ padding: '2px 6px', borderRadius: '6px', background: '#fff7ed', color: '#ea580c', fontWeight: 700 }}>{e.type || e.category}</span></td>
+                                <td>{e.remarks || '—'}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 800, color: '#ea580c' }}>₹{Number(e.amount || 0).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* 2-Step (+Add) Member & Tab Access Modal */}
       {isModalOpen && (

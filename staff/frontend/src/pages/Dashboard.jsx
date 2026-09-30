@@ -64,14 +64,33 @@ export default function Dashboard() {
       const localRejected = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
       const mrxDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
 
+      // Helper fingerprint for deduplicating devices across local and backend sources
+      const makeFingerprint = (item) => {
+        if (!item) return '';
+        if (item.device_code) return `code_${item.device_code}`;
+        if (item.id) return `id_${item.id}`;
+        const b = (item.brand || item.oldBrand || item.newBrand || '').trim().toLowerCase();
+        const m = (item.model || item.oldModel || item.newModel || '').trim().toLowerCase();
+        const amt = Number(item.purchase_amount || item.amount || item.paidAmount || 0);
+        const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
+        const d = item.intake_date || item.created_at || item.date || '';
+        return `${b}|${m}|${item.storage || ''}|${item.ram || ''}|${amt}|${p}|${d}`;
+      };
+
       // 1. Add Inventory (OLD_INVENTORY)
       const seenOldInv = new Set();
       const combinedOldInv = [];
-      [...localOldInv, ...mrxDevices.filter(d => d.status === 'OLD_INVENTORY'), ...dbAllDevices.filter(d => d.status === 'OLD_INVENTORY')].forEach(item => {
+      [...localOldInv, ...mrxDevices, ...dbAllDevices].forEach(item => {
         if (!item) return;
-        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}_${item.purchase_amount}_${item.date || item.intake_date}`);
-        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenOldInv.has(idStr)) {
-          seenOldInv.add(idStr);
+        const status = item.status;
+        if (status && status !== 'OLD_INVENTORY') return;
+
+        const idStr = String(item.id || item.device_code || '');
+        if (idStr && deletedIds.has(idStr)) return;
+
+        const fp = makeFingerprint(item);
+        if (fp && !seenOldInv.has(fp)) {
+          seenOldInv.add(fp);
           combinedOldInv.push(item);
         }
       });
@@ -79,12 +98,18 @@ export default function Dashboard() {
       // 2. Old In-hand Stock (OLD_IN_HAND)
       const seenOldHand = new Set();
       const combinedOldHand = [];
-      [...localOldHand, ...mrxDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'OLD_HAND'), ...dbAllDevices.filter(d => d.status === 'OLD_IN_HAND' || d.status === 'OLD_HAND')].forEach(item => {
+      [...localOldHand, ...mrxDevices, ...dbAllDevices].forEach(item => {
         if (!item) return;
-        if (item.status === 'Booked' || item.status === 'BOOKED' || item.status === 'Delivered' || item.status === 'Sold') return;
-        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}_${item.purchase_amount}_${item.date || item.intake_date}`);
-        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenOldHand.has(idStr)) {
-          seenOldHand.add(idStr);
+        const status = item.status;
+        if (status !== 'OLD_IN_HAND' && status !== 'OLD_HAND') return;
+        if (status === 'Booked' || status === 'BOOKED' || status === 'Delivered' || status === 'Sold' || status === 'IN_REPAIR' || status === 'REJECTED') return;
+
+        const idStr = String(item.id || item.device_code || '');
+        if (idStr && deletedIds.has(idStr)) return;
+
+        const fp = makeFingerprint(item);
+        if (fp && !seenOldHand.has(fp)) {
+          seenOldHand.add(fp);
           combinedOldHand.push(item);
         }
       });
@@ -94,9 +119,15 @@ export default function Dashboard() {
       const combinedNewHand = [];
       [...localNewHand, ...mrxDevices.filter(d => d.status === 'NEW_IN_HAND'), ...dbAllDevices.filter(d => d.status === 'NEW_IN_HAND')].forEach(item => {
         if (!item) return;
-        const idStr = String(item.sno || item.id || item.device_code || `${item.brand || item.newBrand}_${item.model || item.newModel}`);
-        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenNewHand.has(idStr)) {
-          seenNewHand.add(idStr);
+        const status = item.status || 'NEW_IN_HAND';
+        if (status !== 'NEW_IN_HAND') return;
+
+        const idStr = String(item.sno || item.id || item.device_code || '');
+        if (idStr && deletedIds.has(idStr)) return;
+
+        const fp = item.sno ? `sno_${item.sno}` : makeFingerprint(item);
+        if (fp && !seenNewHand.has(fp)) {
+          seenNewHand.add(fp);
           combinedNewHand.push(item);
         }
       });
@@ -106,9 +137,14 @@ export default function Dashboard() {
       const combinedRepair = [];
       [...localRepair, ...mrxDevices.filter(d => d.status === 'IN_REPAIR'), ...dbAllDevices.filter(d => d.status === 'IN_REPAIR')].forEach(item => {
         if (!item) return;
-        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}`);
-        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenRepair.has(idStr)) {
-          seenRepair.add(idStr);
+        if (item.status !== 'IN_REPAIR') return;
+
+        const idStr = String(item.id || item.device_code || '');
+        if (idStr && deletedIds.has(idStr)) return;
+
+        const fp = makeFingerprint(item);
+        if (fp && !seenRepair.has(fp)) {
+          seenRepair.add(fp);
           combinedRepair.push(item);
         }
       });
@@ -118,9 +154,14 @@ export default function Dashboard() {
       const combinedRejected = [];
       [...localRejected, ...mrxDevices.filter(d => d.status === 'REJECTED'), ...dbAllDevices.filter(d => d.status === 'REJECTED')].forEach(item => {
         if (!item) return;
-        const idStr = String(item.id || item.device_code || `${item.brand}_${item.model}`);
-        if (!deletedIds.has(idStr) && !deletedIds.has(String(item.device_code)) && !seenRejected.has(idStr)) {
-          seenRejected.add(idStr);
+        if (item.status !== 'REJECTED') return;
+
+        const idStr = String(item.id || item.device_code || '');
+        if (idStr && deletedIds.has(idStr)) return;
+
+        const fp = makeFingerprint(item);
+        if (fp && !seenRejected.has(fp)) {
+          seenRejected.add(fp);
           combinedRejected.push(item);
         }
       });

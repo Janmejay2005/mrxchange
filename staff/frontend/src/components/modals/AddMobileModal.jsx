@@ -12,7 +12,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     ram: '6',
     colour: 'Midnight Black',
     purchase_amount: '',
-    paid_by: 'Rohit',
+    paid_by: 'Jeet Khubchandani',
     conditionStatus: 'OLD_INVENTORY',
     remarks: '',
     date: new Date().toISOString().split('T')[0]
@@ -98,6 +98,11 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
     const allImagesList = [images.image1, images.image2, ...images.additional].filter(Boolean);
     const mainImageUrl = images.image1 || images.image2 || 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100';
 
+    const pAmount = parseFloat(formData.purchase_amount) || 0;
+    const selectedPayer = (formData.paid_by || 'Jeet Khubchandani').toLowerCase().includes('sonal')
+      ? 'Sonal Wadwani'
+      : 'Jeet Khubchandani';
+
     const localDeviceObj = {
       id: `dev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       device_code: `MRX-${Date.now().toString().slice(-5)}`,
@@ -107,8 +112,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       ram: Number(formData.ram) || 6,
       colour: formData.colour || 'Midnight Black',
       condition: 'Good',
-      purchase_amount: parseFloat(formData.purchase_amount) || 0,
-      paid_by: formData.paid_by || 'Staff',
+      purchase_amount: pAmount,
+      paid_by: selectedPayer,
       intake_date: formData.date || new Date().toISOString().split('T')[0],
       status: 'OLD_INVENTORY',
       remarks: formData.remarks || '',
@@ -127,7 +132,8 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
         brand: effectiveBrand,
         model: effectiveModel,
         status: 'OLD_INVENTORY',
-        purchase_amount: parseFloat(formData.purchase_amount) || 0,
+        paid_by: selectedPayer,
+        purchase_amount: pAmount,
         image_url: mainImageUrl,
         image_data: mainImageUrl,
         images: allImagesList
@@ -148,7 +154,28 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       console.error('Error writing to localStorage:', e);
     }
 
-    // Trigger update event across tabs & components
+    // Record capital investment entry for Jeet / Sonal so it is added to their Investment pool
+    if (pAmount > 0) {
+      try {
+        const newInvRecord = {
+          id: `inv_dev_${Date.now()}`,
+          investment_code: `INV-${Date.now().toString().slice(-6)}`,
+          investment_type: 'INVENTORY',
+          amount: pAmount,
+          investor_name: selectedPayer,
+          admin_name: selectedPayer,
+          investment_date: formData.date || new Date().toISOString().split('T')[0],
+          remarks: `Device Intake: ${effectiveBrand} ${effectiveModel}`
+        };
+        const existingInv = JSON.parse(localStorage.getItem('mrx_investments') || '[]');
+        localStorage.setItem('mrx_investments', JSON.stringify([newInvRecord, ...existingInv]));
+      } catch (invErr) {
+        console.error('Error writing investment:', invErr);
+      }
+    }
+
+    // Trigger update events across tabs & components
+    window.dispatchEvent(new Event('mrx_investments_updated'));
     window.dispatchEvent(new Event('mrx_inventory_updated'));
     window.dispatchEvent(new Event('storage'));
 
@@ -161,7 +188,7 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
       ram: '6',
       colour: 'Midnight Black',
       purchase_amount: '',
-      paid_by: 'Rohit',
+      paid_by: 'Jeet Khubchandani',
       conditionStatus: 'OLD_INVENTORY',
       remarks: '',
       date: new Date().toISOString().split('T')[0]
@@ -303,14 +330,16 @@ export default function AddMobileModal({ isOpen, onClose, onSuccess }) {
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Paid By *</label>
-                <input 
-                  type="text"
+                <label className="form-label">Paid By (Super Admin Investment) *</label>
+                <select 
                   className="form-control"
-                  placeholder="Enter name (e.g. Rohit, Jeet Khubchandani...)"
                   value={formData.paid_by}
                   onChange={(e) => setFormData({ ...formData, paid_by: e.target.value })}
-                />
+                  style={{ fontWeight: 700 }}
+                >
+                  <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                  <option value="Sonal Wadwani">Sonal Wadwani</option>
+                </select>
               </div>
             </div>
 

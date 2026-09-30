@@ -137,21 +137,30 @@ export default function NewInHandStock() {
         if (!item) continue;
         const brandName = item.brand || item.newBrand || 'Generic';
         const modelName = item.model || item.newModel || 'Device';
-        const key = String(item.sno || item.id || item.device_code || `${brandName}_${modelName}_${item.date || item.intake_date}`);
+        const storageVal = String(item.storage || item.newStorage || '128');
+        const ramVal = String(item.ram || item.newRam || '8');
+        const ownerVal = item.purchasedBy || item.paid_by || item.admin_name || 'Staff';
+        const itemAmt = Number(item.amount || item.purchase_amount || item.newAmount || 0);
 
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
+        // Unique identifier key
+        const uniqueId = item.exchangeId || item.id || item.sno || item.device_code;
+        // Composite identity key to prevent duplicate delivery rows for same item
+        const compositeKey = `${brandName.toLowerCase()}_${modelName.toLowerCase()}_${storageVal}_${ramVal}_${ownerVal.toLowerCase()}_${itemAmt}`;
+
+        if (!seenKeys.has(String(uniqueId)) && !seenKeys.has(compositeKey)) {
+          if (uniqueId) seenKeys.add(String(uniqueId));
+          seenKeys.add(compositeKey);
           combined.push({
             ...item,
-            id: item.id || key,
-            sno: item.sno || item.device_code || key,
+            id: item.id || uniqueId,
+            sno: item.sno || item.device_code || uniqueId,
             brand: brandName,
             model: modelName,
-            storage: String(item.storage || item.newStorage || '128'),
-            ram: String(item.ram || item.newRam || '8'),
+            storage: storageVal,
+            ram: ramVal,
             color: item.color || item.colour || item.newColor || '-',
-            purchasedBy: item.purchasedBy || item.paid_by || item.admin_name || 'Staff',
-            amount: Number(item.amount || item.purchase_amount || item.newAmount || 0),
+            purchasedBy: ownerVal,
+            amount: itemAmt,
             totalUnits: Number(item.totalUnits || item.quantity || 1),
             soldUnits: Number(item.soldUnits || 0),
             date: item.date || item.intake_date || new Date().toISOString().split('T')[0]
@@ -755,6 +764,32 @@ export default function NewInHandStock() {
                           title="Edit stock details & total units"
                         >
                           <Edit size={13} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete "${item.brand} ${item.model}" from New In-Hand Stock?`)) {
+                              const itemKey = String(item.sno || item.id);
+                              const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+                              if (!deletedIds.includes(itemKey)) {
+                                deletedIds.push(itemKey);
+                                localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(deletedIds));
+                              }
+                              const updatedStock = stock.filter(s => String(s.sno || s.id) !== itemKey);
+                              setStock(updatedStock);
+                              try {
+                                localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify(updatedStock));
+                                window.dispatchEvent(new Event('mrx_inventory_updated'));
+                                window.dispatchEvent(new Event('storage'));
+                              } catch (e) {}
+                              alert(`Stock item "${item.brand} ${item.model}" deleted successfully!`);
+                            }
+                          }}
+                          style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Delete item permanently from stock"
+                        >
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </td>

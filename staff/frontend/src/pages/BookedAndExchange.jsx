@@ -366,6 +366,8 @@ export default function BookedAndExchange() {
     if (itemToDeliver) {
       const newStockItem = {
         sno: Date.now(),
+        id: itemToDeliver.id ? `EXCH-STOCK-${itemToDeliver.id}` : `STOCK-${Date.now()}`,
+        exchangeId: itemToDeliver.id,
         date: new Date().toISOString().split('T')[0],
         brand: itemToDeliver.newBrand,
         model: itemToDeliver.newModel,
@@ -382,8 +384,8 @@ export default function BookedAndExchange() {
 
       // Create Pending Payment entry from Exchange Deliver ONLY
       const totalAmt = Number(itemToDeliver.newAmount || 0);
-      const paidAmt = Number(itemToDeliver.oldAmount || 0);
-      const pendingAmt = Math.max(0, totalAmt - paidAmt);
+      const paidAmt = 0; // Paid Amount will be zero as requested for Book New Device for Exchange
+      const pendingAmt = totalAmt;
 
       const pendingPaymentItem = {
         id: `EXCH-PAY-${Date.now()}`,
@@ -394,9 +396,9 @@ export default function BookedAndExchange() {
         model: itemToDeliver.newModel,
         imei: `35${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
         totalAmount: totalAmt,
-        paidAmount: paidAmt,
-        pendingAmount: pendingAmt,
-        status: pendingAmt === 0 ? 'Received' : 'Pending',
+        paidAmount: 0,
+        pendingAmount: totalAmt,
+        status: 'Pending',
         type: 'AGENT_PAYABLE',
         recordCategory: 'BOOK_EXCHANGE',
         mode: 'Exchange Trade-in',

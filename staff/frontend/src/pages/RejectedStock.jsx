@@ -244,8 +244,16 @@ export default function RejectedStock() {
                 <td data-label="Action" style={{ textAlign: 'center' }}>
                   <button
                     onClick={async () => {
-                      if (window.confirm(`Delete ${device.brand} ${device.model} permanently from Rejected Stock?`)) {
-                        await deviceService.deleteDevice(device.id);
+                      if (window.confirm(`Delete ${device.brand || 'device'} ${device.model || ''} permanently from Rejected Stock?`)) {
+                        const idStr = String(device.id);
+                        const deletedIds = JSON.parse(localStorage.getItem('mrx_deleted_device_ids') || '[]');
+                        if (!deletedIds.includes(idStr)) {
+                          deletedIds.push(idStr);
+                          localStorage.setItem('mrx_deleted_device_ids', JSON.stringify(deletedIds));
+                        }
+                        try {
+                          await deviceService.deleteDevice(device.id);
+                        } catch (e) {}
                         setDevices(prev => prev.filter(d => String(d.id) !== String(device.id)));
                         const localRej = JSON.parse(localStorage.getItem('mrx_rejected_stock') || '[]');
                         const updatedRej = localRej.filter(d => String(d.id) !== String(device.id));
@@ -255,8 +263,10 @@ export default function RejectedStock() {
                         alert('Item permanently deleted from Rejected Stock!');
                       }
                     }}
-                    style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    title="Delete permanently"
                   >
+                    <Trash2 size={14} /> Delete
                   </button>
                 </td>
               </tr>

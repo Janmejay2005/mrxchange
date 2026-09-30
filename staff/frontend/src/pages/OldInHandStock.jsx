@@ -16,23 +16,25 @@ import {
   CheckCircle,
   XCircle,
   ShoppingBag,
-  AlertTriangle
+  AlertTriangle,
+  BarChart2
 } from 'lucide-react';
 import { deviceService, statsService, saleService } from '../services/api';
 import { KPICard, CurrencyAmount } from '../components/common/UIComponents';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 import PdfExportModal from '../components/common/PdfExportModal';
 import CameraCaptureModal from '../components/common/CameraCaptureModal';
 
 export default function OldInHandStock() {
+  const { user } = useAuth();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [devices, setDevices] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('All Brands');
-  const [expandedImage, setExpandedImage] = useState(null);
+
 
   const [exportModalConfig, setExportModalConfig] = useState({
     isOpen: false,
@@ -493,8 +495,14 @@ export default function OldInHandStock() {
 
       setDevices(allInHand.filter(d => d.status === 'OLD_IN_HAND' || !d.status || d.status === 'Booked' || d.status === 'BOOKED' || d.status === 'Delivered' || d.status === 'Sold'));
 
-      const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
-      setStats(statsRes.data);
+      try {
+        const statsRes = await statsService.getInHandStats({ type: 'OLD_IN_HAND' });
+        if (statsRes && statsRes.data) {
+          setStats(statsRes.data);
+        }
+      } catch (statsErr) {
+        console.warn('Backend in-hand stats offline/fallback:', statsErr);
+      }
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -527,7 +535,8 @@ export default function OldInHandStock() {
     return `${y}-${m}-${day}`;
   };
 
-  const filteredDevices = devices.filter(d => {
+  const filteredDevices = (devices || []).filter(d => {
+    if (!d) return false;
     if (d.status === 'Booked' || d.status === 'BOOKED' || d.status === 'Delivered' || d.status === 'Sold') return false;
     if (selectedBrand !== 'All Brands' && d.brand !== selectedBrand) return false;
     if (selectedDate) {
@@ -537,8 +546,9 @@ export default function OldInHandStock() {
     }
     return true;
   }).sort((a, b) => {
-    // Recent added data appears on top (newest first), older at bottom
+    if (!a || !b) return 0;
     const getTimestamp = (item) => {
+      if (!item) return 0;
       const val = item.intake_date || item.created_at || item.date || item.timestamp;
       if (val) {
         const parsed = new Date(val).getTime();
@@ -623,7 +633,7 @@ export default function OldInHandStock() {
             Pre-existing / acquired mobile devices ready for customer sale • {selectedDate ? `Date: ${selectedDate}` : 'All Stock'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button onClick={handleExportXls} className="btn-secondary" title="Export Excel (.xls)">
             <Download size={15} color="#0284c7" /> Excel (.xls)
           </button>
@@ -1039,10 +1049,28 @@ export default function OldInHandStock() {
                     />
                   </div>
 
-                  {/* Pay By field is separate */}
+                  {/* Pay By field with staff datalist autocomplete */}
                   <div>
                     <label className="form-label">Pay By (Payer / Account) *</label>
-                    <input type="text" className="form-control" placeholder="Enter payer / account (e.g. Jeet, Sonal, Staff)" value={bookForm.newPayBy} onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} required />
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      list="staff-payers-list"
+                      placeholder="Select or enter payer name (e.g. Jeet, Sonal...)" 
+                      value={bookForm.newPayBy} 
+                      onChange={(e) => setBookForm({ ...bookForm, newPayBy: e.target.value })} 
+                      required 
+                    />
+                    <datalist id="staff-payers-list">
+                      <option value="Jeet Khubchandani" />
+                      <option value="Sonal Wadwani" />
+                      {(() => {
+                        try {
+                          const team = JSON.parse(localStorage.getItem('mrx_team_members') || '[]');
+                          return team.map(m => <option key={m.id} value={m.name} />);
+                        } catch (e) { return null; }
+                      })()}
+                    </datalist>
                   </div>
 
                   <div>
@@ -1095,6 +1123,8 @@ export default function OldInHandStock() {
           </div>
         </div>
       )}
+
+
 
       {/* PDF Export Preview Dialogue Modal */}
       <PdfExportModal

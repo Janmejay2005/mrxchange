@@ -29,6 +29,8 @@ export default function PendingAndReceivingPayments() {
     equatedBy: 'Jeet',
     customerName: '',
     paymentType: 'INSTALLMENT', // 'INSTALLMENT' or 'COMPLETE'
+    paymentMode: 'UPI', // 'Cash', 'UPI', 'Card', 'NetBanking', 'Cheque'
+    screenshot: '',
     newPay: '',
     date: new Date().toISOString().split('T')[0]
   });
@@ -37,9 +39,29 @@ export default function PendingAndReceivingPayments() {
   const [selectedPersonForBreakdown, setSelectedPersonForBreakdown] = useState(null);
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
 
+  // Partner Attribution Breakdown Modal State
+  const [selectedPartnerForBreakdown, setSelectedPartnerForBreakdown] = useState(null);
+  const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+
+  const openPartnerBreakdown = (partnerName) => {
+    setSelectedPartnerForBreakdown(partnerName || 'Jeet Khubchandani');
+    setIsPartnerModalOpen(true);
+  };
+
   const openPersonBreakdown = (customerName) => {
     setSelectedPersonForBreakdown(customerName || 'Customer');
     setIsPersonModalOpen(true);
+  };
+
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEquateForm(prev => ({ ...prev, screenshot: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const getStoredPayments = () => {
@@ -94,6 +116,8 @@ export default function PendingAndReceivingPayments() {
       equatedBy: 'Jeet',
       customerName: row ? row.customerName : '',
       paymentType: row && row.pendingAmount === 0 ? 'COMPLETE' : 'INSTALLMENT',
+      paymentMode: row ? (row.mode || 'UPI') : 'UPI',
+      screenshot: '',
       newPay: '',
       date: row ? (toYMD(row.date) || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
     });
@@ -144,11 +168,84 @@ export default function PendingAndReceivingPayments() {
   const receivingList = applyFilters(payments.filter(item => !isAgentPayableItem(item)));
 
   // COLUMN 2: Pending Payments Column (Agent Payables - Book New Device for Exchange)
-  const pendingList = applyFilters(payments.filter(item => isAgentPayableItem(item) && Number(item.pendingAmount) > 0));
+  // Paid Amount (₹) * will be zero for Book New Device for Exchange unless manually equated
+  const pendingList = applyFilters(
+    payments
+      .filter(item => isAgentPayableItem(item))
+      .map(item => {
+        if (!item.isEquatedManual && (item.recordCategory === 'BOOK_EXCHANGE' || String(item.id).startsWith('EXCH-') || String(item.id).startsWith('AGENT-'))) {
+          const tot = Number(item.totalAmount || item.purchasedAmount || 0);
+          return {
+            ...item,
+            paidAmount: 0,
+            pendingAmount: tot,
+            status: tot > 0 ? 'Pending' : 'Received'
+          };
+        }
+        return item;
+      })
+      .filter(item => Number(item.pendingAmount) > 0)
+  );
 
   const totalPendingVal = pendingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
   const totalReceivedVal = receivingList.reduce((sum, item) => sum + (Number(item.paidAmount) || 0), 0);
   const totalReceivingPendingVal = receivingList.reduce((sum, item) => sum + (Number(item.pendingAmount) || 0), 0);
+
+  // Admin-Wise Partner Attribution calculation
+  const partnerAttributionList = React.useMemo(() => {
+    const superAdmins = ['Jeet Khubchandani', 'Sonal Wadwani'];
+    
+    const localInvestments = JSON.parse(localStorage.getItem('mrx_investments') || '[]');
+    const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+    const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+    const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+    const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+    
+    const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+    
+    const totalProfitEarned = localSales.reduce((sum, s) => {
+      const sellPrice = Number(s.sellPrice || s.price_per_unit || s.amount || 0);
+      const buyPrice = Number(s.purchase_amount || s.amount || 0);
+      return sum + Math.max(0, sellPrice - buyPrice);
+    }, 0);
+    
+    const partnerData = superAdmins.map(adminName => {
+      const shortName = adminName.split(' ')[0].toLowerCase();
+      
+      const capitalInv = localInvestments
+        .filter(inv => (inv.investor_name || inv.admin_name || '').toLowerCase().includes(shortName))
+        .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+        
+      const deviceInv = allIntake
+        .filter(d => (d.paid_by || d.purchasedBy || '').toLowerCase().includes(shortName))
+        .reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+        
+      const totalInvested = capitalInv + deviceInv;
+      return {
+        adminName,
+        capitalInv,
+        deviceInv,
+        totalInvested
+      };
+    });
+    
+    const combinedTotalInvestment = partnerData.reduce((sum, p) => sum + p.totalInvested, 0);
+    
+    return partnerData.map(p => {
+      const sharePct = combinedTotalInvestment > 0 
+        ? Number(((p.totalInvested / combinedTotalInvestment) * 100).toFixed(1)) 
+        : 50.0;
+      const profitEarned = Math.round(totalProfitEarned * (sharePct / 100));
+      const totalValuation = p.totalInvested + profitEarned;
+      
+      return {
+        ...p,
+        sharePct,
+        profitEarned,
+        totalValuation
+      };
+    });
+  }, [payments]);
 
   // Card Payment Identification & Breakdown
   const cardPaymentsList = payments.filter(item => String(item.mode || item.paymentType || '').toLowerCase() === 'card');
@@ -189,11 +286,21 @@ export default function PendingAndReceivingPayments() {
         return;
       }
 
+      const historyItem = {
+        id: Date.now(),
+        date: equateForm.date,
+        amount: newPayAmt,
+        mode: equateForm.paymentMode || 'UPI',
+        screenshot: equateForm.screenshot || '',
+        equatedBy: equateForm.equatedBy || 'Jeet'
+      };
+
       const updatedList = payments.map(p => {
         if (String(p.id) === String(selectedPayment.id)) {
           const newPaidAmount = Math.min(currentTotal, existingPaid + newPayAmt);
           const newPendingAmount = Math.max(0, currentTotal - newPaidAmount);
           const newStatus = newPendingAmount === 0 ? 'Received' : 'Pending';
+          const existingHistory = p.equateHistory || [];
 
           return {
             ...p,
@@ -202,18 +309,59 @@ export default function PendingAndReceivingPayments() {
             paidAmount: newPaidAmount,
             pendingAmount: newPendingAmount,
             status: newStatus,
-            equatedBy: equateForm.equatedBy || 'Jeet'
+            mode: equateForm.paymentMode || p.mode || 'UPI',
+            equatedBy: equateForm.equatedBy || 'Jeet',
+            isEquatedManual: true,
+            equateHistory: [historyItem, ...existingHistory]
           };
         }
         return p;
       });
       savePaymentsToStorage(updatedList);
-      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Paid Amount equated to Total Price.`);
+
+      // Sync equate status to mrx_exchanges if it matches an exchange
+      try {
+        const storedExchanges = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]');
+        const targetName = (equateForm.customerName || selectedPayment?.customerName || '').toLowerCase();
+        const updatedExchanges = storedExchanges.map(ex => {
+          const newPayer = (ex.newPurchasedBy || '').toLowerCase();
+          const oldPayer = (ex.oldPurchasedBy || '').toLowerCase();
+          const custName = (ex.customerName || '').toLowerCase();
+          if ((targetName && (newPayer.includes(targetName) || oldPayer.includes(targetName) || custName.includes(targetName))) || String(ex.id) === String(selectedPayment?.id)) {
+            const exPaid = (Number(ex.equatedAmount) || 0) + newPayAmt;
+            const exTot = Number(ex.newAmount || ex.purchasedAmount || 0);
+            return {
+              ...ex,
+              equatedAmount: exPaid,
+              isEquated: exPaid >= exTot,
+              equateStatus: exPaid >= exTot ? 'Equated' : 'Partial',
+              equatedDate: equateForm.date,
+              equatedBy: equateForm.equatedBy || 'Jeet',
+              equateHistory: [historyItem, ...(ex.equateHistory || [])]
+            };
+          }
+          return ex;
+        });
+        localStorage.setItem('mrx_exchanges', JSON.stringify(updatedExchanges));
+        window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      } catch (e) {}
+
+      alert(`Equated successfully for ${equateForm.customerName || selectedPayment.customerName}! Mode: ${equateForm.paymentMode || 'UPI'}. Transaction recorded.`);
+      setIsEquateModalOpen(false);
     } else {
       const isBookExch = equateForm.recordCategory === 'BOOK_EXCHANGE';
       const enteredTotal = Number(equateForm.pendingPayment) || newPayAmt;
       const initialPaid = Math.min(newPayAmt, enteredTotal);
       const calculatedPending = Math.max(0, enteredTotal - initialPaid);
+
+      const historyItem = {
+        id: Date.now(),
+        date: equateForm.date,
+        amount: initialPaid,
+        mode: equateForm.paymentMode || 'UPI',
+        screenshot: equateForm.screenshot || '',
+        equatedBy: equateForm.equatedBy || 'Jeet'
+      };
 
       const newPayEntry = {
         id: isBookExch ? `EXCH-PAY-${Date.now()}` : `PAY-${Date.now()}`,
@@ -227,13 +375,15 @@ export default function PendingAndReceivingPayments() {
         status: calculatedPending <= 0 ? 'Received' : 'Pending',
         type: isBookExch ? 'AGENT_PAYABLE' : 'CUSTOMER_RECEIVABLE',
         recordCategory: isBookExch ? 'BOOK_EXCHANGE' : 'SELL_MOBILE',
-        mode: 'Cash',
-        equatedBy: equateForm.equatedBy || 'Jeet'
+        mode: equateForm.paymentMode || 'UPI',
+        equatedBy: equateForm.equatedBy || 'Jeet',
+        isEquatedManual: true,
+        equateHistory: [historyItem]
       };
       savePaymentsToStorage([newPayEntry, ...payments]);
-      alert(`Payment record created successfully for ${equateForm.customerName || 'Account'}!`);
+      alert(`New entry & equate saved for ${equateForm.customerName}! Mode: ${equateForm.paymentMode || 'UPI'}.`);
+      setIsEquateModalOpen(false);
     }
-    setIsEquateModalOpen(false);
   };
 
   const handleExportPdf = () => {
@@ -580,6 +730,75 @@ export default function PendingAndReceivingPayments() {
             </div>
           </div>
         </div>
+
+        {/* ADMIN-WISE PARTNER ATTRIBUTION TABLE */}
+        <div className="card-container" style={{ marginTop: '24px', background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', borderTop: '4px solid #7c3aed' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid #f3e8ff', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CircleDollarSign size={20} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#5b21b6', margin: 0 }}>Admin-Wise Partner Attribution Table</h2>
+                <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 700 }}>
+                  Show Capital Invested and Profits Earned by Super Admins
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="custom-table" style={{ width: '100%', fontSize: '12px' }}>
+              <thead>
+                <tr>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6' }}>#</th>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6' }}>Super Admin / Partner Name</th>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6', textAlign: 'right' }}>Total Capital Invested (₹)</th>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6', textAlign: 'right' }}>Attributed Net Profit (₹)</th>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6', textAlign: 'right' }}>Total Valuation / Payout (₹)</th>
+                  <th style={{ backgroundColor: '#f5f3ff', color: '#5b21b6', textAlign: 'center' }}>History Breakdown</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partnerAttributionList.map((partner, idx) => (
+                  <tr key={partner.adminName}>
+                    <td style={{ fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                    <td style={{ fontWeight: 800, color: '#0f172a' }}>
+                      <button 
+                        type="button"
+                        onClick={() => openPartnerBreakdown(partner.adminName)}
+                        style={{ background: 'none', border: 'none', padding: 0, color: '#5b21b6', fontWeight: 800, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left', fontSize: '12px' }}
+                        title="Click to view full investment & profit history breakdown"
+                      >
+                        👤 {partner.adminName}
+                      </button>
+                      <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 800, marginLeft: '6px' }}>Super Admin</span>
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#0284c7' }}>
+                      <CurrencyAmount amount={partner.totalInvested} />
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#16a34a' }}>
+                      <CurrencyAmount amount={partner.profitEarned} />
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#7c3aed', fontSize: '13px' }}>
+                      <CurrencyAmount amount={partner.totalValuation} />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => openPartnerBreakdown(partner.adminName)} 
+                        className="btn-secondary" 
+                        style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', fontWeight: 700, borderColor: '#c4b5fd', color: '#6d28d9', background: '#f5f3ff' }}
+                      >
+                        📜 Breakdown History
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Person Pay Breakdown Statement Modal */}
@@ -827,6 +1046,42 @@ export default function PendingAndReceivingPayments() {
                 />
               </div>
 
+              {/* Payment Mode Selection */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Payment Mode *</label>
+                  <select 
+                    className="form-control" 
+                    value={equateForm.paymentMode} 
+                    onChange={(e) => setEquateForm({ ...equateForm, paymentMode: e.target.value })}
+                  >
+                    <option value="UPI">UPI Payment</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="NetBanking">Net Banking</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontWeight: 700 }}>Upload Payment Screenshot Proof</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="form-control" 
+                    onChange={handleScreenshotChange}
+                    style={{ fontSize: '12px' }} 
+                  />
+                  {equateForm.screenshot && (
+                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <img src={equateForm.screenshot} alt="Screenshot Proof" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>✓ Screenshot Attached</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Equated by */}
               <div style={{ marginBottom: '14px' }}>
                 <label className="form-label">Equated by (Super Admin) *</label>
@@ -909,11 +1164,170 @@ export default function PendingAndReceivingPayments() {
                 </div>
               </div>
 
+              {/* Equate History Records Table */}
+              {selectedPayment && selectedPayment.equateHistory && selectedPayment.equateHistory.length > 0 && (
+                <div style={{ marginBottom: '18px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                    📜 Previous Equate Transaction History
+                  </div>
+                  <div className="table-responsive">
+                    <table className="custom-table" style={{ fontSize: '11px', margin: 0 }}>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Amount Paid (₹)</th>
+                          <th>Mode</th>
+                          <th>Proof</th>
+                          <th>Equated By</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedPayment.equateHistory.map((h, i) => (
+                          <tr key={h.id || i}>
+                            <td>{h.date}</td>
+                            <td style={{ fontWeight: 700, color: '#059669' }}><CurrencyAmount amount={h.amount} /></td>
+                            <td><span style={{ padding: '2px 6px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', fontWeight: 700 }}>{h.mode}</span></td>
+                            <td>
+                              {h.screenshot ? (
+                                <img src={h.screenshot} alt="Proof" style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }} onClick={() => window.open(h.screenshot, '_blank')} />
+                              ) : (
+                                <span style={{ color: '#94a3b8' }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ fontWeight: 700 }}>{h.equatedBy}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsEquateModalOpen(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontWeight: 800 }}>Save & Equate</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Partner Attribution Breakdown History Modal */}
+      {isPartnerModalOpen && selectedPartnerForBreakdown && (
+        <div className="modal-overlay" onClick={() => setIsPartnerModalOpen(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#5b21b6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  📜 Partner History Breakdown: <span style={{ color: '#7c3aed' }}>{selectedPartnerForBreakdown}</span>
+                </h2>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+                  Itemized investment history, intake contributions, and attributed profit share.
+                </p>
+              </div>
+              <button onClick={() => setIsPartnerModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748b" /></button>
+            </div>
+
+            {(() => {
+              const partnerName = selectedPartnerForBreakdown;
+              const shortName = partnerName.split(' ')[0].toLowerCase();
+              const localInvestments = JSON.parse(localStorage.getItem('mrx_investments') || '[]');
+              const localDevices = JSON.parse(localStorage.getItem('mrx_devices') || '[]');
+              const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
+              const localOldHand = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]');
+              const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+
+              const capitalItems = localInvestments.filter(inv => (inv.investor_name || inv.admin_name || '').toLowerCase().includes(shortName));
+              const allIntake = [...localDevices, ...localOldInv, ...localOldHand];
+              const intakeItems = allIntake.filter(d => (d.paid_by || d.purchasedBy || '').toLowerCase().includes(shortName));
+
+              const totCap = capitalItems.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+              const totIntake = intakeItems.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount) || 0), 0);
+              const totInv = totCap + totIntake;
+              const totGrossProfit = localSales.reduce((sum, s) => {
+                const sellPrice = Number(s.sellPrice || s.price_per_unit || s.amount || 0);
+                const buyPrice = Number(s.purchase_amount || s.amount || 0);
+                return sum + Math.max(0, sellPrice - buyPrice);
+              }, 0);
+              const profitEarned = Math.round(totGrossProfit * 0.5);
+
+              return (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ background: '#f5f3ff', padding: '12px', borderRadius: '10px', border: '1px solid #ddd6fe' }}>
+                      <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 700 }}>Total Invested</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#5b21b6' }}><CurrencyAmount amount={totInv} /></div>
+                    </div>
+                    <div style={{ background: '#ecfdf5', padding: '12px', borderRadius: '10px', border: '1px solid #a7f3d0' }}>
+                      <span style={{ fontSize: '11px', color: '#047857', fontWeight: 700 }}>Attributed Profit (50%)</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#059669' }}><CurrencyAmount amount={profitEarned} /></div>
+                    </div>
+                    <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                      <span style={{ fontSize: '11px', color: '#0284c7', fontWeight: 700 }}>Total Equity Payout</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7' }}><CurrencyAmount amount={totInv + profitEarned} /></div>
+                    </div>
+                  </div>
+
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>📦 Device Intake Investment History ({intakeItems.length} Devices)</h4>
+                  <div className="table-responsive" style={{ marginBottom: '20px', maxHeight: '200px', overflowY: 'auto' }}>
+                    <table className="custom-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Device Brand & Model</th>
+                          <th>Paid By</th>
+                          <th style={{ textAlign: 'right' }}>Amount Paid (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {intakeItems.length === 0 ? (
+                          <tr><td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: '#94a3b8' }}>No device intake entries recorded for this admin.</td></tr>
+                        ) : (
+                          intakeItems.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.intake_date || item.date || 'Today'}</td>
+                              <td style={{ fontWeight: 700 }}>{item.brand} {item.model}</td>
+                              <td>{item.paid_by || item.purchasedBy || partnerName}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#0284c7' }}><CurrencyAmount amount={item.purchase_amount || item.amount} /></td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>💰 Capital Contribution Records ({capitalItems.length} Entries)</h4>
+                  <div className="table-responsive" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    <table className="custom-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>Code</th>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th>Remarks</th>
+                          <th style={{ textAlign: 'right' }}>Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {capitalItems.length === 0 ? (
+                          <tr><td colSpan="5" style={{ textAlign: 'center', padding: '16px', color: '#94a3b8' }}>No direct capital entries recorded.</td></tr>
+                        ) : (
+                          capitalItems.map((inv, idx) => (
+                            <tr key={idx}>
+                              <td style={{ fontWeight: 700 }}>{inv.investment_code || `INV-${idx+1}`}</td>
+                              <td>{inv.investment_date || 'Today'}</td>
+                              <td><span style={{ padding: '2px 6px', borderRadius: '6px', background: '#f5f3ff', color: '#7c3aed', fontWeight: 700 }}>{inv.investment_type}</span></td>
+                              <td>{inv.remarks || '—'}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#7c3aed' }}><CurrencyAmount amount={inv.amount} /></td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

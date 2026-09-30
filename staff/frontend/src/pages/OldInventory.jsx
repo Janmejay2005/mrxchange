@@ -898,8 +898,16 @@ export default function OldInventory() {
                   <input type="text" className="form-control" value={editForm.colour} onChange={(e) => setEditForm({ ...editForm, colour: e.target.value })} />
                 </div>
                 <div>
-                  <label className="form-label">Paid By *</label>
-                  <input type="text" className="form-control" value={editForm.paid_by} onChange={(e) => setEditForm({ ...editForm, paid_by: e.target.value })} required />
+                  <label className="form-label">Paid By (Super Admin) *</label>
+                  <select 
+                    className="form-control" 
+                    value={editForm.paid_by || 'Jeet Khubchandani'} 
+                    onChange={(e) => setEditForm({ ...editForm, paid_by: e.target.value })}
+                    style={{ fontWeight: 700 }}
+                  >
+                    <option value="Jeet Khubchandani">Jeet Khubchandani</option>
+                    <option value="Sonal Wadwani">Sonal Wadwani</option>
+                  </select>
                 </div>
               </div>
 

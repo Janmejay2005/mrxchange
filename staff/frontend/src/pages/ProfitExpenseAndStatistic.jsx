@@ -111,12 +111,31 @@ export default function ProfitExpenseAndStatistic() {
   const loadData = async () => {
     try {
       const [salesRes, expRes, devRes] = await Promise.all([
-        saleService.getSales(),
-        expenseService.getExpenses(),
+        saleService.getSales().catch(() => ({ data: [] })),
+        expenseService.getExpenses().catch(() => ({ data: [] })),
         deviceService.getDevices().catch(() => [])
       ]);
-      setPhoneProfits(salesRes.data || []);
-      setExpenses(expRes.data || []);
+
+      const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+      const remoteSales = salesRes?.data || [];
+      setPhoneProfits(remoteSales.length > 0 ? remoteSales : localSales);
+
+      const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
+      const remoteExpenses = expRes?.data || [];
+      const mergedExpMap = new Map();
+      [...remoteExpenses, ...localExpenses].forEach(e => {
+        if (e) {
+          const key = e.id || e.expense_code || `${e.category || e.type}_${e.amount}_${e.expense_date || e.date}`;
+          mergedExpMap.set(String(key), {
+            ...e,
+            date: e.date || e.expense_date || new Date().toISOString().split('T')[0],
+            admin: e.admin || e.admin_name || 'Jeet',
+            type: e.type || e.category || 'Shop Rent',
+            remarks: e.remarks || ''
+          });
+        }
+      });
+      setExpenses(Array.from(mergedExpMap.values()));
 
       // Deduplicate and merge Add Inventory devices from API and localStorage
       const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
