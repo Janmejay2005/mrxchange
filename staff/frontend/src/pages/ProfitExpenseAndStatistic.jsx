@@ -25,7 +25,7 @@ import {
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { CurrencyAmount } from '../components/common/UIComponents';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import PdfExportModal from '../components/common/PdfExportModal';
 
 import { expenseService, saleService, deviceService } from '../services/api';
@@ -33,6 +33,7 @@ import { expenseService, saleService, deviceService } from '../services/api';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export default function ProfitExpenseAndStatistic() {
+  const navigate = useNavigate();
   const { globalSearch, selectedDate } = useOutletContext() || {};
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'profit' | 'expenses' | 'statistics' | 'booking_staff_expenses'
   const [selectedAdmin, setSelectedAdmin] = useState('All Super Admins');
@@ -118,7 +119,39 @@ export default function ProfitExpenseAndStatistic() {
 
       const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
       const remoteSales = salesRes?.data || [];
-      setPhoneProfits(remoteSales.length > 0 ? remoteSales : localSales);
+      const combinedSalesMap = new Map();
+      [...remoteSales, ...localSales].forEach(s => {
+        if (!s) return;
+        const actualAmount = Number(s.actualAmount || s.actual_amount || s.totalAmount || s.selling || s.selling_price || s.soldPrice || s.ppu || 0);
+        const sellingPrice = Number(s.sellingPrice || s.selling_price || s.purchase || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || 0);
+        const bevVal = Number(s.bev || s.exchangeValue || s.newAmount || 0);
+        const repairVal = Number(s.repair_cost || s.repairCost || 0);
+        
+        let perMobileProfit = 0;
+        if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
+          perMobileProfit = Number(s.profit);
+        } else {
+          perMobileProfit = actualAmount - (sellingPrice + bevVal + repairVal);
+        }
+
+        const norm = {
+          ...s,
+          id: s.id || s.sale_code || `SALE-${s.brand}_${s.model}_${actualAmount}_${s.date}`,
+          admin: s.admin || s.admin_name || s.soldBy || s.sold_by || 'Jeet Khubchandani',
+          brand: s.brand || 'Device',
+          model: s.model || 'Mobile',
+          actualAmount: actualAmount,
+          sellingPrice: sellingPrice,
+          purchase: sellingPrice,
+          selling: actualAmount,
+          profit: perMobileProfit,
+          date: s.date || s.sale_date || new Date().toISOString().split('T')[0]
+        };
+
+        const key = norm.id || `${norm.brand}_${norm.model}_${norm.selling}_${norm.date}`;
+        combinedSalesMap.set(String(key), norm);
+      });
+      setPhoneProfits(Array.from(combinedSalesMap.values()));
 
       const localExpenses = JSON.parse(localStorage.getItem('mrx_expenses') || '[]');
       const remoteExpenses = expRes?.data || [];
@@ -170,7 +203,34 @@ export default function ProfitExpenseAndStatistic() {
     } catch (err) {
       console.error("Error loading profit and expense data:", err);
       try {
-        setPhoneProfits(JSON.parse(localStorage.getItem('mrx_sales') || '[]'));
+        const localSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+        const normLocalSales = localSales.map(s => {
+          if (!s) return null;
+          const sellingVal = Number(s.selling || s.selling_price || s.soldPrice || s.totalAmount || s.unitPrice || s.ppu || 0);
+          const buyVal = Number(s.purchase || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || 0);
+          const bevVal = Number(s.bev || s.exchangeValue || s.newAmount || 0);
+          const repairVal = Number(s.repair_cost || s.repairCost || 0);
+          let calculatedProfit = 0;
+          if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
+            calculatedProfit = Number(s.profit);
+          } else if (s.unitProfit !== undefined && s.unitProfit !== null && !isNaN(Number(s.unitProfit))) {
+            calculatedProfit = Number(s.unitProfit);
+          } else {
+            calculatedProfit = sellingVal - (buyVal + bevVal + repairVal);
+          }
+          return {
+            ...s,
+            id: s.id || s.sale_code || `SALE-${s.brand}_${s.model}_${sellingVal}_${s.date}`,
+            admin: s.admin || s.admin_name || s.soldBy || s.sold_by || 'Jeet Khubchandani',
+            brand: s.brand || 'Device',
+            model: s.model || 'Mobile',
+            purchase: buyVal,
+            selling: sellingVal,
+            profit: calculatedProfit,
+            date: s.date || s.sale_date || new Date().toISOString().split('T')[0]
+          };
+        }).filter(Boolean);
+        setPhoneProfits(normLocalSales);
         setExpenses(JSON.parse(localStorage.getItem('mrx_expenses') || '[]'));
 
         const localOldInv = JSON.parse(localStorage.getItem('mrx_old_inventory') || '[]');
@@ -374,9 +434,9 @@ export default function ProfitExpenseAndStatistic() {
     return sum + (unitProfit * units);
   }, 0);
 
-  // 4. Expenses = PV (Purchased Amounts) + Operational Expenses (Rent, Salary, etc.)
+  // 4. Expenses = Operational Expenses (Rent, Salary, Bills, etc.)
   const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  const totalExpensesAmount = totalPV + operationalExpenses;
+  const totalExpensesAmount = operationalExpenses;
   const finalProfit = totalProfit - operationalExpenses;
 
   // Investment Base for ROI calculation
@@ -733,7 +793,7 @@ export default function ProfitExpenseAndStatistic() {
         </button>
 
         <button
-          onClick={() => setActiveTab('expenses')}
+          onClick={() => navigate('/expenses')}
           style={{
             padding: '10px 18px',
             fontWeight: 700,
@@ -748,8 +808,9 @@ export default function ProfitExpenseAndStatistic() {
             gap: '8px',
             transition: 'all 0.2s ease'
           }}
+          title="Open Operating Expenses Page"
         >
-          <Wallet size={16} /> Expenses Register
+          <Wallet size={16} /> Expenses Register Page
           <span style={{ background: activeTab === 'expenses' ? '#ea580c' : '#e2e8f0', color: activeTab === 'expenses' ? '#ffffff' : '#64748b', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>
             {filteredExpenses.length}
           </span>
@@ -991,9 +1052,9 @@ export default function ProfitExpenseAndStatistic() {
                   <th>Date</th>
                   <th>Super Admin</th>
                   <th>Brand & Model</th>
-                  <th>Bought Cost (₹)</th>
-                  <th>Sold Price (₹)</th>
-                  <th>Net Profit (₹)</th>
+                  <th>Intake Cost (₹)</th>
+                  <th>Actual Amount (₹)</th>
+                  <th>Per Mobile Profit (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -1009,8 +1070,8 @@ export default function ProfitExpenseAndStatistic() {
                         <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.model}</div>
                         <div style={{ fontSize: '11px', color: '#64748b' }}>{item.brand}</div>
                       </td>
-                      <td style={{ fontWeight: 600, color: '#475569' }}><CurrencyAmount amount={item.purchase} /></td>
-                      <td style={{ fontWeight: 700, color: '#0284c7' }}><CurrencyAmount amount={item.selling} /></td>
+                      <td style={{ fontWeight: 600, color: '#475569' }}><CurrencyAmount amount={item.sellingPrice !== undefined ? item.sellingPrice : item.purchase} /></td>
+                      <td style={{ fontWeight: 700, color: '#0284c7' }}><CurrencyAmount amount={item.actualAmount !== undefined ? item.actualAmount : item.selling} /></td>
                       <td style={{ fontWeight: 800, color: item.profit >= 0 ? '#16a34a' : '#ef4444' }}>
                         <CurrencyAmount amount={item.profit} />
                       </td>

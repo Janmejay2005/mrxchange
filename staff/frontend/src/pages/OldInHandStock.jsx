@@ -347,6 +347,8 @@ export default function OldInHandStock() {
       unitPrice: Number(sellForm.soldPrice) || 0,
       totalAmount: Number(sellForm.totalAmount) || 0,
       paidAmount: Number(sellForm.paidAmount) || 0,
+      purchase_amount: Number(selectedSellDevice.purchase_amount || selectedSellDevice.amount || selectedSellDevice.paidAmount || 0),
+      purchase: Number(selectedSellDevice.purchase_amount || selectedSellDevice.amount || selectedSellDevice.paidAmount || 0),
       paymentMode: sellForm.paymentType || 'Cash',
       status: 'Sold'
     };

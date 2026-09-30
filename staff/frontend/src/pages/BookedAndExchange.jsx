@@ -479,6 +479,8 @@ export default function BookedAndExchange() {
       unitPrice: Number(sellForm.soldPrice) || 0,
       totalAmount: Number(sellForm.totalAmount) || 0,
       paidAmount: Number(sellForm.paidAmount) || 0,
+      purchase_amount: Number(selectedSellRow.purchasedAmount || selectedSellRow.amount || selectedSellRow.purchase_amount || 0),
+      purchase: Number(selectedSellRow.purchasedAmount || selectedSellRow.amount || selectedSellRow.purchase_amount || 0),
       paymentMode: sellForm.paymentType || 'Cash',
       status: 'Sold'
     };
@@ -836,7 +838,7 @@ export default function BookedAndExchange() {
                 <th style={{ backgroundColor: '#f1f5f9' }}>RAM (GB)</th>
                 <th style={{ backgroundColor: '#f1f5f9' }}>Color</th>
                 <th style={{ backgroundColor: '#f1f5f9' }}>Purchased By</th>
-                <th style={{ backgroundColor: '#f1f5f9' }}>Purchased Amount </th>
+                <th style={{ backgroundColor: '#f1f5f9' }}>Exchange Value</th>
               </tr>
             </thead>
             <tbody>
@@ -884,8 +886,8 @@ export default function BookedAndExchange() {
                     <td data-label="Old RAM">{row.oldRam} GB</td>
                     <td data-label="Old Color">{row.oldColor}</td>
                     <td data-label="Old Purchased By">{row.oldPurchasedBy}</td>
-                    <td data-label="Old Amount" style={{ fontWeight: 700 }}>
-                      <CurrencyAmount amount={row.oldAmount} />
+                    <td data-label="Exchange Value" style={{ fontWeight: 700, color: '#16a34a' }}>
+                      <CurrencyAmount amount={row.exchangeValue !== undefined && row.exchangeValue !== null && row.exchangeValue !== '' ? row.exchangeValue : (row.oldExchangeValue || row.oldAmount || 0)} />
                       <span style={{ fontSize: '11px', color: '#0284c7', marginLeft: '4px' }}>🔄</span>
                     </td>
 

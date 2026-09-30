@@ -12,6 +12,7 @@ import {
   Package,
   CircleDollarSign,
   BarChart2,
+  Wallet,
   LogOut,
   X,
   Users
@@ -38,6 +39,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     { label: 'Rejected Inventory', path: '/rejected-stocks', icon: Trash2 },
     { label: 'Pending and Receiving Payments', path: '/pending-payments', icon: CircleDollarSign },
     { label: 'Profit, Expense and Statistic', path: '/profit-expense-statistic', icon: BarChart2 },
+    { label: 'Expenses Register', path: '/expenses', icon: Wallet },
     { label: 'Report', path: '/reports', icon: FileText },
     { label: 'Members', path: '/members-super-admin', icon: Users },
   ];

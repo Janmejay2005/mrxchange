@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { exportToXls } from '../utils/pdfGenerator';
 
 export default function Expenses() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, canAccessTab } = useAuth();
   const { selectedDate } = useOutletContext() || {};
   const [expenses, setExpenses] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -37,8 +37,8 @@ export default function Expenses() {
     remarks: ''
   });
 
-  // Guard: Superadmin only
-  if (!isSuperAdmin) {
+  // Access check
+  if (!isSuperAdmin && canAccessTab && !canAccessTab('/expenses')) {
     return <Navigate to="/dashboard" replace />;
   }
 

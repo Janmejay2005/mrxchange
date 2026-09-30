@@ -67,14 +67,14 @@ export default function Dashboard() {
       // Helper fingerprint for deduplicating devices across local and backend sources
       const makeFingerprint = (item) => {
         if (!item) return '';
-        if (item.device_code) return `code_${item.device_code}`;
-        if (item.id) return `id_${item.id}`;
         const b = (item.brand || item.oldBrand || item.newBrand || '').trim().toLowerCase();
         const m = (item.model || item.oldModel || item.newModel || '').trim().toLowerCase();
-        const amt = Number(item.purchase_amount || item.amount || item.paidAmount || 0);
-        const p = (item.paid_by || item.purchasedBy || item.paidBy || '').trim().toLowerCase();
-        const d = item.intake_date || item.created_at || item.date || '';
-        return `${b}|${m}|${item.storage || ''}|${item.ram || ''}|${amt}|${p}|${d}`;
+        const amt = Number(item.purchase_amount || item.amount || item.paidAmount || item.purchasedAmount || 0);
+        const p = (item.paid_by || item.purchasedBy || item.paidBy || item.admin || '').trim().toLowerCase();
+        const d = item.intake_date || item.created_at || item.date || item.timestamp || '';
+        const id = item.id || item.device_code || item.sno || '';
+        const status = item.status || 'DEV';
+        return `${status}_${id}_${b}_${m}_${item.storage || ''}_${item.ram || ''}_${amt}_${p}_${d}`;
       };
 
       // 1. Add Inventory (OLD_INVENTORY)

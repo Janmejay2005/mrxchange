@@ -96,13 +96,13 @@ export default function App() {
               <Route path="new-in-hand" element={<NewInHandStock />} />
               <Route path="pending-payments" element={<PendingAndReceivingPayments />} />
               <Route path="profit-expense-statistic" element={<ProfitExpenseAndStatistic />} />
+              <Route path="expenses" element={<Expenses />} />
               <Route path="reports" element={<Reports />} />
               <Route path="members-super-admin" element={<MembersSuperAdmin />} />
 
               <Route path="in-hand-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="resell-stock" element={<Navigate to="/old-in-hand" replace />} />
               <Route path="central-ledger" element={<SuperAdminRoute><CentralLedger /></SuperAdminRoute>} />
-              <Route path="expenses" element={<SuperAdminRoute><Expenses /></SuperAdminRoute>} />
               <Route path="investments" element={<SuperAdminRoute><Investments /></SuperAdminRoute>} />
             </Route>
           </Routes>
