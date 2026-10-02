@@ -682,27 +682,6 @@ export default function OldInventory() {
                   <td data-label="Status">
                     {/* Status Dropdown: old-inhand, repair, rejected stock, old-inventory */}
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setBookingDevice(device); setIsBookingModalOpen(true); }}
-                          style={{
-                            background: '#e0f2fe',
-                            color: '#0369a1',
-                            border: '1px solid #7dd3fc',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px'
-                          }}
-                          title="Book this mobile for customer"
-                        >
-                          📖 Book
-                        </button>
-
                         <select
                           value={device.status || 'OLD_INVENTORY'}
                           onClick={(e) => e.stopPropagation()}
@@ -725,7 +704,6 @@ export default function OldInventory() {
                           }}
                         >
                           <option value="OLD_INVENTORY">Add Inventory</option>
-                          <option value="Booked">📖 Book Mobile</option>
                           <option value="OLD_IN_HAND">Old In-Hand</option>
                           <option value="IN_REPAIR">Repair</option>
                           <option value="REJECTED">Rejected Stock</option>

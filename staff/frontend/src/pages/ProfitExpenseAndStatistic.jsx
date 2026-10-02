@@ -122,8 +122,8 @@ export default function ProfitExpenseAndStatistic() {
       const combinedSalesMap = new Map();
       [...remoteSales, ...localSales].forEach(s => {
         if (!s) return;
-        const actualAmount = Number(s.actualAmount || s.actual_amount || s.totalAmount || s.selling || s.selling_price || s.soldPrice || s.ppu || 0);
-        const sellingPrice = Number(s.sellingPrice || s.selling_price || s.purchase || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || 0);
+        const actualAmount = Number(s.actualAmount || s.actual_amount || s.totalAmount || s.selling || s.selling_price || s.soldPrice || s.ppu || s.unitPrice || 0);
+        const purchasePrice = Number(s.purchase || s.purchase_amount || s.pv || s.purchasePrice || s.sellingPrice || s.oldAmount || s.boughtCost || 0);
         const bevVal = Number(s.bev || s.exchangeValue || s.newAmount || 0);
         const repairVal = Number(s.repair_cost || s.repairCost || 0);
         
@@ -131,7 +131,7 @@ export default function ProfitExpenseAndStatistic() {
         if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
           perMobileProfit = Number(s.profit);
         } else {
-          perMobileProfit = actualAmount - (sellingPrice + bevVal + repairVal);
+          perMobileProfit = actualAmount - (purchasePrice + bevVal + repairVal);
         }
 
         const norm = {
@@ -141,10 +141,15 @@ export default function ProfitExpenseAndStatistic() {
           brand: s.brand || 'Device',
           model: s.model || 'Mobile',
           actualAmount: actualAmount,
-          sellingPrice: sellingPrice,
-          purchase: sellingPrice,
+          sellingPrice: actualAmount,
+          purchase: purchasePrice,
+          pv: purchasePrice,
           selling: actualAmount,
+          ppu: actualAmount,
+          bev: bevVal,
+          repair_cost: repairVal,
           profit: perMobileProfit,
+          unitProfit: perMobileProfit,
           date: s.date || s.sale_date || new Date().toISOString().split('T')[0]
         };
 
@@ -418,18 +423,21 @@ export default function ProfitExpenseAndStatistic() {
   // 2. Selling Revenue (PPU)
   const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
 
-  // 3. Profit Formula = PPU - (PV + BEV)
+  // 3. Profit Formula = PPU - (PV + BEV + Repair)
   const totalProfit = filteredProfits.reduce((sum, p) => {
-    const ppu = Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0;
-    const pv = Number(p.pv || p.oldAmount || p.purchase_amount || p.purchase) || 0;
+    const ppu = Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.actualAmount || p.totalAmount) || 0;
+    const pv = Number(p.pv || p.purchase || p.purchase_amount || p.purchasePrice || p.oldAmount) || 0;
     const bev = Number(p.bev || p.exchangeValue || p.newAmount) || 0;
+    const repair = Number(p.repair_cost || p.repairCost) || 0;
     const units = Number(p.units || p.unit || 1);
 
     let unitProfit = 0;
-    if (p.unitProfit !== undefined && p.unitProfit !== null && !isNaN(p.unitProfit)) {
+    if (p.profit !== undefined && p.profit !== null && !isNaN(Number(p.profit))) {
+      unitProfit = Number(p.profit);
+    } else if (p.unitProfit !== undefined && p.unitProfit !== null && !isNaN(Number(p.unitProfit))) {
       unitProfit = Number(p.unitProfit);
     } else {
-      unitProfit = ppu - (pv + bev);
+      unitProfit = ppu - (pv + bev + repair);
     }
     return sum + (unitProfit * units);
   }, 0);
