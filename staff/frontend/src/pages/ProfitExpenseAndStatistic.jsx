@@ -131,8 +131,8 @@ export default function ProfitExpenseAndStatistic() {
           ? Number(s.actualAmount)
           : (paidAmount + exchangeValue);
 
-        // Per Mobile Profit = Sold Price (33000) - actualAmount (25900) - Repair Cost
-        const perMobileProfit = sellingPrice - (actualAmount + repairVal);
+        // Profit = totalActualAmount - Total Selling Amount
+        const perMobileProfit = actualAmount - sellingPrice;
 
         const norm = {
           ...s,
@@ -427,19 +427,20 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  // 1. Total Investment = Sum of Paid Amount + Exchange Value across inventory
-  const totalInvestment = filteredDevices.reduce((sum, d) => {
+  // 1. Total actualAmount across all devices
+  const totalActualAmount = filteredDevices.reduce((sum, d) => {
     const paid = Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0;
     const exch = Number(d.exchangeValue || d.bev) || 0;
     return sum + (paid + exch);
   }, 0);
-  const totalPV = totalInvestment;
+  const totalPV = totalActualAmount;
+  const totalInvestment = totalPV;
 
-  // 2. Total Selling Amount = Sum of Sold Prices across all sold devices
+  // 2. Total Selling Amount = Sum of Sold Prices
   const totalSelling = filteredProfits.reduce((sum, p) => sum + Number(p.sellingPrice || p.selling || p.ppu || p.soldPrice || 0), 0);
 
-  // 3. Total Profit = Sum of per-mobile profits across sold devices (Sold Price - (Paid Amount + Exchange Value + Repair Cost))
-  const totalProfit = filteredProfits.reduce((sum, p) => sum + Number(p.profit || 0), 0);
+  // 3. Profit = totalActualAmount - Total Selling Amount
+  const totalProfit = totalActualAmount - totalSelling;
 
   // 4. Expenses = Operational Expenses (Rent, Salary, Bills, etc.)
   const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -1081,7 +1082,7 @@ export default function ProfitExpenseAndStatistic() {
                     const actualAmt = (item.actualAmount && Number(item.actualAmount) > 0)
                       ? Number(item.actualAmount)
                       : (purchaseCost + exchangeVal);
-                    const unitProfit = soldPrice - (actualAmt + repairCost);
+                    const unitProfit = actualAmt - soldPrice;
 
                     return (
                       <tr key={item.id || idx}>
