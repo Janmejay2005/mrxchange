@@ -418,18 +418,19 @@ export default function ProfitExpenseAndStatistic() {
   // 2. Selling Revenue (PPU)
   const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
 
-  // 3. Profit Formula = PPU - (PV + BEV)
+  // 3. Profit Formula = PPU - (PV + BEV + Repair Cost)
   const totalProfit = filteredProfits.reduce((sum, p) => {
     const ppu = Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0;
     const pv = Number(p.pv || p.oldAmount || p.purchase_amount || p.purchase) || 0;
     const bev = Number(p.bev || p.exchangeValue || p.newAmount) || 0;
+    const repair = Number(p.repair_cost || p.repairCost) || 0;
     const units = Number(p.units || p.unit || 1);
 
     let unitProfit = 0;
     if (p.unitProfit !== undefined && p.unitProfit !== null && !isNaN(p.unitProfit)) {
       unitProfit = Number(p.unitProfit);
     } else {
-      unitProfit = ppu - (pv + bev);
+      unitProfit = ppu - (pv + bev + repair);
     }
     return sum + (unitProfit * units);
   }, 0);
@@ -442,6 +443,8 @@ export default function ProfitExpenseAndStatistic() {
   // Investment Base for ROI calculation
   const investmentBase = totalInvestment > 0 ? totalInvestment : (totalSelling > 0 ? totalSelling : 100000);
   const roi = investmentBase > 0 ? ((finalProfit / investmentBase) * 100).toFixed(2) : '0.00';
+  console.log(`[Final Net Profit] Total Profit - Total Expenses = ${totalProfit} - ${totalExpensesAmount} = ${finalProfit}`);
+  console.log(`[ROI] (Final Net Profit / Investment Base) * 100 = (${finalProfit} / ${investmentBase}) * 100 = ${roi}%`);
 
   // -------------------------------------------------------------
   // AGGREGATION 1: STAFF EXPENSES (Add Inventory Payers)
