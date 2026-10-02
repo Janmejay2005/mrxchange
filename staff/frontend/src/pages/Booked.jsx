@@ -85,11 +85,7 @@ export default function Booked() {
     }
   };
 
-  const sampleBookings = [
-    { id: 1, bookingId: 'BK-1001', date: '2026-09-15', bookedBy: 'Jeet Khubchandani', customerName: 'Rajesh Mehta', customerPhone: '+91 98250 12345', brand: 'Apple', model: 'iPhone 15 Pro Max', storage: 256, ram: 8, color: 'Natural Titanium', bookedAmount: 125000, viaMode: 'UPI', viaId: 'rajesh@upi', platform: 'Store', status: 'Booked' },
-    { id: 2, bookingId: 'BK-1002', date: '2026-09-14', bookedBy: 'Sonal Wadwani', customerName: 'Anita Shah', customerPhone: '+91 98980 67890', brand: 'Samsung', model: 'Galaxy S24 Ultra', storage: 512, ram: 12, color: 'Titanium Gray', bookedAmount: 118000, viaMode: 'Card', viaId: 'HDFC-4821', platform: 'Online', status: 'Booked' },
-    { id: 3, bookingId: 'BK-1003', date: '2026-09-13', bookedBy: 'Jeet Khubchandani', customerName: 'Vikas Sharma', customerPhone: '+91 97123 45678', brand: 'Google Pixel', model: 'Pixel 8 Pro', storage: 256, ram: 12, color: 'Obsidian', bookedAmount: 92000, viaMode: 'Cash', viaId: '-', platform: 'Store', status: 'Booked' }
-  ];
+  const sampleBookings = [];
 
   const getStoredBookedList = () => {
     try {
@@ -136,27 +132,26 @@ export default function Booked() {
         status: d.status || 'Booked'
       }));
 
-      if (localStorage.getItem('mrx_exchanges') !== null || localStorage.getItem('mrx_old_in_hand_stock') !== null) {
-        const seenMap = new Map();
-        for (const b of allCombined) {
-          if (!b) continue;
-          if (b.status === 'REJECTED' || b.status === 'Rejected' || b.status === 'CANCELLED' || b.status === 'Cancelled') continue;
-          
-          const exId = b.bookingId && !String(b.bookingId).startsWith('BK-') ? b.bookingId : null;
-          const brand = String(b.brand || b.newBrand || '').trim().toLowerCase();
-          const model = String(b.model || b.newModel || '').trim().toLowerCase();
-          const amount = Number(b.bookedAmount || b.newAmount || b.purchasedAmount || 0);
-          const payer = String(b.bookedBy || b.customerName || b.newPurchasedBy || '').trim().toLowerCase();
+      const allCombined = [...formattedExchanges, ...formattedOldHand];
+      const seenMap = new Map();
+      for (const b of allCombined) {
+        if (!b) continue;
+        if (b.status === 'REJECTED' || b.status === 'Rejected' || b.status === 'CANCELLED' || b.status === 'Cancelled') continue;
+        
+        const exId = b.bookingId && !String(b.bookingId).startsWith('BK-') ? b.bookingId : null;
+        const brand = String(b.brand || b.newBrand || '').trim().toLowerCase();
+        const model = String(b.model || b.newModel || '').trim().toLowerCase();
+        const amount = Number(b.bookedAmount || b.newAmount || b.purchasedAmount || 0);
+        const payer = String(b.bookedBy || b.customerName || b.newPurchasedBy || '').trim().toLowerCase();
 
-          const key = exId ? `bk_${exId}` : `${brand}_${model}_${amount}_${payer}`;
-          if (!seenMap.has(key)) {
-            seenMap.set(key, b);
-          }
+        const key = exId ? `bk_${exId}` : `${brand}_${model}_${amount}_${payer}`;
+        if (!seenMap.has(key)) {
+          seenMap.set(key, b);
         }
-        return Array.from(seenMap.values());
       }
+      return Array.from(seenMap.values());
     } catch (e) {}
-    return sampleBookings;
+    return [];
   };
 
   const [bookedList, setBookedList] = useState(getStoredBookedList);

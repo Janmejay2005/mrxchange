@@ -131,13 +131,8 @@ export default function ProfitExpenseAndStatistic() {
           ? Number(s.actualAmount)
           : (paidAmount + exchangeValue);
 
-        // Per Mobile Profit = Sold Price - (Purchase Cost + Exchange Value + Repair Cost)
-        let perMobileProfit = 0;
-        if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
-          perMobileProfit = Number(s.profit);
-        } else {
-          perMobileProfit = sellingPrice - (paidAmount + exchangeValue + repairVal);
-        }
+        // Per Mobile Profit = Sold Price (33000) - actualAmount (25900) - Repair Cost
+        const perMobileProfit = sellingPrice - (actualAmount + repairVal);
 
         const norm = {
           ...s,
@@ -1084,9 +1079,10 @@ export default function ProfitExpenseAndStatistic() {
                     const repairCost = Number(item.repair_cost || item.repairCost || 0);
                     const exchangeVal = Number(item.exchangeValue || item.bev || 0);
                     const soldPrice = Number(item.sellingPrice || item.selling || item.ppu || 0);
-                    const unitProfit = Number(item.profit !== undefined && item.profit !== null && Number(item.profit) !== 0 
-                      ? item.profit 
-                      : (soldPrice - (purchaseCost + repairCost + exchangeVal)));
+                    const actualAmt = (item.actualAmount && Number(item.actualAmount) > 0)
+                      ? Number(item.actualAmount)
+                      : (purchaseCost + exchangeVal);
+                    const unitProfit = soldPrice - (actualAmt + repairCost);
 
                     return (
                       <tr key={item.id || idx}>
