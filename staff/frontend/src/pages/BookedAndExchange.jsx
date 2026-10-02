@@ -148,16 +148,7 @@ export default function BookedAndExchange() {
     }
   };
 
-  const defaultExchanges = [
-    { id: 1, date: '15 Sep 2026', newBrand: 'Apple', newModel: 'iPhone 15 Pro Max', newStorage: 256, newRam: 8, newColor: 'Natural Titanium', newPurchasedBy: 'Jeet Khubchandani', newAmount: 125000, oldBrand: 'Samsung', oldModel: 'S23 Ultra', oldStorage: 256, oldRam: 12, oldColor: 'Phantom Black', oldPurchasedBy: 'Jeet Khubchandani', oldAmount: 58000, oldImage: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200', status: 'Booked' },
-    { id: 2, date: '14 Sep 2026', newBrand: 'Samsung', newModel: 'Galaxy S24 Ultra', newStorage: 512, newRam: 12, newColor: 'Titanium Gray', newPurchasedBy: 'Sonal Wadwani', newAmount: 118000, oldBrand: 'OnePlus', oldModel: '11', oldStorage: 256, oldRam: 16, oldColor: 'Eternal Green', oldPurchasedBy: 'Sonal Wadwani', oldAmount: 32000, oldImage: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200', status: 'Booked' },
-    { id: 3, date: '13 Sep 2026', newBrand: 'Google Pixel', newModel: 'Pixel 8 Pro', newStorage: 256, newRam: 12, newColor: 'Obsidian', newPurchasedBy: 'Rohit Kumar', newAmount: 92000, oldBrand: 'Google Pixel', oldModel: 'Pixel 6 Pro', oldStorage: 128, oldRam: 12, oldColor: 'Stormy Black', oldPurchasedBy: 'Rohit Kumar', oldAmount: 26000, oldImage: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200', status: 'Booked' },
-    { id: 4, date: '12 Sep 2026', newBrand: 'OnePlus', newModel: 'OnePlus 12', newStorage: 512, newRam: 16, newColor: 'Flowy Emerald', newPurchasedBy: 'Neha', newAmount: 64999, oldBrand: 'Xiaomi', oldModel: '12 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Blue', oldPurchasedBy: 'Neha', oldAmount: 22000, status: 'Booked' },
-    { id: 5, date: '11 Sep 2026', newBrand: 'Vivo', newModel: 'X100 Pro', newStorage: 512, newRam: 16, newColor: 'Asteroid Black', newPurchasedBy: 'Aman', newAmount: 89999, oldBrand: 'Vivo', oldModel: 'V27 Pro', oldStorage: 256, oldRam: 12, oldColor: 'Magic Blue', oldPurchasedBy: 'Aman', oldAmount: 24000, status: 'Booked' },
-    { id: 6, date: '10 Sep 2026', newBrand: 'Nothing', newModel: 'Phone (2)', newStorage: 256, newRam: 12, newColor: 'Dark Gray', newPurchasedBy: 'Karan', newAmount: 44999, oldBrand: 'Nothing', oldModel: 'Phone (1)', oldStorage: 128, oldRam: 8, oldColor: 'White', oldPurchasedBy: 'Karan', oldAmount: 18000, status: 'Booked' },
-    { id: 7, date: '09 Sep 2026', newBrand: 'Motorola', newModel: 'Edge 50 Ultra', newStorage: 512, newRam: 16, newColor: 'Peach Fuzz', newPurchasedBy: 'Vikram', newAmount: 59999, oldBrand: 'Motorola', oldModel: 'Edge 40', oldStorage: 256, oldRam: 8, oldColor: 'Eclipse Black', oldPurchasedBy: 'Vikram', oldAmount: 20000, status: 'Booked' },
-    { id: 8, date: '08 Sep 2026', newBrand: 'Xiaomi', newModel: '14 Ultra', newStorage: 512, newRam: 16, newColor: 'Black', newPurchasedBy: 'Ananya', newAmount: 99999, oldBrand: 'Oppo', oldModel: 'Reno 10 Pro+', oldStorage: 256, oldRam: 12, oldColor: 'Silver', oldPurchasedBy: 'Ananya', oldAmount: 29000, status: 'Booked' }
-  ];
+  const defaultExchanges = [];
 
   const getStoredExchanges = () => {
     try {
@@ -189,19 +180,25 @@ export default function BookedAndExchange() {
       }));
 
       const combined = [...storedExchanges, ...formattedOldHand];
-      if (combined.length > 0) {
-        const seenMap = new Map();
-        for (const item of combined) {
-          if (!item) continue;
-          const key = String(item.id || `${item.newBrand}_${item.newModel}_${item.oldBrand}_${item.oldModel}`);
-          if (!seenMap.has(key)) {
-            seenMap.set(key, item);
-          }
+      const seenMap = new Map();
+      for (const item of combined) {
+        if (!item) continue;
+        if (item.status === 'REJECTED' || item.status === 'Rejected' || item.status === 'CANCELLED' || item.status === 'Cancelled') continue;
+        
+        const exId = item.exchangeId && !String(item.exchangeId).startsWith('EXCH-STOCK') ? item.exchangeId : null;
+        const brand = String(item.newBrand || item.brand || item.oldBrand || '').trim().toLowerCase();
+        const model = String(item.newModel || item.model || item.oldModel || '').trim().toLowerCase();
+        const amount = Number(item.newAmount || item.purchasedAmount || item.bookedAmount || item.oldAmount || 0);
+        const payer = String(item.newPurchasedBy || item.bookedBy || item.oldPurchasedBy || item.paid_by || '').trim().toLowerCase();
+
+        const key = exId ? `ex_${exId}` : `${brand}_${model}_${amount}_${payer}`;
+        if (!seenMap.has(key)) {
+          seenMap.set(key, item);
         }
-        return Array.from(seenMap.values());
       }
+      return Array.from(seenMap.values());
     } catch (e) {}
-    return defaultExchanges;
+    return [];
   };
 
   const [exchanges, setExchanges] = useState(getStoredExchanges);

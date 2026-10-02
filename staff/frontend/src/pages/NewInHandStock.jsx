@@ -604,6 +604,37 @@ export default function NewInHandStock() {
     });
   };
 
+  const handleCleanStock = async () => {
+    if (window.confirm('Are you sure you want to reset and clear ALL website inventory, sales, and expense data to 0?')) {
+      try {
+        await deviceService.cleanDatabase();
+      } catch (err) {
+        console.warn('DB clean warning:', err);
+      }
+      localStorage.setItem('mrx_old_inventory', JSON.stringify([]));
+      localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_new_in_hand_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_repair_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_rejected_stock', JSON.stringify([]));
+      localStorage.setItem('mrx_exchanges', JSON.stringify([]));
+      localStorage.setItem('mrx_exchange_pool', JSON.stringify([]));
+      localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
+      localStorage.setItem('mrx_sales', JSON.stringify([]));
+      localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_expenses', JSON.stringify([]));
+      localStorage.setItem('mrx_expense_evaluations', JSON.stringify({}));
+
+      window.dispatchEvent(new Event('mrx_inventory_updated'));
+      window.dispatchEvent(new Event('mrx_exchanges_updated'));
+      window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
+      window.dispatchEvent(new Event('storage'));
+
+      setStock([]);
+      alert('All stock and website data successfully reset to 0!');
+    }
+  };
+
   return (
     <div>
       {/* Header & Breadcrumbs */}
@@ -630,6 +661,9 @@ export default function NewInHandStock() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={handleCleanStock} className="btn-secondary" style={{ backgroundColor: '#fef2f2', color: '#ef4444', borderColor: '#fca5a5', padding: '9px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Trash2 size={16} color="#ef4444" /> Reset All Data (0)
+          </button>
           <button onClick={handleExportPdf} className="btn-secondary" style={{ padding: '9px 16px', borderRadius: '8px' }}>
             <FileText size={16} /> Export PDF Report
           </button>

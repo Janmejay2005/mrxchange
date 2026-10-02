@@ -122,17 +122,17 @@ export default function ProfitExpenseAndStatistic() {
       const combinedSalesMap = new Map();
       [...remoteSales, ...localSales].forEach(s => {
         if (!s) return;
-        const actualAmount = Number(s.actualAmount || s.actual_amount || s.totalAmount || s.selling || s.selling_price || s.soldPrice || s.ppu || 0);
-        const sellingPrice = Number(s.sellingPrice || s.selling_price || s.purchase || s.purchase_amount || s.oldAmount || s.pv || s.boughtCost || 0);
-        const bevVal = Number(s.bev || s.exchangeValue || s.newAmount || 0);
+        const purchaseCost = Number(s.purchase_amount || s.purchase || s.pv || s.boughtCost || s.oldAmount || 0);
+        const exchangeValue = Number(s.bev || s.exchangeValue || s.newAmount || 0);
         const repairVal = Number(s.repair_cost || s.repairCost || 0);
+        const sellingPrice = Number(s.sellingPrice || s.selling || s.selling_price || s.soldPrice || s.totalAmount || s.unitPrice || s.ppu || 0);
         
-        let perMobileProfit = 0;
-        if (s.profit !== undefined && s.profit !== null && !isNaN(Number(s.profit)) && Number(s.profit) !== 0) {
-          perMobileProfit = Number(s.profit);
-        } else {
-          perMobileProfit = actualAmount - (sellingPrice + bevVal + repairVal);
-        }
+        const actualAmount = (s.actualAmount !== undefined && s.actualAmount !== null && Number(s.actualAmount) > 0)
+          ? Number(s.actualAmount)
+          : (purchaseCost + exchangeValue);
+
+        // Per Mobile Profit = Sold Price (Revenue) - actualAmount (Purchase + Exchange Cost) - Repair Cost
+        const perMobileProfit = sellingPrice - (actualAmount + repairVal);
 
         const norm = {
           ...s,
@@ -140,11 +140,18 @@ export default function ProfitExpenseAndStatistic() {
           admin: s.admin || s.admin_name || s.soldBy || s.sold_by || 'Jeet Khubchandani',
           brand: s.brand || 'Device',
           model: s.model || 'Mobile',
+          paidAmount: purchaseCost,
+          exchangeValue: exchangeValue,
           actualAmount: actualAmount,
           sellingPrice: sellingPrice,
-          purchase: sellingPrice,
-          selling: actualAmount,
+          purchase: purchaseCost,
+          pv: purchaseCost,
+          selling: sellingPrice,
+          ppu: sellingPrice,
+          bev: exchangeValue,
+          repair_cost: repairVal,
           profit: perMobileProfit,
+          unitProfit: perMobileProfit,
           date: s.date || s.sale_date || new Date().toISOString().split('T')[0]
         };
 
@@ -204,9 +211,18 @@ export default function ProfitExpenseAndStatistic() {
       const localOldStock = JSON.parse(localStorage.getItem('mrx_old_in_hand_stock') || '[]').filter(s => s.status === 'Booked');
       const combinedExchMap = new Map();
       [...localExchanges, ...localOldStock].forEach(e => {
-        if (e) {
-          const key = e.id || e.exchangeId || `${e.newBrand || e.brand}_${e.newModel || e.model}_${e.newAmount || e.purchasedAmount}_${e.date}`;
-          combinedExchMap.set(String(key), e);
+        if (!e) return;
+        if (e.status === 'REJECTED' || e.status === 'Rejected' || e.status === 'CANCELLED' || e.status === 'Cancelled') return;
+
+        const exId = e.exchangeId && !String(e.exchangeId).startsWith('EXCH-STOCK') ? e.exchangeId : null;
+        const brand = String(e.newBrand || e.brand || e.oldBrand || '').trim().toLowerCase();
+        const model = String(e.newModel || e.model || e.oldModel || '').trim().toLowerCase();
+        const amount = Number(e.newAmount || e.purchasedAmount || e.bookedAmount || e.oldAmount || 0);
+        const payer = String(e.newPurchasedBy || e.bookedBy || e.oldPurchasedBy || e.paid_by || '').trim().toLowerCase();
+
+        const key = exId ? `ex_${exId}` : `${brand}_${model}_${amount}_${payer}`;
+        if (!combinedExchMap.has(key)) {
+          combinedExchMap.set(key, e);
         }
       });
       setExchanges(Array.from(combinedExchMap.values()));
@@ -463,8 +479,8 @@ export default function ProfitExpenseAndStatistic() {
   const totalInvestment = totalPV + totalExchangeInvestment;
   console.log(`[Investment] Add Inventory + Exchange Value = ${totalPV} + ${totalExchangeInvestment} = ${totalInvestment}`);
 
-  // 2. Selling Revenue (PPU)
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
+  // 2. Total Selling Amount = Sum of Sold Prices across all sold devices
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + Number(p.sellingPrice || p.selling || p.ppu || p.soldPrice || 0), 0);
 
   // 3. Profit Formula = PPU - (PV + BEV + Repair Cost)
   const totalProfit = filteredProfits.reduce((sum, p) => {
@@ -483,10 +499,19 @@ export default function ProfitExpenseAndStatistic() {
     return sum + (unitProfit * units);
   }, 0);
 
+  // 4. Total Repair Cost of Sold Devices
+  const totalSoldRepairCost = filteredProfits.reduce((sum, p) => sum + Number(p.repair_cost || p.repairCost || 0), 0);
+
+  // 5. Total Profit = Sum of per-mobile profits across all sold devices
+  const totalProfit = filteredProfits.reduce((sum, p) => sum + Number(p.profit || p.unitProfit || 0), 0);
+
   // 4. Expenses = Operational Expenses (Rent, Salary, Bills, etc.)
-  const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalExpensesAmount = operationalExpenses;
-  const finalProfit = totalProfit - operationalExpenses;
+
+  // 5. SuperProfit = Total Profit - Operational Expenses
+  const superProfit = totalProfit - operationalExpenses;
+  const finalProfit = superProfit;
 
   // Investment Base for ROI calculation
   const investmentBase = totalInvestment > 0 ? totalInvestment : (totalSelling > 0 ? totalSelling : 100000);
@@ -913,7 +938,7 @@ export default function ProfitExpenseAndStatistic() {
             <DollarSign size={24} color={finalProfit >= 0 ? '#ec4899' : '#dc2626'} />
           </div>
           <div className="kpi-info">
-            <span className="kpi-title" style={{ fontSize: '12px' }}>Final Net Profit</span>
+            <span className="kpi-title" style={{ fontSize: '12px' }}>SuperProfit (Net Profit)</span>
             <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: finalProfit >= 0 ? '#ec4899' : '#dc2626' }}>
               {finalProfit >= 0 ? `₹ ${finalProfit.toLocaleString()}` : `-₹ ${Math.abs(finalProfit).toLocaleString()}`}
             </span>
@@ -1074,31 +1099,46 @@ export default function ProfitExpenseAndStatistic() {
                   <th>Date</th>
                   <th>Super Admin</th>
                   <th>Brand & Model</th>
-                  <th>Intake Cost (₹)</th>
-                  <th>Actual Amount (₹)</th>
+                  <th>Purchase Cost (₹)</th>
+                  <th>Repair Cost (₹)</th>
+                  <th>Exchange Value (₹)</th>
+                  <th>Sold Price (₹)</th>
                   <th>Per Mobile Profit (₹)</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProfits.length === 0 ? (
-                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No profit records found.</td></tr>
+                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No profit records found.</td></tr>
                 ) : (
-                  filteredProfits.map((item, idx) => (
-                    <tr key={item.id || idx}>
-                      <td>{idx + 1}</td>
-                      <td>{item.date}</td>
-                      <td style={{ fontWeight: 600 }}>{item.admin}</td>
-                      <td>
-                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.model}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>{item.brand}</div>
-                      </td>
-                      <td style={{ fontWeight: 600, color: '#475569' }}><CurrencyAmount amount={item.sellingPrice !== undefined ? item.sellingPrice : item.purchase} /></td>
-                      <td style={{ fontWeight: 700, color: '#0284c7' }}><CurrencyAmount amount={item.actualAmount !== undefined ? item.actualAmount : item.selling} /></td>
-                      <td style={{ fontWeight: 800, color: item.profit >= 0 ? '#16a34a' : '#ef4444' }}>
-                        <CurrencyAmount amount={item.profit} />
-                      </td>
-                    </tr>
-                  ))
+                  filteredProfits.map((item, idx) => {
+                    const purchaseCost = Number(item.purchase_amount || item.purchase || item.pv || item.boughtCost || item.oldAmount || 0);
+                    const repairCost = Number(item.repair_cost || item.repairCost || 0);
+                    const exchangeVal = Number(item.exchangeValue || item.bev || 0);
+                    const soldPrice = Number(item.sellingPrice || item.selling || item.ppu || 0);
+                    const actualAmt = (item.actualAmount && Number(item.actualAmount) > 0)
+                      ? Number(item.actualAmount)
+                      : (purchaseCost + exchangeVal);
+                    const unitProfit = soldPrice - (actualAmt + repairCost);
+
+                    return (
+                      <tr key={item.id || idx}>
+                        <td>{idx + 1}</td>
+                        <td>{item.date}</td>
+                        <td style={{ fontWeight: 600 }}>{item.admin}</td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.model}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>{item.brand}</div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: '#475569' }}><CurrencyAmount amount={purchaseCost} /></td>
+                        <td style={{ fontWeight: 700, color: '#d97706' }}><CurrencyAmount amount={repairCost} /></td>
+                        <td style={{ fontWeight: 700, color: '#8b5cf6' }}><CurrencyAmount amount={exchangeVal} /></td>
+                        <td style={{ fontWeight: 700, color: '#0284c7' }}><CurrencyAmount amount={soldPrice} /></td>
+                        <td style={{ fontWeight: 800, color: unitProfit >= 0 ? '#16a34a' : '#ef4444' }}>
+                          <CurrencyAmount amount={unitProfit} />
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
