@@ -427,26 +427,25 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  // 1. actualAmount = Paid Amount (from Add Mobile Entry) + Exchange Value (from Book New Device for Exchange)
-  const totalActualAmount = filteredDevices.reduce((sum, d) => {
+  // 1. Total Investment = Sum of Paid Amount + Exchange Value across inventory
+  const totalInvestment = filteredDevices.reduce((sum, d) => {
     const paid = Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0;
     const exch = Number(d.exchangeValue || d.bev) || 0;
     return sum + (paid + exch);
   }, 0);
-  const totalPV = totalActualAmount;
-  const totalInvestment = totalPV;
+  const totalPV = totalInvestment;
 
-  // 2. Selling Revenue collected from selling phones in New In-hand Stock
-  const totalSelling = filteredProfits.reduce((sum, p) => sum + (Number(p.ppu || p.selling || p.selling_price || p.soldPrice || p.totalAmount) || 0), 0);
+  // 2. Total Selling Amount = Sum of Sold Prices across all sold devices
+  const totalSelling = filteredProfits.reduce((sum, p) => sum + Number(p.sellingPrice || p.selling || p.ppu || p.soldPrice || 0), 0);
 
-  // 3. Profit = Total Selling Amount - totalActualAmount
-  const totalProfit = totalSelling - totalActualAmount;
+  // 3. Total Profit = Sum of per-mobile profits across sold devices (Sold Price - (Paid Amount + Exchange Value + Repair Cost))
+  const totalProfit = filteredProfits.reduce((sum, p) => sum + Number(p.profit || 0), 0);
 
   // 4. Expenses = Operational Expenses (Rent, Salary, Bills, etc.)
-  const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalExpensesAmount = operationalExpenses;
 
-  // 5. SuperProfit = Profit - Expenses
+  // 5. SuperProfit = Total Profit - Operational Expenses
   const superProfit = totalProfit - operationalExpenses;
   const finalProfit = superProfit;
 
