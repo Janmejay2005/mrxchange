@@ -157,8 +157,8 @@ export async function getSuperadminAnalytics(req, res) {
       WHERE 1=1 ${adminFilter ? 'AND s.sold_by = ?' : ''}
     `, adminParams);
 
-    const totalSales = parseFloat(salesResult[0]?.total_sales || 182500);
-    const totalCost = parseFloat(salesResult[0]?.total_cost || 132000);
+    const totalSales = parseFloat(salesResult[0]?.total_sales || 0);
+    const totalCost = parseFloat(salesResult[0]?.total_cost || 0);
     const grossProfit = totalSales - totalCost;
 
     // 2. Expenses
@@ -183,7 +183,7 @@ export async function getSuperadminAnalytics(req, res) {
       WHERE ${expConditions.join(' AND ')}
     `, expParams);
 
-    const totalExpenses = parseFloat(expResult[0]?.total_expenses || 40500);
+    const totalExpenses = parseFloat(expResult[0]?.total_expenses || 0);
     const netProfit = grossProfit - totalExpenses;
     const profitMargin = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
     const expenseRatio = totalSales > 0 ? ((totalExpenses / totalSales) * 100).toFixed(2) : 0;
@@ -200,7 +200,7 @@ export async function getSuperadminAnalytics(req, res) {
       SELECT COALESCE(SUM(amount), 0) as total_investment FROM investments WHERE ${invConditions.join(' AND ')}
     `, invParams);
 
-    const totalInvestment = parseFloat(invResult[0]?.total_investment || 850000);
+    const totalInvestment = parseFloat(invResult[0]?.total_investment || 0);
     const roi = totalInvestment > 0 ? ((netProfit / totalInvestment) * 100).toFixed(2) : 0;
 
     // 4. Admin-wise Performance Table
@@ -218,7 +218,7 @@ export async function getSuperadminAnalytics(req, res) {
       const s = parseFloat(a.sales);
       const e = parseFloat(a.expenses);
       const inv = parseFloat(a.investment);
-      const net = s * 0.25 - e; // approximate profit estimate for demo attribution
+      const net = s - e; // sales minus expenses (no per-admin cost basis available)
       return {
         admin: a.admin_name,
         sales: s,
@@ -243,9 +243,9 @@ export async function getSuperadminAnalytics(req, res) {
           expense_ratio: parseFloat(expenseRatio)
         },
         expense_breakdown: {
-          salary: parseFloat(expResult[0]?.salary_expenses || 25000),
-          repair: parseFloat(expResult[0]?.repair_expenses || 9200),
-          other: parseFloat(expResult[0]?.other_expenses || 6300)
+          salary: parseFloat(expResult[0]?.salary_expenses || 0),
+          repair: parseFloat(expResult[0]?.repair_expenses || 0),
+          other: parseFloat(expResult[0]?.other_expenses || 0)
         },
         admin_performance: adminPerformance,
         available_admins: ['All Admins', 'Jeet', 'Sunal', 'Admin23']
