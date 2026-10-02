@@ -122,17 +122,17 @@ export default function ProfitExpenseAndStatistic() {
       const combinedSalesMap = new Map();
       [...remoteSales, ...localSales].forEach(s => {
         if (!s) return;
-        const paidAmount = Number(s.paidAmount || s.purchase || s.purchase_amount || s.pv || s.oldAmount || s.boughtCost || 0);
+        const purchaseCost = Number(s.purchase_amount || s.purchase || s.pv || s.boughtCost || s.oldAmount || 0);
         const exchangeValue = Number(s.bev || s.exchangeValue || s.newAmount || 0);
         const repairVal = Number(s.repair_cost || s.repairCost || 0);
-        const sellingPrice = Number(s.selling || s.selling_price || s.soldPrice || s.ppu || s.unitPrice || 0);
+        const sellingPrice = Number(s.sellingPrice || s.selling || s.selling_price || s.soldPrice || s.totalAmount || s.unitPrice || s.ppu || 0);
         
         const actualAmount = (s.actualAmount !== undefined && s.actualAmount !== null && Number(s.actualAmount) > 0)
           ? Number(s.actualAmount)
-          : (paidAmount + exchangeValue);
+          : (purchaseCost + exchangeValue);
 
-        // Profit = totalActualAmount - Total Selling Amount
-        const perMobileProfit = actualAmount - sellingPrice;
+        // Per Mobile Profit = Sold Price (Revenue) - actualAmount (Purchase + Exchange Cost) - Repair Cost
+        const perMobileProfit = sellingPrice - (actualAmount + repairVal);
 
         const norm = {
           ...s,
@@ -140,12 +140,12 @@ export default function ProfitExpenseAndStatistic() {
           admin: s.admin || s.admin_name || s.soldBy || s.sold_by || 'Jeet Khubchandani',
           brand: s.brand || 'Device',
           model: s.model || 'Mobile',
-          paidAmount: paidAmount,
+          paidAmount: purchaseCost,
           exchangeValue: exchangeValue,
           actualAmount: actualAmount,
           sellingPrice: sellingPrice,
-          purchase: paidAmount,
-          pv: paidAmount,
+          purchase: purchaseCost,
+          pv: purchaseCost,
           selling: sellingPrice,
           ppu: sellingPrice,
           bev: exchangeValue,
@@ -427,20 +427,30 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  // 1. Total actualAmount across all devices
-  const totalActualAmount = filteredDevices.reduce((sum, d) => {
+  // 1. Total Investment = Sum of Paid Amount + Exchange Value across inventory devices
+  const totalInvestment = filteredDevices.reduce((sum, d) => {
     const paid = Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0;
     const exch = Number(d.exchangeValue || d.bev) || 0;
     return sum + (paid + exch);
   }, 0);
-  const totalPV = totalActualAmount;
-  const totalInvestment = totalPV;
+  const totalPV = totalInvestment;
 
-  // 2. Total Selling Amount = Sum of Sold Prices
+  // 2. Total Selling Amount = Sum of Sold Prices across all sold devices
   const totalSelling = filteredProfits.reduce((sum, p) => sum + Number(p.sellingPrice || p.selling || p.ppu || p.soldPrice || 0), 0);
 
-  // 3. Profit = totalActualAmount - Total Selling Amount
-  const totalProfit = totalActualAmount - totalSelling;
+  // 3. Total actualAmount of Sold Devices = Sum of (Purchase Cost + Exchange Value) of sold devices
+  const totalSoldActualAmount = filteredProfits.reduce((sum, p) => {
+    const cost = Number(p.purchase_amount || p.purchase || p.pv || p.boughtCost || p.oldAmount || 0);
+    const exch = Number(p.bev || p.exchangeValue || p.newAmount || 0);
+    const itemActual = (p.actualAmount && Number(p.actualAmount) > 0) ? Number(p.actualAmount) : (cost + exch);
+    return sum + itemActual;
+  }, 0);
+
+  // 4. Total Repair Cost of Sold Devices
+  const totalSoldRepairCost = filteredProfits.reduce((sum, p) => sum + Number(p.repair_cost || p.repairCost || 0), 0);
+
+  // 5. Total Profit = Sum of per-mobile profits across all sold devices
+  const totalProfit = filteredProfits.reduce((sum, p) => sum + Number(p.profit || p.unitProfit || 0), 0);
 
   // 4. Expenses = Operational Expenses (Rent, Salary, Bills, etc.)
   const operationalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -1075,14 +1085,14 @@ export default function ProfitExpenseAndStatistic() {
                   <tr><td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No profit records found.</td></tr>
                 ) : (
                   filteredProfits.map((item, idx) => {
-                    const purchaseCost = Number(item.paidAmount || item.purchase || item.pv || 0);
+                    const purchaseCost = Number(item.purchase_amount || item.purchase || item.pv || item.boughtCost || item.oldAmount || 0);
                     const repairCost = Number(item.repair_cost || item.repairCost || 0);
                     const exchangeVal = Number(item.exchangeValue || item.bev || 0);
                     const soldPrice = Number(item.sellingPrice || item.selling || item.ppu || 0);
                     const actualAmt = (item.actualAmount && Number(item.actualAmount) > 0)
                       ? Number(item.actualAmount)
                       : (purchaseCost + exchangeVal);
-                    const unitProfit = actualAmt - soldPrice;
+                    const unitProfit = soldPrice - (actualAmt + repairCost);
 
                     return (
                       <tr key={item.id || idx}>
