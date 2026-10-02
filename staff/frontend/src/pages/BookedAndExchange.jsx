@@ -188,12 +188,19 @@ export default function BookedAndExchange() {
         status: d.status || 'Booked'
       }));
 
-      const combined = [...storedExchanges, ...formattedOldHand];
-      if (combined.length > 0) {
+      if (storedStr !== null) {
         const seenMap = new Map();
         for (const item of combined) {
           if (!item) continue;
-          const key = String(item.id || `${item.newBrand}_${item.newModel}_${item.oldBrand}_${item.oldModel}`);
+          if (item.status === 'REJECTED' || item.status === 'Rejected' || item.status === 'CANCELLED' || item.status === 'Cancelled') continue;
+          
+          const exId = item.exchangeId && !String(item.exchangeId).startsWith('EXCH-STOCK') ? item.exchangeId : null;
+          const brand = String(item.newBrand || item.brand || item.oldBrand || '').trim().toLowerCase();
+          const model = String(item.newModel || item.model || item.oldModel || '').trim().toLowerCase();
+          const amount = Number(item.newAmount || item.purchasedAmount || item.bookedAmount || item.oldAmount || 0);
+          const payer = String(item.newPurchasedBy || item.bookedBy || item.oldPurchasedBy || item.paid_by || '').trim().toLowerCase();
+
+          const key = exId ? `ex_${exId}` : `${brand}_${model}_${amount}_${payer}`;
           if (!seenMap.has(key)) {
             seenMap.set(key, item);
           }

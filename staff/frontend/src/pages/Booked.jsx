@@ -136,12 +136,19 @@ export default function Booked() {
         status: d.status || 'Booked'
       }));
 
-      const allCombined = [...formattedExchanges, ...formattedOldHand];
-      if (allCombined.length > 0) {
+      if (localStorage.getItem('mrx_exchanges') !== null || localStorage.getItem('mrx_old_in_hand_stock') !== null) {
         const seenMap = new Map();
         for (const b of allCombined) {
           if (!b) continue;
-          const key = String(b.bookingId || b.id || `${b.brand}_${b.model}_${b.bookedAmount}`);
+          if (b.status === 'REJECTED' || b.status === 'Rejected' || b.status === 'CANCELLED' || b.status === 'Cancelled') continue;
+          
+          const exId = b.bookingId && !String(b.bookingId).startsWith('BK-') ? b.bookingId : null;
+          const brand = String(b.brand || b.newBrand || '').trim().toLowerCase();
+          const model = String(b.model || b.newModel || '').trim().toLowerCase();
+          const amount = Number(b.bookedAmount || b.newAmount || b.purchasedAmount || 0);
+          const payer = String(b.bookedBy || b.customerName || b.newPurchasedBy || '').trim().toLowerCase();
+
+          const key = exId ? `bk_${exId}` : `${brand}_${model}_${amount}_${payer}`;
           if (!seenMap.has(key)) {
             seenMap.set(key, b);
           }

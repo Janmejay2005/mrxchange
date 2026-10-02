@@ -289,10 +289,13 @@ export default function OldInventory() {
       localStorage.setItem('mrx_pending_payments', JSON.stringify([]));
       localStorage.setItem('mrx_sales', JSON.stringify([]));
       localStorage.setItem('mrx_devices', JSON.stringify([]));
+      localStorage.setItem('mrx_expenses', JSON.stringify([]));
+      localStorage.setItem('mrx_expense_evaluations', JSON.stringify({}));
 
       window.dispatchEvent(new Event('mrx_inventory_updated'));
       window.dispatchEvent(new Event('mrx_exchanges_updated'));
       window.dispatchEvent(new Event('mrx_pending_payments_updated'));
+      window.dispatchEvent(new Event('mrx_expenses_updated'));
       window.dispatchEvent(new Event('storage'));
 
       setDevices([]);
