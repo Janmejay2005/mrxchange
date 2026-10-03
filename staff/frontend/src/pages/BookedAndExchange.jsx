@@ -309,6 +309,7 @@ export default function BookedAndExchange() {
       oldColor: 'Default',
       oldPurchasedBy: bookForm.oldPayBy || 'Staff',
       oldAmount: oldAmt,
+      exchangeValue: exVal,
       oldImage: bookForm.oldImage || '',
       status: 'Booked'
     };
@@ -373,6 +374,9 @@ export default function BookedAndExchange() {
         color: itemToDeliver.newColor,
         purchasedBy: itemToDeliver.newPurchasedBy,
         amount: itemToDeliver.newAmount,
+        // Carry the cost basis forward so profit = Selling - (Exchange value + Add Inventory cost)
+        addInventoryCost: Number(itemToDeliver.oldAmount) || 0,
+        exchangeValue: Number(itemToDeliver.exchangeValue) || 0,
         procedure: 'Sell'
       };
 
@@ -440,7 +444,6 @@ export default function BookedAndExchange() {
     setSelectedSellRow(row);
     setSellError('');
     const fullModelName = `${row.newBrand} ${row.newModel}`;
-    const initialPrice = row.newAmount || 0;
 
     setSellForm({
       model: fullModelName,
@@ -448,9 +451,9 @@ export default function BookedAndExchange() {
       soldBy: row.newPurchasedBy || 'Jeet Khubchandani',
       soldTo: row.newPurchasedBy || 'Customer',
       paymentType: 'COMPLETE',
-      soldPrice: initialPrice,
-      totalAmount: initialPrice,
-      paidAmount: initialPrice,
+      soldPrice: '',
+      totalAmount: '',
+      paidAmount: '',
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
@@ -464,6 +467,20 @@ export default function BookedAndExchange() {
 
     const requestedUnits = Number(sellForm.unit) || 1;
 
+    const sellPv = Number(selectedSellRow.oldAmount) || 0;
+    // Profit = Selling - (Exchange value + Add Inventory cost)
+    const rowEx = Number(selectedSellRow.exchangeValue);
+    const sellBev = Number.isFinite(rowEx) && selectedSellRow.exchangeValue !== '' && selectedSellRow.exchangeValue != null
+      ? rowEx
+      : Math.max(0, (Number(selectedSellRow.newAmount) || 0) - sellPv);
+
+    console.log('[SELL:BookedExchange]', {
+      selling_totalAmount: Number(sellForm.totalAmount) || 0,
+      pv_addInventory: sellPv, bev_exchange: sellBev,
+      row: { oldAmount: selectedSellRow.oldAmount, newAmount: selectedSellRow.newAmount, exchangeValue: selectedSellRow.exchangeValue, purchasedAmount: selectedSellRow.purchasedAmount },
+      formula: `${Number(sellForm.totalAmount) || 0} - (${sellPv} + ${sellBev}) = ${(Number(sellForm.totalAmount) || 0) - (sellPv + sellBev)}`
+    });
+
     // Record sale in mrx_sales
     const newSale = {
       id: `SALE-${Date.now()}`,
@@ -476,8 +493,11 @@ export default function BookedAndExchange() {
       unitPrice: Number(sellForm.soldPrice) || 0,
       totalAmount: Number(sellForm.totalAmount) || 0,
       paidAmount: Number(sellForm.paidAmount) || 0,
-      purchase_amount: Number(selectedSellRow.purchasedAmount || selectedSellRow.amount || selectedSellRow.purchase_amount || 0),
-      purchase: Number(selectedSellRow.purchasedAmount || selectedSellRow.amount || selectedSellRow.purchase_amount || 0),
+      // Actual amount (cost) = old inventory purchase (pv) + booking payment (bev); profit = selling price - actual amount
+      pv: sellPv,
+      bev: sellBev,
+      purchase_amount: sellPv,
+      purchase: sellPv,
       paymentMode: sellForm.paymentType || 'Cash',
       status: 'Sold'
     };
@@ -1144,8 +1164,8 @@ export default function BookedAndExchange() {
       {/* Book a Mobile Modal matching diagram */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
+          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '0 24px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingTop: '24px', paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7' }}>Book & Exchange Phone</h2>
                 <p style={{ fontSize: '13px', color: '#64748b' }}>Enter old phone trade-in valuation and new phone pre-order booking details.</p>

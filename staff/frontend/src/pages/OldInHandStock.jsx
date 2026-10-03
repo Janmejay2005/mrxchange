@@ -282,6 +282,7 @@ export default function OldInHandStock() {
           newRam: Number(bookForm.newRam) || 12,
           newPurchasedBy: bookForm.newPayBy || 'Customer',
           newAmount: newAmt,
+          exchangeValue: exVal,
           platform: bookForm.platform,
           platformRemarks: bookForm.platformRemarks || '',
           exchangeRemarks: bookForm.exchangeRemarks || ''
@@ -311,7 +312,6 @@ export default function OldInHandStock() {
     setSelectedSellDevice(device);
     setSellError('');
     const fullModelName = `${device.newBrand || device.brand} ${device.newModel || device.model}`;
-    const initialPrice = device.newAmount || device.purchase_amount || 0;
 
     setSellForm({
       model: fullModelName,
@@ -319,9 +319,9 @@ export default function OldInHandStock() {
       soldBy: device.newPurchasedBy || device.paid_by || 'Jeet Khubchandani',
       soldTo: device.newPurchasedBy || 'Customer',
       paymentType: 'COMPLETE',
-      soldPrice: initialPrice,
-      totalAmount: initialPrice,
-      paidAmount: initialPrice,
+      soldPrice: '',
+      totalAmount: '',
+      paidAmount: '',
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
@@ -335,6 +335,24 @@ export default function OldInHandStock() {
 
     const requestedUnits = Number(sellForm.unit) || 1;
 
+    const sellPv = Number(selectedSellDevice.purchase_amount || selectedSellDevice.amount || selectedSellDevice.paidAmount || 0);
+    // Profit = Selling - (Exchange value + Add Inventory cost); exchange value is saved on the device when booked,
+    // older bookings only have it on the matching mrx_exchanges entry.
+    let sellBev = Number(selectedSellDevice.exchangeValue) || 0;
+    if (!sellBev && selectedSellDevice.exchangeId) {
+      try {
+        const ex = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]').find(x => String(x.id) === String(selectedSellDevice.exchangeId));
+        sellBev = Number(ex?.exchangeValue) || 0;
+      } catch (e) {}
+    }
+
+    console.log('[SELL:OldInHand]', {
+      selling_totalAmount: Number(sellForm.totalAmount) || 0,
+      pv_addInventory: sellPv, bev_exchange: sellBev,
+      device: { status: selectedSellDevice.status, purchase_amount: selectedSellDevice.purchase_amount, amount: selectedSellDevice.amount, paidAmount: selectedSellDevice.paidAmount, newAmount: selectedSellDevice.newAmount, exchangeValue: selectedSellDevice.exchangeValue, exchangeId: selectedSellDevice.exchangeId },
+      formula: `${Number(sellForm.totalAmount) || 0} - (${sellPv} + ${sellBev}) = ${(Number(sellForm.totalAmount) || 0) - (sellPv + sellBev)}`
+    });
+
     // Record sale in mrx_sales
     const newSale = {
       id: `SALE-${Date.now()}`,
@@ -347,8 +365,11 @@ export default function OldInHandStock() {
       unitPrice: Number(sellForm.soldPrice) || 0,
       totalAmount: Number(sellForm.totalAmount) || 0,
       paidAmount: Number(sellForm.paidAmount) || 0,
-      purchase_amount: Number(selectedSellDevice.purchase_amount || selectedSellDevice.amount || selectedSellDevice.paidAmount || 0),
-      purchase: Number(selectedSellDevice.purchase_amount || selectedSellDevice.amount || selectedSellDevice.paidAmount || 0),
+      // Actual amount (cost) = old inventory purchase (pv) + booking payment (bev); profit = selling price - actual amount
+      pv: sellPv,
+      bev: sellBev,
+      purchase_amount: sellPv,
+      purchase: sellPv,
       paymentMode: sellForm.paymentType || 'Cash',
       status: 'Sold'
     };
@@ -358,7 +379,7 @@ export default function OldInHandStock() {
 
     // Record Payment entry (Received if fully paid, Pending if partial)
     const totAmt = Number(sellForm.totalAmount) || 0;
-    const pdAmt = Math.min(totAmt, Number(sellForm.paidAmount) || 0);
+    const pdAmt = sellForm.paidAmount === '' ? totAmt : Math.min(totAmt, Number(sellForm.paidAmount) || 0);
     const pendAmt = Math.max(0, totAmt - pdAmt);
     const payStatus = pendAmt <= 0 ? 'Received' : 'Pending';
 
@@ -926,8 +947,8 @@ export default function OldInHandStock() {
       {/* Book New Device Modal (Triggered by clicking Exchange on an Old In-hand item) */}
       {isBookModalOpen && selectedDeviceForExchange && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
+          <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '0 24px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'sticky', top: 0, background: '#fff', zIndex: 10, paddingTop: '24px', paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', margin: 0 }}>Book New Device for Exchange</h2>
                 <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px', margin: 0 }}>Enter booking details for the new device to complete the exchange transaction.</p>

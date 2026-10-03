@@ -10,7 +10,7 @@ let pool = null;
 async function createPgPool(connectionStringOrConfig) {
   const { default: pg } = await import('pg');
   
-  // Parse NUMERIC / DECIMAL as Float, BIGINT as Integer in PostgreSQL
+  // Parse NUMERIC / DECIMAL as Float, BIGINT as Integer in PostgreSQL.
   pg.types.setTypeParser(1700, val => (val === null ? 0 : parseFloat(val)));
   pg.types.setTypeParser(20, val => (val === null ? 0 : parseInt(val, 10)));
 

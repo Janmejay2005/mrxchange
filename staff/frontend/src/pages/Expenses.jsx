@@ -162,7 +162,7 @@ export default function Expenses() {
           <div className="kpi-info">
             <span className="kpi-title">Salaries</span>
             <span className="kpi-value">
-              ₹{(breakdown.find(b => b.category === 'SALARY')?.amount || 25000).toLocaleString('en-IN')}
+              ₹{(breakdown.find(b => b.category === 'SALARY')?.amount || 0).toLocaleString('en-IN')}
             </span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Technician & Staff payroll</span>
           </div>
@@ -175,7 +175,7 @@ export default function Expenses() {
           <div className="kpi-info">
             <span className="kpi-title">Repairing Costs</span>
             <span className="kpi-value">
-              ₹{(breakdown.find(b => b.category === 'REPAIRING_COST')?.amount || 9200).toLocaleString('en-IN')}
+              ₹{(breakdown.find(b => b.category === 'REPAIRING_COST')?.amount || 0).toLocaleString('en-IN')}
             </span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Parts, Displays & IC work</span>
           </div>
@@ -188,7 +188,7 @@ export default function Expenses() {
           <div className="kpi-info">
             <span className="kpi-title">Other Expenses</span>
             <span className="kpi-value">
-              ₹{(breakdown.find(b => b.category === 'OTHER')?.amount || 6300).toLocaleString('en-IN')}
+              ₹{(breakdown.find(b => b.category === 'OTHER')?.amount || 0).toLocaleString('en-IN')}
             </span>
             <span className="kpi-subtext" style={{ color: '#64748b' }}>Electricity, Internet & Packaging</span>
           </div>

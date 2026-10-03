@@ -183,12 +183,27 @@ export default function ProfitExpenseAndStatistic() {
       const apiDev = Array.isArray(devRes) ? devRes : (devRes?.data || []);
 
       const combinedDevMap = new Map();
-      [...localOldInv, ...localDev, ...apiDev].forEach(d => {
-        if (d) {
-          const key = d.id || d.device_code || `${d.brand}_${d.model}_${d.purchase_amount}_${d.date || d.intake_date}`;
-          combinedDevMap.set(String(key), d);
-        }
+      const devSources = new Map();
+      [['mrx_old_inventory', localOldInv], ['mrx_devices', localDev], ['api', apiDev]].forEach(([src, list]) => {
+        list.forEach(d => {
+          if (d) {
+            const key = String(d.id || d.device_code || `${d.brand}_${d.model}_${d.purchase_amount}_${d.date || d.intake_date}`);
+            combinedDevMap.set(key, d);
+            devSources.set(key, [...(devSources.get(key) || []), src]);
+          }
+        });
       });
+      console.log(`[Investment devices] raw: mrx_old_inventory=${localOldInv.length}, mrx_devices=${localDev.length}, api=${apiDev.length} -> unique by id/device_code=${combinedDevMap.size}`);
+      console.table(Array.from(combinedDevMap.entries()).map(([key, d]) => ({
+        key,
+        foundIn: (devSources.get(key) || []).join(' + '),
+        device_code: d.device_code,
+        brand: d.brand,
+        model: d.model,
+        status: d.status,
+        purchase_amount: d.purchase_amount ?? d.amount,
+        intake_date: d.intake_date || d.date
+      })));
       setAllDevices(Array.from(combinedDevMap.values()));
 
       // Deduplicate and load Booking / Exchange records
@@ -427,24 +442,45 @@ export default function ProfitExpenseAndStatistic() {
     return true;
   });
 
-  // 1. Total Investment = Sum of Paid Amount + Exchange Value across inventory devices
-  const totalInvestment = filteredDevices.reduce((sum, d) => {
-    const paid = Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0;
-    const exch = Number(d.exchangeValue || d.bev) || 0;
-    return sum + (paid + exch);
-  }, 0);
-  const totalPV = totalInvestment;
+  const filteredExchanges = exchanges.filter(e => {
+    if (!matchesAdmin(e.newPurchasedBy || e.oldPurchasedBy || e.paid_by, selectedAdmin)) return false;
+    if (selectedDate) {
+      const eYMD = toYMD(e.date || e.bookingDate);
+      const selYMD = toYMD(selectedDate);
+      if (eYMD && selYMD && eYMD !== selYMD) return false;
+    }
+    if (fromDate) {
+      const eYMD = toYMD(e.date || e.bookingDate);
+      const fYMD = toYMD(fromDate);
+      if (eYMD && fYMD && eYMD < fYMD) return false;
+    }
+    if (toDate) {
+      const eYMD = toYMD(e.date || e.bookingDate);
+      const tYMD = toYMD(toDate);
+      if (eYMD && tYMD && eYMD > tYMD) return false;
+    }
+    const q = (globalSearch || '').trim().toLowerCase();
+    if (q) {
+      const matchPayer = (e.newPurchasedBy || e.newPayBy || e.paid_by || e.customerName || e.oldPurchasedBy || '').toLowerCase().includes(q);
+      const matchNewBrand = (e.newBrand || e.brand || '').toLowerCase().includes(q);
+      const matchNewModel = (e.newModel || e.model || '').toLowerCase().includes(q);
+      const matchOldBrand = (e.oldBrand || '').toLowerCase().includes(q);
+      const matchOldModel = (e.oldModel || '').toLowerCase().includes(q);
+      const matchPlatform = (e.platform || '').toLowerCase().includes(q);
+      if (!matchPayer && !matchNewBrand && !matchNewModel && !matchOldBrand && !matchOldModel && !matchPlatform) return false;
+    }
+    return true;
+  });
+
+  // 1. PV (Purchase Value / Paid Amount from Add Inventory)
+  const totalPV = filteredDevices.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount || d.pv) || 0), 0);
+  // Exchange value of all (filtered) exchanges/bookings is part of the investment too
+  const totalExchangeInvestment = filteredExchanges.reduce((sum, e) => sum + (Number(e.exchangeValue) || 0), 0);
+  const totalInvestment = totalPV + totalExchangeInvestment;
+  console.log(`[Investment] Add Inventory + Exchange Value = ${totalPV} + ${totalExchangeInvestment} = ${totalInvestment}`);
 
   // 2. Total Selling Amount = Sum of Sold Prices across all sold devices
   const totalSelling = filteredProfits.reduce((sum, p) => sum + Number(p.sellingPrice || p.selling || p.ppu || p.soldPrice || 0), 0);
-
-  // 3. Total actualAmount of Sold Devices = Sum of (Purchase Cost + Exchange Value) of sold devices
-  const totalSoldActualAmount = filteredProfits.reduce((sum, p) => {
-    const cost = Number(p.purchase_amount || p.purchase || p.pv || p.boughtCost || p.oldAmount || 0);
-    const exch = Number(p.bev || p.exchangeValue || p.newAmount || 0);
-    const itemActual = (p.actualAmount && Number(p.actualAmount) > 0) ? Number(p.actualAmount) : (cost + exch);
-    return sum + itemActual;
-  }, 0);
 
   // 4. Total Repair Cost of Sold Devices
   const totalSoldRepairCost = filteredProfits.reduce((sum, p) => sum + Number(p.repair_cost || p.repairCost || 0), 0);
@@ -461,8 +497,10 @@ export default function ProfitExpenseAndStatistic() {
   const finalProfit = superProfit;
 
   // Investment Base for ROI calculation
-  const investmentBase = totalInvestment > 0 ? totalInvestment : (totalSelling > 0 ? totalSelling : 100000);
+  const investmentBase = totalInvestment;
   const roi = investmentBase > 0 ? ((finalProfit / investmentBase) * 100).toFixed(2) : '0.00';
+  console.log(`[Final Net Profit] Total Profit - Total Expenses = ${totalProfit} - ${totalExpensesAmount} = ${finalProfit}`);
+  console.log(`[ROI] (Final Net Profit / Investment Base) * 100 = (${finalProfit} / ${investmentBase}) * 100 = ${roi}%`);
 
   // -------------------------------------------------------------
   // AGGREGATION 1: STAFF EXPENSES (Add Inventory Payers)
@@ -504,35 +542,6 @@ export default function ProfitExpenseAndStatistic() {
   // -------------------------------------------------------------
   // AGGREGATION 2: BOOK EXPENSES (Booking / Exchange Payers)
   // -------------------------------------------------------------
-  const filteredExchanges = exchanges.filter(e => {
-    if (!matchesAdmin(e.newPurchasedBy || e.oldPurchasedBy || e.paid_by, selectedAdmin)) return false;
-    if (selectedDate) {
-      const eYMD = toYMD(e.date || e.bookingDate);
-      const selYMD = toYMD(selectedDate);
-      if (eYMD && selYMD && eYMD !== selYMD) return false;
-    }
-    if (fromDate) {
-      const eYMD = toYMD(e.date || e.bookingDate);
-      const fYMD = toYMD(fromDate);
-      if (eYMD && fYMD && eYMD < fYMD) return false;
-    }
-    if (toDate) {
-      const eYMD = toYMD(e.date || e.bookingDate);
-      const tYMD = toYMD(toDate);
-      if (eYMD && tYMD && eYMD > tYMD) return false;
-    }
-    const q = (globalSearch || '').trim().toLowerCase();
-    if (q) {
-      const matchPayer = (e.newPurchasedBy || e.newPayBy || e.paid_by || e.customerName || e.oldPurchasedBy || '').toLowerCase().includes(q);
-      const matchNewBrand = (e.newBrand || e.brand || '').toLowerCase().includes(q);
-      const matchNewModel = (e.newModel || e.model || '').toLowerCase().includes(q);
-      const matchOldBrand = (e.oldBrand || '').toLowerCase().includes(q);
-      const matchOldModel = (e.oldModel || '').toLowerCase().includes(q);
-      const matchPlatform = (e.platform || '').toLowerCase().includes(q);
-      if (!matchPayer && !matchNewBrand && !matchNewModel && !matchOldBrand && !matchOldModel && !matchPlatform) return false;
-    }
-    return true;
-  });
 
   const bookGroups = {};
   filteredExchanges.forEach(e => {
@@ -945,7 +954,7 @@ export default function ProfitExpenseAndStatistic() {
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '8px 0 2px' }}>
                 <CurrencyAmount amount={totalInvestment} />
               </div>
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>{filteredDevices.length} Mobiles in Add Inventory</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>{filteredDevices.length} Mobiles in Add Inventory (₹{totalPV.toLocaleString('en-IN')}) + Exchange Value (₹{totalExchangeInvestment.toLocaleString('en-IN')})</span>
             </div>
 
             <div className="card" style={{ padding: '18px', borderLeft: '4px solid #16a34a' }}>

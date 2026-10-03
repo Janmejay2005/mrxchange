@@ -267,8 +267,8 @@ export default function Dashboard() {
 
         const totalInvestmentVal = filteredDevicesList.reduce((sum, d) => sum + (Number(d.purchase_amount || d.amount || d.paidAmount) || 0), 0);
 
-        const investmentBase = totalInvestmentVal > 0 ? totalInvestmentVal : (totalSalesVal > 0 ? totalSalesVal : 100000);
-        const roiVal = Number(((netProfitVal / investmentBase) * 100).toFixed(2));
+        const investmentBase = totalInvestmentVal > 0 ? totalInvestmentVal : totalSalesVal;
+        const roiVal = investmentBase > 0 ? Number(((netProfitVal / investmentBase) * 100).toFixed(2)) : 0;
 
         setFinanceStats({
           kpis: {
@@ -313,9 +313,9 @@ export default function Dashboard() {
     datasets: [
       {
         data: [
-          stats?.distribution?.old_inventory?.count || 3786,
-          stats?.distribution?.in_hand?.count || 620,
-          stats?.distribution?.repair?.count || 842,
+          stats?.distribution?.old_inventory?.count || 0,
+          stats?.distribution?.in_hand?.count || 0,
+          stats?.distribution?.repair?.count || 0,
           stats?.distribution?.rejected?.count || 0
         ],
         backgroundColor: ['#0284c7', '#10b981', '#f59e0b', '#ef4444'],
@@ -329,7 +329,7 @@ export default function Dashboard() {
     datasets: [
       {
         label: 'Total Mobiles',
-        data: stats?.trend?.map(t => t.count) || [4700, 4900, 4950, 5100, 5200, 5248],
+        data: stats?.trend?.map(t => t.count) || [],
         borderColor: '#0284c7',
         backgroundColor: 'rgba(2, 132, 199, 0.1)',
         tension: 0.4,

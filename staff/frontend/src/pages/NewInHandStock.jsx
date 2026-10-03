@@ -285,16 +285,15 @@ export default function NewInHandStock() {
     setSellError('');
     const avail = Math.max(0, (item.totalUnits || 1) - (item.soldUnits || 0));
     const fetchedModel = `${item.brand} ${item.model}`;
-    const initialPrice = item.amount || 0;
     
     setSellForm({
       model: fetchedModel,
       soldBy: loggedInAccountName,
       unit: avail > 0 ? 1 : 0,
       soldTo: item.purchasedBy || 'Customer',
-      soldPrice: initialPrice,
-      totalAmount: initialPrice,
-      paidAmount: initialPrice,
+      soldPrice: '',
+      totalAmount: '',
+      paidAmount: '',
       date: new Date().toISOString().split('T')[0]
     });
     setIsSellModalOpen(true);
@@ -338,6 +337,56 @@ export default function NewInHandStock() {
     const pdAmt = sellForm.paidAmount !== '' && sellForm.paidAmount !== undefined ? Math.min(totAmt, Number(sellForm.paidAmount)) : totAmt;
     const pendAmt = Math.max(0, totAmt - pdAmt);
     const payStatus = pendAmt <= 0 ? 'Received' : 'Pending';
+
+    // Record sale in mrx_sales so Profit page picks it up.
+    // Actual amount (cost) = pv (purchase cost of the units sold) + bev (booking payment, 0 for direct stock sale)
+    try {
+      const unitCost = Number(selectedStockItem.amount || selectedStockItem.purchase_amount || 0);
+
+      // Items that came from an Exchange carry Add Inventory cost + exchange value
+      // (older delivered items only have them on the matching mrx_exchanges entry).
+      let exchangeEntry = null;
+      if (selectedStockItem.exchangeId) {
+        try {
+          exchangeEntry = JSON.parse(localStorage.getItem('mrx_exchanges') || '[]')
+            .find(x => String(x.id) === String(selectedStockItem.exchangeId)) || null;
+        } catch (e) {}
+      }
+      const fromExchange = !!(selectedStockItem.exchangeId || selectedStockItem.addInventoryCost !== undefined);
+      const addInv = Number(selectedStockItem.addInventoryCost ?? exchangeEntry?.oldAmount) || 0;
+      const exVal = Number(selectedStockItem.exchangeValue ?? exchangeEntry?.exchangeValue) || 0;
+      const salePv = fromExchange ? addInv * requestedUnits : unitCost * requestedUnits;
+      const saleBev = fromExchange ? exVal * requestedUnits : 0;
+
+      console.log('[SELL:NewInHand]', {
+        selling_totalAmount: totAmt, units: requestedUnits, fromExchange,
+        item: { amount: selectedStockItem.amount, addInventoryCost: selectedStockItem.addInventoryCost, exchangeValue: selectedStockItem.exchangeValue, exchangeId: selectedStockItem.exchangeId },
+        exchangeEntry: exchangeEntry && { oldAmount: exchangeEntry.oldAmount, exchangeValue: exchangeEntry.exchangeValue, newAmount: exchangeEntry.newAmount },
+        pv_addInventory: salePv, bev_exchange: saleBev,
+        formula: `${totAmt} - (${salePv} + ${saleBev}) = ${totAmt - (salePv + saleBev)}`
+      });
+      const newSale = {
+        id: `SALE-${Date.now()}`,
+        date: sellForm.date || new Date().toISOString().split('T')[0],
+        brand: selectedStockItem.brand,
+        model: selectedStockItem.model,
+        customerName: sellForm.soldTo || 'Customer',
+        soldBy: sellForm.soldBy || loggedInAccountName,
+        quantity: requestedUnits,
+        unitPrice: Number(sellForm.soldPrice) || 0,
+        totalAmount: totAmt,
+        paidAmount: pdAmt,
+        pv: salePv,
+        bev: saleBev,
+        purchase_amount: salePv,
+        purchase: salePv,
+        paymentMode: sellForm.paymentType || 'Cash',
+        status: 'Sold'
+      };
+      const existingSales = JSON.parse(localStorage.getItem('mrx_sales') || '[]');
+      localStorage.setItem('mrx_sales', JSON.stringify([newSale, ...existingSales]));
+      window.dispatchEvent(new Event('mrx_sales_updated'));
+    } catch (e) {}
 
     const newPaymentObj = {
       id: `PAY-${Date.now()}_${Math.floor(Math.random() * 1000)}`,

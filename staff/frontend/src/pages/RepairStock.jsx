@@ -135,6 +135,14 @@ export default function RepairStock() {
       filtered.unshift(inHandDevice);
       localStorage.setItem('mrx_old_in_hand_stock', JSON.stringify(filtered));
 
+      // Remove from the local repair list, otherwise the entry reappears in Repair Stock on refresh
+      const localRepair = JSON.parse(localStorage.getItem('mrx_repair_stock') || '[]');
+      const remainingRepair = localRepair.filter(d =>
+        String(d.id) !== String(device.id) &&
+        !(device.device_code && String(d.device_code) === String(device.device_code))
+      );
+      localStorage.setItem('mrx_repair_stock', JSON.stringify(remainingRepair));
+
       try {
         await deviceService.updateStatus(device.id, {
           status: 'OLD_IN_HAND',
